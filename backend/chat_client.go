@@ -11,7 +11,6 @@ type ClientList map[*Client]bool
 
 type Client struct {
 	userID int
-	//user2ID int
 	userName   string
 	connection *websocket.Conn
 	manager    *Manager
@@ -37,8 +36,7 @@ func (c *Client) readMessages() { //run as a goroutine "readPump"
 
 	for {
 		// Read message from WebSocket
-		messageType, payload, err := c.connection.ReadMessage()
-		log.Println("func readMessages called")
+		_, payload, err := c.connection.ReadMessage()
 
 		if err != nil {
 			// We only want to log Strange errors, but not simple Disconnection
@@ -53,23 +51,15 @@ func (c *Client) readMessages() { //run as a goroutine "readPump"
 			log.Println("Error decoding message:", err)
 			continue
 		}
-		//log.Println("Message received: ", msg)
-		//add sender_id and user name
+		
 		msg.SenderID = c.userID
 		msg.SenderName = c.userName
-
-		//log.Println("Message sender id added to payload: ", msg.SenderID)
-		//log.Println("Message sender name added to payload: ", msg.SenderName)
-		//log.Println("SenderName: ", msg.SenderName)
-		//log.Println("Message: ", msg.Message)
-		//log.Println("Time: ", msg.Time)
 
 		//  save to DB
 		if err := saveMessage(msg); err != nil {
 			log.Println("Error saving message to DB:", err)
 			continue
 		}
-		//log.Println("Message saved to DB: ", msg.Message)
 
 		// Add a message with type "update" to the broadcast channel to notify all clients and update userlist
 		updateMessage := Message{
@@ -89,9 +79,6 @@ func (c *Client) readMessages() { //run as a goroutine "readPump"
 			continue
 		}
 
-		log.Println("MessageType: ", messageType)
-		//log.Println("Payload (msgData): ", string(payload))
-
 		// add to brodcast channel
 		c.manager.broadcast <- payload
 	}
@@ -106,7 +93,6 @@ func (c *Client) writeMessages() {
 
 	for {
 		message, ok := <-c.send
-		//log.Println("func writeMessages called")
 
 		if !ok {
 			// Manager has closed this connection channel, so communicate that to frontend
@@ -121,6 +107,5 @@ func (c *Client) writeMessages() {
 		if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
 			log.Println(err)
 		}
-		log.Println("Message sent to reseivers wsclient: ")
 	}
 }

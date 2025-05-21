@@ -1,4 +1,4 @@
-import { loadUsers } from "./activity.js";
+//import { loadUsers } from "./activity.js";
 
 // Keep a map of chatId → Window reference
 window.openChats = new Map();
@@ -51,7 +51,7 @@ if (chatId && receiverId && chatName) {
   <!-- Typing indicator above input -->
   <div id="typing-indicator" class="typing-indicator" style="display: none;">
   
-  <!-- <span>${chatName} is typing </span> -->
+  <span style="margin-right: 5px">${chatName} is typing </span>
     <span class="dot"></span>
     <span class="dot"></span>
     <span class="dot"></span>
@@ -97,6 +97,7 @@ if (chatId && receiverId && chatName) {
         const scrollPosition = messagesOutput.scrollHeight;
 
         data.messages.forEach(msg => {
+          if (!msg.message || msg.message.trim() === '') return;
           const div = document.createElement('div');
           div.className = msg.sender_id === receiverId
             ? 'message incoming'
@@ -123,7 +124,6 @@ if (chatId && receiverId && chatName) {
     } catch (err) {
       console.error(err);
     }
-
     setTimeout(() => { loading = false; }, 300)
   }
 
@@ -165,19 +165,9 @@ if (chatId && receiverId && chatName) {
       time: timeStr
     };
 
-
     ws.send(JSON.stringify(msgData));
-
-    // Display outgoing
-    const out = document.createElement('div');
-    out.className = 'message outgoing';
-    out.innerHTML = `
-      <span class="message-text">${message}</span>
-      <span class="message-time">${formatDate(timeStr)}</span>
-    `;
-    messagesOutput.appendChild(out);
-    messagesOutput.scrollTop = messagesOutput.scrollHeight;
     messageInput.value = '';
+
   };
 
   // RECEIVE A MESSAGE or typing info
@@ -186,39 +176,37 @@ if (chatId && receiverId && chatName) {
   ws.addEventListener('message', event => {
     const data = JSON.parse(event.data);
     switch (data.type) {
-
       case 'typing':
-    
         if (data.sender_id === receiverId) {
+          typingIndicator.style.display = 'flex';
   
-            typingIndicator.style.display = 'flex';
-         // Clear previous timeout if one exists
-    clearTimeout(window.typingTimeout);
-
-    // Set new timeout to hide indicator after 1 second
-    window.typingTimeout = setTimeout(() => {
-      typingIndicator.style.display = 'none';
-    }, 1500);
+          // Clear previous timeout if it exists
+          clearTimeout(window.typingTimeout);
+  
+          // Hide indicator after 1.5 seconds of no typing activity
+          window.typingTimeout = setTimeout(() => {
+            typingIndicator.style.display = 'none';
+          }, 1500);
         }
         break;
-
-      case 'message':
-        if (data.sender_id === receiverId) {
-          const inc = document.createElement('div');
-          inc.className = 'message incoming';
-          inc.innerHTML = `
+  
+        case 'message':
+          typingIndicator.style.display = 'none';
+        
+          const isIncoming = data.sender_id === receiverId;
+        
+          const msg = document.createElement('div');
+          msg.className = `message ${isIncoming ? 'incoming' : 'outgoing'}`;
+          msg.innerHTML = `
             <span class="message-sender">${data.sender_name}</span>
             <span class="message-text">${data.message}</span>
             <span class="message-time">${formatDate(data.time)}</span>
           `;
-          messagesOutput.appendChild(inc);
+          messagesOutput.appendChild(msg);
           messagesOutput.scrollTop = messagesOutput.scrollHeight;
-        }
-        break;
+          break;  
     }
   });
-  //} else {
-  //  console.error("Missing chatId, chatReceiver, or chatName in URL");
 }
 
 function formatDate(date) {

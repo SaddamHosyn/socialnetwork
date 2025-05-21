@@ -107,14 +107,15 @@ function updateWebsocket(status) {
       const data = JSON.parse(event.data);
       switch (data.type) {
         case 'update':
-          console.log("Update message received (frontend.js");
+        //  console.log("Update message received (frontend.js");
           loadUsers();
           break;
 
-        case 'message':
-          console.log('trying to show notification badge')
-          UI.toast('New message from ' + data.sender_name, 5000, 'center');
-          
+          case 'message':
+            if (data.sender_id !== window.currentUserId) {
+              UI.toast('New message from ' + data.sender_name, 5000, 'center');
+            }
+            break;
       }
     });
   } else {

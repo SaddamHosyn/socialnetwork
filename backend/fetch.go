@@ -549,8 +549,6 @@ func FetchVotes(postID, commentID int) (int, error) {
 }
 
 func CurrentUser(path, val string) (User, error) {
-	log.Println("fetching current user")
-
 	query, err := db.Query(`
 		SELECT users.id, users.nickname, users.first_name, users.last_name, users.gender, users.email 
 		FROM sessions 
@@ -565,8 +563,6 @@ func CurrentUser(path, val string) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-
-	log.Println("users: ", users)
 
 	if len(users) == 0 {
 		return User{}, errors.New("no users found")
@@ -595,7 +591,6 @@ func ConvertRowToUser(rows *sql.Rows) ([]User, error) {
 			log.Printf("Row scan error: %v", err)
 			break
 		}
-		log.Println("user", user)
 
 		// Append the temporary user struct to the users slice
 		users = append(users, user)

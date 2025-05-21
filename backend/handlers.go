@@ -3,7 +3,6 @@ package backend
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -553,13 +552,12 @@ func HandleChatRequest(w http.ResponseWriter, r *http.Request) {
 		"chatId":  chatId,
 	}
 
-	fmt.Println("Chat ID:", chatId)
+	//fmt.Println("Chat ID:", chatId)
 	w.Header().Set("Content-Type", "application/json") // tells the client “we’re sending JSON”
 	json.NewEncoder(w).Encode(response)                // creates a JSON encoder that writes directly to the HTTP response writer
 }
 
 // fetch(`/api/chat/history?receiverId=${receiverId}&limit=${limit}&offset=${offset}`
-// GET /api/chat/history?receiverId=123
 func HandleChatHistory(w http.ResponseWriter, r *http.Request) {
 	limit := 10
 
