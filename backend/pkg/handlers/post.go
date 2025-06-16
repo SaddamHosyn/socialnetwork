@@ -1,9 +1,9 @@
-package backend
+package handlers
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
+	"social-network/backend/pkg/db"
 	"social-network/backend/pkg/utils"
 	"strconv"
 	"strings"

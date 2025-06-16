@@ -1,4 +1,4 @@
-package backend
+package handlers
 
 import (
 	"encoding/json"
@@ -49,7 +49,7 @@ func HandleChatRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find or create the chat
-	chatId, err := findOrCreateChat(user1.ID, user2_id)
+	chatId, err := FindOrCreateChat(user1.ID, user2_id)
 	if err != nil {
 		http.Error(w, "Error finding/creating chat", http.StatusInternalServerError)
 		log.Println("Error in findOrCreateChat:", err)

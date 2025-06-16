@@ -39,14 +39,12 @@ type PublicUser struct {
 	Online   bool   `json:"online"`
 }
 
-// Define UserProfile struct with User as a field
 type UserProfile struct {
-	User    User     `json:"user"`
-	Posts   []Post   `json:"posts"`
+	User     User      `json:"user"`
+	Posts    []Post    `json:"posts"`
 	Comments []Comment `json:"comments"`
 }
 
-// Define User struct separately
 type User struct {
 	ID        int    `json:"id"`
 	Nickname  string `json:"nickname"`

@@ -3,13 +3,14 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
 	"strings"
 	"time"
 )
 
 func BeginTx() (*sql.Tx, error) {
-	return GetDB().Begin()
+	return sqlite.GetDB().Begin()
 }
 
 func InsertPost(tx *sql.Tx, userID int, title, content string) (int64, error) {
@@ -20,7 +21,7 @@ func InsertPost(tx *sql.Tx, userID int, title, content string) (int64, error) {
 	return res.LastInsertId()
 }
 
-func SetCoverImage(tx *sql.Tx, postID int64, path string) error {
+func SetPostCoverImage(tx *sql.Tx, postID int64, path string) error {
 	_, err := tx.Exec(`UPDATE posts SET image_path = ? WHERE id = ?`, path, postID)
 	return err
 }
@@ -37,7 +38,7 @@ func LinkPostCategory(tx *sql.Tx, postID int64, catID int) error {
 
 func IsPostOwner(userID, postID int) (bool, error) {
 	var owner int
-	err := GetDB().QueryRow("SELECT user_id FROM posts WHERE id = ?", postID).Scan(&owner)
+	err := sqlite.GetDB().QueryRow("SELECT user_id FROM posts WHERE id = ?", postID).Scan(&owner)
 	if err == sql.ErrNoRows {
 		return false, errors.New("not found")
 	} else if err != nil {
@@ -47,44 +48,44 @@ func IsPostOwner(userID, postID int) (bool, error) {
 }
 
 func DeletePost(postID int) error {
-	_, err := GetDB().Exec("DELETE FROM posts WHERE id = ?", postID)
+	_, err := sqlite.GetDB().Exec("DELETE FROM posts WHERE id = ?", postID)
 	return err
 }
 
 func GetPostsFeed(currentUserID, categoryID, limit, offset int) ([]models.Post, error) {
 	const sqlQuery = `
-    SELECT 
-      p.id, p.user_id, u.nickname, p.title, p.content, 
-      p.image_path, p.created_at,
-      COALESCE(v.total_votes, 0) AS votes,
-      COALESCE(uv.user_vote, 0) AS user_vote,
-      GROUP_CONCAT(DISTINCT c.name) AS cats,
-      GROUP_CONCAT(pi.image_path) AS extra_images
-    FROM posts p
-    LEFT JOIN post_images pi ON pi.post_id = p.id
-    JOIN users u ON u.id = p.user_id
-    LEFT JOIN (
-      SELECT post_id, SUM(vote_type) AS total_votes 
-      FROM votes 
-      WHERE post_id IS NOT NULL 
-      GROUP BY post_id
-    ) v ON v.post_id = p.id
-    LEFT JOIN (
-      SELECT post_id, vote_type AS user_vote 
-      FROM votes 
-      WHERE user_id = ? AND post_id IS NOT NULL
-    ) uv ON uv.post_id = p.id
-    LEFT JOIN post_categories pc ON pc.post_id = p.id
-    LEFT JOIN categories c ON c.id = pc.category_id
-    WHERE ? = 0 OR EXISTS (
-      SELECT 1 FROM post_categories pc2 
-      WHERE pc2.post_id = p.id AND pc2.category_id = ?
-    )
-    GROUP BY p.id
-    ORDER BY p.created_at DESC
-    LIMIT ? OFFSET ?;
-    `
-	rows, err := GetDB().Query(
+SELECT 
+  p.id, p.user_id, u.nickname, p.title, p.content, 
+  p.image_path, p.created_at,
+  COALESCE(v.total_votes, 0) AS votes,
+  COALESCE(uv.user_vote, 0) AS user_vote,
+  GROUP_CONCAT(DISTINCT c.name) AS cats,
+  GROUP_CONCAT(pi.image_path) AS extra_images
+FROM posts p
+LEFT JOIN post_images pi ON pi.post_id = p.id
+JOIN users u ON u.id = p.user_id
+LEFT JOIN (
+  SELECT post_id, SUM(vote_type) AS total_votes 
+  FROM votes 
+  WHERE post_id IS NOT NULL 
+  GROUP BY post_id
+) v ON v.post_id = p.id
+LEFT JOIN (
+  SELECT post_id, vote_type AS user_vote 
+  FROM votes 
+  WHERE user_id = ? AND post_id IS NOT NULL
+) uv ON uv.post_id = p.id
+LEFT JOIN post_categories pc ON pc.post_id = p.id
+LEFT JOIN categories c ON c.id = pc.category_id
+WHERE ? = 0 OR EXISTS (
+  SELECT 1 FROM post_categories pc2 
+  WHERE pc2.post_id = p.id AND pc2.category_id = ?
+)
+GROUP BY p.id
+ORDER BY p.created_at DESC
+LIMIT ? OFFSET ?;`
+
+	rows, err := sqlite.GetDB().Query(
 		sqlQuery,
 		currentUserID,
 		categoryID,
@@ -127,7 +128,7 @@ func GetPostsFeed(currentUserID, categoryID, limit, offset int) ([]models.Post, 
 func GetPostByID(postID int) (models.Post, error) {
 	var post models.Post
 	var catNames sql.NullString
-	err := GetDB().QueryRow(
+	err := sqlite.GetDB().QueryRow(
 		`SELECT p.id, p.user_id, u.nickname, p.title, p.content, p.image_path, p.created_at,
            IFNULL(GROUP_CONCAT(DISTINCT c.name), '') AS cats
          FROM posts p
@@ -153,7 +154,7 @@ func GetPostByID(postID int) (models.Post, error) {
 	}
 
 	// fetch extra images
-	rows, err := GetDB().Query(`SELECT image_path FROM post_images WHERE post_id = ? ORDER BY position`, postID)
+	rows, err := sqlite.GetDB().Query(`SELECT image_path FROM post_images WHERE post_id = ? ORDER BY position`, postID)
 	if err != nil {
 		return post, err
 	}
@@ -171,7 +172,7 @@ func GetPostByID(postID int) (models.Post, error) {
 }
 
 func GetAllCategories() ([]models.Category, error) {
-	rows, err := GetDB().Query(`SELECT id, name FROM categories ORDER BY name ASC`)
+	rows, err := sqlite.GetDB().Query(`SELECT id, name FROM categories ORDER BY name ASC`)
 	if err != nil {
 		return nil, err
 	}
@@ -201,21 +202,21 @@ func nullInt(v int) any {
 func InsertVote(userID, postID, commentID, voteType int) error {
 	var existingVote int
 	query := "SELECT vote_type FROM votes WHERE user_id = ? AND post_id IS ? AND comment_id IS ?"
-	err := GetDB().QueryRow(query, userID, nullInt(postID), nullInt(commentID)).Scan(&existingVote)
+	err := sqlite.GetDB().QueryRow(query, userID, nullInt(postID), nullInt(commentID)).Scan(&existingVote)
 
 	if err == sql.ErrNoRows {
-		_, err = GetDB().Exec(
+		_, err = sqlite.GetDB().Exec(
 			`INSERT INTO votes (user_id, post_id, comment_id, vote_type)
              VALUES (?, ?, ?, ?)`,
 			userID, nullInt(postID), nullInt(commentID), voteType)
 		return err
 	} else if err == nil {
 		if existingVote == voteType {
-			_, err = GetDB().Exec(
+			_, err = sqlite.GetDB().Exec(
 				`DELETE FROM votes WHERE user_id = ? AND post_id IS ? AND comment_id IS ?`,
 				userID, nullInt(postID), nullInt(commentID))
 		} else {
-			_, err = GetDB().Exec(
+			_, err = sqlite.GetDB().Exec(
 				`UPDATE votes SET vote_type = ? WHERE user_id = ? AND post_id IS ? AND comment_id IS ?`,
 				voteType, userID, nullInt(postID), nullInt(commentID))
 		}
@@ -230,9 +231,9 @@ func GetVoteSum(postID, commentID int) (int, error) {
 	var err error
 
 	if postID != 0 {
-		err = GetDB().QueryRow("SELECT IFNULL(SUM(vote_type), 0) FROM votes WHERE post_id = ?", postID).Scan(&total)
+		err = sqlite.GetDB().QueryRow("SELECT IFNULL(SUM(vote_type), 0) FROM votes WHERE post_id = ?", postID).Scan(&total)
 	} else if commentID != 0 {
-		err = GetDB().QueryRow("SELECT IFNULL(SUM(vote_type), 0) FROM votes WHERE comment_id = ?", commentID).Scan(&total)
+		err = sqlite.GetDB().QueryRow("SELECT IFNULL(SUM(vote_type), 0) FROM votes WHERE comment_id = ?", commentID).Scan(&total)
 	} else {
 		return 0, errors.New("invalid vote target")
 	}
@@ -241,7 +242,7 @@ func GetVoteSum(postID, commentID int) (int, error) {
 }
 
 func GetChatUserList(currentUserID int, threshold time.Time) ([]models.PublicUser, error) {
-	rows, err := GetDB().Query(`
+	rows, err := sqlite.GetDB().Query(`
         SELECT DISTINCT u.id, u.nickname, u.last_active_at
         FROM users u
         LEFT JOIN (
@@ -287,7 +288,7 @@ func GetChatUserList(currentUserID int, threshold time.Time) ([]models.PublicUse
 
 func GetUserBySessionToken(token string) (models.User, error) {
 	var user models.User
-	err := GetDB().QueryRow(`
+	err := sqlite.GetDB().QueryRow(`
         SELECT id, nickname, first_name, last_name, gender, email
         FROM users
         INNER JOIN sessions ON sessions.user_id = users.id
@@ -303,7 +304,7 @@ func GetUserProfileInfo(userID int) (models.User, int, error) {
 	var user models.User
 	var genderID int
 	var age int
-	err := GetDB().QueryRow(`
+	err := sqlite.GetDB().QueryRow(`
         SELECT id, nickname, first_name, last_name, age, gender, email
         FROM users WHERE id = ?`, userID,
 	).Scan(&user.ID, &user.Nickname, &user.FirstName, &user.LastName, &age, &genderID, &user.Email)
@@ -314,8 +315,25 @@ func GetUserProfileInfo(userID int) (models.User, int, error) {
 	return user, genderID, nil
 }
 
+func GetUserProfile(userID int) (models.UserProfile, error) {
+	var profile models.UserProfile
+	err := sqlite.GetDB().QueryRow(`
+        SELECT id, nickname, first_name, last_name, age, gender, email
+        FROM users WHERE id = ?`, userID,
+	).Scan(
+		&profile.User.ID,
+		&profile.User.Nickname,
+		&profile.User.FirstName,
+		&profile.User.LastName,
+		&profile.User.Age,
+		&profile.User.Gender,
+		&profile.User.Email,
+	)
+	return profile, err
+}
+
 func GetPostsByUser(userID int, nick string) ([]models.Post, error) {
-	rows, err := GetDB().Query(`
+	rows, err := sqlite.GetDB().Query(`
       SELECT p.id, p.title, p.content, p.image_path, p.created_at,
              COALESCE(SUM(v.vote_type),0)  AS votes,
              IFNULL(GROUP_CONCAT(DISTINCT c.name), '') AS categories
@@ -349,7 +367,7 @@ func GetPostsByUser(userID int, nick string) ([]models.Post, error) {
 		}
 		p.ImagePaths = []string{p.ImagePath}
 		// Fetch extra images
-		imgRows, err := GetDB().Query(`SELECT image_path FROM post_images WHERE post_id = ? ORDER BY position`, p.ID)
+		imgRows, err := sqlite.GetDB().Query(`SELECT image_path FROM post_images WHERE post_id = ? ORDER BY position`, p.ID)
 		if err == nil {
 			defer imgRows.Close()
 			for imgRows.Next() {
@@ -365,7 +383,7 @@ func GetPostsByUser(userID int, nick string) ([]models.Post, error) {
 }
 
 func GetCommentsByUser(userID int, nick string) ([]models.Comment, error) {
-	rows, err := GetDB().Query(`
+	rows, err := sqlite.GetDB().Query(`
       SELECT c.id, c.post_id, c.content, c.created_at, COALESCE(SUM(v.vote_type),0) AS votes
       FROM comments c
       LEFT JOIN votes v ON v.comment_id = c.id
@@ -392,7 +410,7 @@ func GetCommentsByUser(userID int, nick string) ([]models.Comment, error) {
 }
 
 func InsertComment(postID, userID int, content string) error {
-	_, err := GetDB().Exec(
+	_, err := sqlite.GetDB().Exec(
 		`INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)`,
 		postID, userID, content,
 	)
@@ -401,7 +419,7 @@ func InsertComment(postID, userID int, content string) error {
 
 func IsCommentOwner(commentID, userID int) (bool, error) {
 	var owner int
-	err := GetDB().QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&owner)
+	err := sqlite.GetDB().QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&owner)
 	if err == sql.ErrNoRows {
 		return false, sql.ErrNoRows
 	}
@@ -412,12 +430,12 @@ func IsCommentOwner(commentID, userID int) (bool, error) {
 }
 
 func DeleteCommentByID(commentID int) error {
-	_, err := GetDB().Exec("DELETE FROM comments WHERE id = ?", commentID)
+	_, err := sqlite.GetDB().Exec("DELETE FROM comments WHERE id = ?", commentID)
 	return err
 }
 
 func GetCommentsByPost(postID, limit, offset int) ([]models.Comment, error) {
-	rows, err := GetDB().Query(`
+	rows, err := sqlite.GetDB().Query(`
 		SELECT c.id, c.user_id, u.nickname, c.content, c.created_at,
 			   COALESCE(SUM(v.vote_type),0) AS votes
 		FROM comments c
@@ -448,7 +466,7 @@ func GetCommentsByPost(postID, limit, offset int) ([]models.Comment, error) {
 }
 
 func RegisterUser(nickname, email, hashedPassword, firstName, lastName string, age, gender int) error {
-	_, err := GetDB().Exec(
+	_, err := sqlite.GetDB().Exec(
 		`INSERT INTO users (nickname, email, password, age, gender, first_name, last_name)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		nickname, email, hashedPassword, age, gender, firstName, lastName)
@@ -458,7 +476,7 @@ func RegisterUser(nickname, email, hashedPassword, firstName, lastName string, a
 func GetLoginCredentials(login string) (int, string, error) {
 	var userID int
 	var storedHash string
-	err := GetDB().QueryRow(`
+	err := sqlite.GetDB().QueryRow(`
         SELECT id, password FROM users 
         WHERE nickname = ? OR email = LOWER(?)`,
 		login, login).Scan(&userID, &storedHash)
@@ -466,14 +484,34 @@ func GetLoginCredentials(login string) (int, string, error) {
 }
 
 func UpdateUserLastActive(userID int) error {
-	_, err := GetDB().Exec("UPDATE users SET last_active_at = ? WHERE id = ?", time.Now().UTC(), userID)
+	_, err := sqlite.GetDB().Exec("UPDATE users SET last_active_at = ? WHERE id = ?", time.Now().UTC(), userID)
 	return err
 }
 
 func InsertSession(userID int, token string, expiresAt time.Time) error {
-	_, err := GetDB().Exec(`
+	_, err := sqlite.GetDB().Exec(`
         INSERT INTO sessions (user_id, token, expires_at)
         VALUES (?, ?, ?)`,
 		userID, token, expiresAt.Format(time.RFC3339))
 	return err
+}
+
+func SetUserInactive(userID int) error {
+	_, err := sqlite.GetDB().Exec("UPDATE users SET last_active_at = NULL WHERE id = ?", userID)
+	return err
+}
+
+func DeleteSessionByToken(token string) error {
+	_, err := sqlite.GetDB().Exec("DELETE FROM sessions WHERE token = ?", token)
+	return err
+}
+
+func GetSessionInfo(token string) (int, string, error) {
+	var userID int
+	var expiresAt string
+	err := sqlite.GetDB().QueryRow(
+		"SELECT user_id, expires_at FROM sessions WHERE token = ?",
+		token,
+	).Scan(&userID, &expiresAt)
+	return userID, expiresAt, err
 }

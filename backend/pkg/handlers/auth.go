@@ -1,16 +1,24 @@
-package backend
+package handlers
 
 import (
+	"context"
 	"database/sql"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
-	"social-network/backend/pkg/models"
+	"social-network/backend/pkg/db"
 	"social-network/backend/pkg/utils"
 	"strconv"
 	"strings"
 	"time"
+)
+
+type contextKey string
+
+const (
+	userIDKey       contextKey = "userID"
+	sessionTokenKey contextKey = "sessionToken"
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
@@ -133,15 +141,9 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(int)
 	token := r.Context().Value(sessionTokenKey).(string)
 
-	// Update user status
-	_, err := db.Exec("UPDATE users SET last_active_at = NULL WHERE id = ?", userID)
-	if err != nil {
-		log.Printf("User status update error on logout for user %d: %v", userID, err)
-	}
+	_ = db.SetUserInactive(userID)
 
-	_, err = db.Exec("DELETE FROM sessions WHERE token = ?", token)
-	if err != nil {
-		log.Printf("Session delete error: %v", err)
+	if err := db.DeleteSessionByToken(token); err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Server error: couldn't delete session")
 		return
 	}
@@ -158,13 +160,6 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	utils.Success(w, http.StatusOK, "Logged out successfully")
 }
 
-type contextKey string
-
-const (
-	userIDKey       contextKey = "userID"
-	sessionTokenKey contextKey = "sessionToken"
-)
-
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session_token")
@@ -173,13 +168,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		var userID int
-		var expiresAtStr string
-		err = db.QueryRow(
-			"SELECT user_id, expires_at FROM sessions WHERE token = ?",
-			cookie.Value,
-		).Scan(&userID, &expiresAtStr)
-
+		userID, expiresAtStr, err := db.GetSessionInfo(cookie.Value)
 		if err == sql.ErrNoRows {
 			http.SetCookie(w, &http.Cookie{
 				Name:     "session_token",
@@ -198,7 +187,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		expiresAt, err := time.Parse(time.RFC3339, expiresAtStr)
 		if err != nil || time.Now().After(expiresAt) {
-			db.Exec("DELETE FROM sessions WHERE token = ?", cookie.Value)
+			db.DeleteSessionByToken(cookie.Value)
 			http.Error(w, "Session expired", http.StatusUnauthorized)
 			return
 		}
@@ -215,37 +204,16 @@ func Heartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userID := r.Context().Value(userIDKey).(int)
-	if _, err := db.Exec(
-		`UPDATE users SET last_active_at = ? WHERE id = ?`,
-		time.Now().UTC(), userID,
-	); err != nil {
-		log.Printf("Heartbeat update error for user %d: %v", userID, err)
-	}
+	_ = db.UpdateUserLastActive(userID)
 	utils.Success(w, http.StatusOK, nil)
 }
 
 func MeHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(int)
-
-	var profile models.UserProfile
-	err := db.QueryRow(`
-        SELECT id, nickname, first_name, last_name, age, gender, email
-        FROM users WHERE id = ?`,
-		userID,
-	).Scan(
-		&profile.User.ID,
-		&profile.User.Nickname,
-		&profile.User.FirstName,
-		&profile.User.LastName,
-		&profile.User.Age,
-		&profile.User.Gender,
-		&profile.User.Email,
-	)
+	profile, err := db.GetUserProfile(userID)
 	if err != nil {
-		log.Printf("Profile fetch error: %v", err)
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return
 	}
-
 	utils.Success(w, http.StatusOK, profile)
 }

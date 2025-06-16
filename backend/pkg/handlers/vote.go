@@ -1,8 +1,9 @@
-package backend
+package handlers
 
 import (
 	"log"
 	"net/http"
+	"social-network/backend/pkg/db"
 	"social-network/backend/pkg/utils"
 	"strconv"
 )
@@ -49,7 +50,7 @@ func VoteHandler(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(userIDKey).(int)
 
-	err = db.UpsertVote(userID, postID, commentID, voteType)
+	err = db.InsertVote(userID, postID, commentID, voteType)
 	if err != nil {
 		log.Printf("Vote error: %v", err)
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
