@@ -4,6 +4,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
+	"social-network/backend/pkg/chat"
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/handlers"
 )
@@ -17,8 +18,8 @@ func main() {
 		log.Fatalf("Migration error: %v", err)
 	}
 
-	// manager := backend.NewManager()
-	// go manager.Run()
+	manager := chat.NewManager()
+	go manager.Run()
 
 	sqlite.SetDB(database)
 
@@ -43,9 +44,9 @@ func main() {
 	http.Handle("/api/post/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeletePostHandler)))
 	http.Handle("/api/comment/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeleteCommentHandler)))
 
-	// http.HandleFunc("/ws", manager.ServeWebSocket)
-	// http.HandleFunc("/api/chat", backend.HandleChatRequest)
-	// http.HandleFunc("/api/chat/history", backend.HandleChatHistory)
+	http.HandleFunc("/ws", manager.ServeWebSocket)
+	http.HandleFunc("/api/chat", chat.HandleChatRequest)
+	http.HandleFunc("/api/chat/history", chat.HandleChatHistory)
 
 	log.Println("Starting server on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))

@@ -1,4 +1,4 @@
-package backend
+package chat
 
 import (
 	"database/sql"

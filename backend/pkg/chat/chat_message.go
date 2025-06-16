@@ -1,4 +1,4 @@
-package backend
+package chat
 
 type Message struct {
 	Type       string `json:"type"`

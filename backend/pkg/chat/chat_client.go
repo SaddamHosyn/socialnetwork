@@ -1,4 +1,4 @@
-package backend
+package chat
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 type ClientList map[*Client]bool
 
 type Client struct {
-	userID int
+	userID     int
 	userName   string
 	connection *websocket.Conn
 	manager    *Manager
@@ -51,7 +51,7 @@ func (c *Client) readMessages() { //run as a goroutine "readPump"
 			log.Println("Error decoding message:", err)
 			continue
 		}
-		
+
 		msg.SenderID = c.userID
 		msg.SenderName = c.userName
 

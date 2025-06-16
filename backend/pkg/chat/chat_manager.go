@@ -1,19 +1,19 @@
-package backend
+package chat
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"social-network/backend/pkg/handlers"
 	"sync"
-	"github.com/gorilla/websocket"
 )
 
 type Manager struct {
 	clients   ClientList
 	broadcast chan []byte
 	sync.RWMutex
-
 }
 
 func NewManager() *Manager {
@@ -40,7 +40,7 @@ func (m *Manager) Run() {
 				//Sending update message to all clients
 				wsclient.send <- message
 			} else {
-				if wsclient.userID == msg.ReceiverID || wsclient.userID == msg.SenderID{
+				if wsclient.userID == msg.ReceiverID || wsclient.userID == msg.SenderID {
 					wsclient.send <- message
 				}
 			}
@@ -72,7 +72,7 @@ func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	token := cookie.Value
 
-	currentUser, err := CurrentUser("forum.db", token)
+	currentUser, err := handlers.CurrentUser("forum.db", token)
 	if err != nil {
 		log.Println("User is not authorized, closeing websocket")
 		return
@@ -92,7 +92,7 @@ func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// start go routine listening for the messages
 	go client.readMessages()
-	 client.writeMessages()
+	client.writeMessages()
 
 }
 
@@ -109,7 +109,6 @@ func (m *Manager) addClient(client *Client) {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-
 }
 
 func (m *Manager) removeClient(client *Client) {
