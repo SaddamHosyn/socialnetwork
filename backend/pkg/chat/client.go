@@ -2,41 +2,49 @@ package chat
 
 import (
 	"encoding/json"
-	"log"
-
 	"github.com/gorilla/websocket"
+	"log"
+	"social-network/backend/pkg/db"
+	"social-network/backend/pkg/models"
+	"sync"
 )
 
 type ClientList map[*Client]bool
 
 type Client struct {
-	userID     int
-	userName   string
-	connection *websocket.Conn
-	manager    *Manager
-	send       chan []byte
+	UserID     int
+	UserName   string
+	Connection *websocket.Conn
+	Manager    *Manager
+	Send       chan []byte
+}
+
+type Manager struct {
+	Clients   ClientList
+	Broadcast chan []byte
+	sync.RWMutex
 }
 
 func NewClient(id int, name string, conn *websocket.Conn, manager *Manager) *Client {
 	return &Client{
-		userID:     id,
-		userName:   name,
-		connection: conn,
-		manager:    manager,
-		send:       make(chan []byte),
+		UserID:     id,
+		UserName:   name,
+		Connection: conn,
+		Manager:    manager,
+		Send:       make(chan []byte),
 	}
 }
 
-func (c *Client) readMessages() { //run as a goroutine "readPump"
+func (c *Client) ReadMessages() { //run as a goroutine "readPump"
 
 	defer func() {
 		// Graceful Close the Connection once this goroutine is done
-		c.manager.removeClient(c)
+		c.Manager.RemoveClient(c)
 	}()
 
 	for {
 		// Read message from WebSocket
-		_, payload, err := c.connection.ReadMessage()
+		_, payload, err := c.Connection.ReadMessage()
 
 		if err != nil {
 			// We only want to log Strange errors, but not simple Disconnection
@@ -46,23 +54,23 @@ func (c *Client) readMessages() { //run as a goroutine "readPump"
 			break
 		}
 		// unmarshal to message struct
-		var msg Message
+		var msg models.Message
 		if err := json.Unmarshal(payload, &msg); err != nil {
 			log.Println("Error decoding message:", err)
 			continue
 		}
 
-		msg.SenderID = c.userID
-		msg.SenderName = c.userName
+		msg.SenderID = c.UserID
+		msg.SenderName = c.UserName
 
 		//  save to DB
-		if err := saveMessage(msg); err != nil {
+		if err := db.SaveMessage(msg); err != nil {
 			log.Println("Error saving message to DB:", err)
 			continue
 		}
 
 		// Add a message with type "update" to the broadcast channel to notify all clients and update userlist
-		updateMessage := Message{
+		updateMessage := models.Message{
 			Type: "update",
 		}
 		updatePayload, err := json.Marshal(updateMessage)
@@ -70,7 +78,7 @@ func (c *Client) readMessages() { //run as a goroutine "readPump"
 			log.Println("Error encoding update message:", err)
 			continue
 		}
-		c.manager.broadcast <- updatePayload
+		c.Manager.Broadcast <- updatePayload
 
 		// marshal back to json
 		payload, err = json.Marshal(msg)
@@ -80,23 +88,23 @@ func (c *Client) readMessages() { //run as a goroutine "readPump"
 		}
 
 		// add to brodcast channel
-		c.manager.broadcast <- payload
+		c.Manager.Broadcast <- payload
 	}
 }
 
 // run as a goroutine "writePump"
-func (c *Client) writeMessages() {
+func (c *Client) WriteMessages() {
 	defer func() {
 		// Graceful close if this triggers a closing
-		c.manager.removeClient(c)
+		c.Manager.RemoveClient(c)
 	}()
 
 	for {
-		message, ok := <-c.send
+		message, ok := <-c.Send
 
 		if !ok {
 			// Manager has closed this connection channel, so communicate that to frontend
-			if err := c.connection.WriteMessage(websocket.CloseMessage, nil); err != nil {
+			if err := c.Connection.WriteMessage(websocket.CloseMessage, nil); err != nil {
 				// Log that the connection is closed and the reason
 				log.Println("connection closed: ", err)
 			}
@@ -104,7 +112,7 @@ func (c *Client) writeMessages() {
 			return
 		}
 		// Write a Regular text message to the connection
-		if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
+		if err := c.Connection.WriteMessage(websocket.TextMessage, message); err != nil {
 			log.Println(err)
 		}
 	}

@@ -54,3 +54,13 @@ type User struct {
 	Gender    string `json:"gender"`
 	Email     string `json:"email"`
 }
+
+type Message struct {
+	Type       string `json:"type"`
+	ID         int    `json:"id"`
+	SenderID   int    `json:"sender_id"`
+	SenderName string `json:"sender_name"`
+	ReceiverID int    `json:"receiverId"`
+	Message    string `json:"message"`
+	Time       string `json:"time"`
+}

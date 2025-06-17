@@ -6,47 +6,32 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"social-network/backend/pkg/handlers"
-	"sync"
+	"social-network/backend/pkg/models"
 )
-
-type Manager struct {
-	clients   ClientList
-	broadcast chan []byte
-	sync.RWMutex
-}
-
-func NewManager() *Manager {
-	return &Manager{
-		clients:   make(ClientList),
-		broadcast: make(chan []byte),
-	}
-}
 
 func (m *Manager) Run() {
 
-	var msg Message
+	var msg models.Message
 	//fmt.Println("Running websocket manager...")
 	for {
-		message := <-m.broadcast
+		message := <-m.Broadcast
 
 		if err := json.Unmarshal(message, &msg); err != nil {
 			fmt.Println("Error decoding message:", err)
 			continue
 		}
 
-		for wsclient := range m.clients {
+		for wsclient := range m.Clients {
 			if msg.Type == "update" {
 				//Sending update message to all clients
-				wsclient.send <- message
+				wsclient.Send <- message
 			} else {
-				if wsclient.userID == msg.ReceiverID || wsclient.userID == msg.SenderID {
-					wsclient.send <- message
+				if wsclient.UserID == msg.ReceiverID || wsclient.UserID == msg.SenderID {
+					wsclient.Send <- message
 				}
 			}
 		}
 	}
-
 }
 
 func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +57,7 @@ func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	token := cookie.Value
 
-	currentUser, err := handlers.CurrentUser("forum.db", token)
+	currentUser, err := CurrentUser("forum.db", token)
 	if err != nil {
 		log.Println("User is not authorized, closeing websocket")
 		return
@@ -81,26 +66,25 @@ func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// create a new client and add it to the manager
 	client := NewClient(currentUser.ID, currentUser.Nickname, conn, m)
-	m.addClient(client)
+	m.AddClient(client)
 
 	// Add a message with type "update" to the broadcast channel to notify all clients and update userlist
-	updateMessage := Message{
+	updateMessage := models.Message{
 		Type: "update",
 	}
 	updatePayload, _ := json.Marshal(updateMessage)
-	m.broadcast <- updatePayload
+	m.Broadcast <- updatePayload
 
 	// start go routine listening for the messages
-	go client.readMessages()
-	client.writeMessages()
-
+	go client.ReadMessages()
+	client.WriteMessages()
 }
 
-func (m *Manager) addClient(client *Client) {
+func (m *Manager) AddClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.clients[client] = true
+	m.Clients[client] = true
 	//fmt.Println(client)
 
 }
@@ -111,18 +95,25 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func (m *Manager) removeClient(client *Client) {
+func (m *Manager) RemoveClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
-	if _, ok := m.clients[client]; ok { // check if exists and delete
-		client.connection.Close()
-		delete(m.clients, client)
+	if _, ok := m.Clients[client]; ok { // check if exists and delete
+		client.Connection.Close()
+		delete(m.Clients, client)
 	}
 	// Add a message with type "update" to the broadcast channel to notify all clients and update userlist
-	updateMessage := Message{
+	updateMessage := models.Message{
 		Type: "update",
 	}
 	updatePayload, _ := json.Marshal(updateMessage)
-	m.broadcast <- updatePayload
+	m.Broadcast <- updatePayload
+}
+
+func NewManager() *Manager {
+	return &Manager{
+		Clients:   make(ClientList),
+		Broadcast: make(chan []byte),
+	}
 }
