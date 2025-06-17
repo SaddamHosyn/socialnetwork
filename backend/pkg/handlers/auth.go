@@ -38,21 +38,22 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	password := strings.TrimSpace(r.FormValue("password"))
 	firstName := strings.TrimSpace(r.FormValue("first_name"))
 	lastName := strings.TrimSpace(r.FormValue("last_name"))
-	ageStr := r.FormValue("age")
+	dateOfBirth := strings.TrimSpace(r.FormValue("date_of_birth"))
 	genderStr := r.FormValue("gender")
 
-	ageInt, err := strconv.Atoi(ageStr)
+	dob, err := time.Parse("2006-01-02", dateOfBirth)
 	if err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Invalid age format")
+		utils.Fail(w, http.StatusBadRequest, "Invalid date format (YYYY-MM-DD)")
 		return
 	}
+
 	genderInt, err := strconv.Atoi(genderStr)
 	if err != nil {
 		utils.Fail(w, http.StatusBadRequest, "Invalid gender format")
 		return
 	}
 
-	if validationErr := utils.ValidateRegister(nickname, email, password, firstName, lastName, ageInt, genderInt); validationErr != nil {
+	if validationErr := utils.ValidateRegister(nickname, email, password, firstName, lastName, dob, genderInt); validationErr != nil {
 		utils.Fail(w, http.StatusBadRequest, validationErr.Message)
 		return
 	}
@@ -63,8 +64,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.RegisterUser(nickname, email, string(hashedPassword), firstName, lastName, ageInt, genderInt)
+	err = db.RegisterUser(nickname, email, string(hashedPassword), firstName, lastName, dob, genderInt)
 	if err != nil {
+		log.Printf("REGISTER ERROR: %v", err)
 		if strings.Contains(err.Error(), "UNIQUE constraint") {
 			utils.Fail(w, http.StatusConflict, "Nickname or email already taken")
 		} else {

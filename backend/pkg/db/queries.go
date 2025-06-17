@@ -465,11 +465,11 @@ func GetCommentsByPost(postID, limit, offset int) ([]models.Comment, error) {
 	return comments, nil
 }
 
-func RegisterUser(nickname, email, hashedPassword, firstName, lastName string, age, gender int) error {
+func RegisterUser(nickname, email, hashedPassword, firstName, lastName string, dob time.Time, gender int) error {
 	_, err := sqlite.GetDB().Exec(
-		`INSERT INTO users (nickname, email, password, age, gender, first_name, last_name)
+		`INSERT INTO users (nickname, email, password, date_of_birth, gender, first_name, last_name)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		nickname, email, hashedPassword, age, gender, firstName, lastName)
+		nickname, email, hashedPassword, dob.Format("2006-01-02"), gender, firstName, lastName)
 	return err
 }
 

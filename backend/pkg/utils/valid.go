@@ -2,6 +2,7 @@ package utils
 
 import (
 	"regexp"
+	"time"
 )
 
 type ValidationError struct {
@@ -13,7 +14,7 @@ var (
 	emailRegex    = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 )
 
-func ValidateRegister(nickname, email, password, firstName, lastName string, age, gender int) *ValidationError {
+func ValidateRegister(nickname, email, password, firstName, lastName string, dob time.Time, gender int) *ValidationError {
 	if nickname == "" || email == "" || password == "" || firstName == "" || lastName == "" {
 		return &ValidationError{Message: "All fields are required"}
 	}
@@ -30,8 +31,13 @@ func ValidateRegister(nickname, email, password, firstName, lastName string, age
 		return &ValidationError{Message: "Password must be at least 6 and less than 72 characters"}
 	}
 
-	if age < 18 || age > 120 {
-		return &ValidationError{Message: "Age must be between 18 and 120"}
+	now := time.Now()
+	age := now.Year() - dob.Year()
+	if now.YearDay() < dob.YearDay() {
+		age--
+	}
+	if age < 18 {
+		return &ValidationError{Message: "You must be at least 18 years old"}
 	}
 
 	if gender < 1 || gender > 3 {
