@@ -23,7 +23,7 @@ func main() {
 
 	sqlite.SetDB(database)
 
-	http.Handle("/", http.FileServer(http.Dir("public")))
+	http.Handle("/", http.FileServer(http.Dir("frontend")))
 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 
 	http.HandleFunc("/api/register", handlers.RegisterHandler)
