@@ -54,12 +54,11 @@ func DeletePost(postID int) error {
 func GetPostsFeed(currentUserID, categoryID, limit, offset int) ([]models.Post, error) {
 	const sqlQuery = `
 SELECT 
-  p.id, p.user_id, u.nickname, p.title, p.content, 
-  p.image_path, p.created_at,
+  p.id, p.user_id, u.nickname, p.title, p.content, p.created_at,
   COALESCE(v.total_votes, 0) AS votes,
   COALESCE(uv.user_vote, 0) AS user_vote,
   GROUP_CONCAT(DISTINCT c.name) AS cats,
-  GROUP_CONCAT(pi.image_path) AS extra_images
+  GROUP_CONCAT(pi.image_path) AS image_paths
 FROM posts p
 LEFT JOIN post_images pi ON pi.post_id = p.id
 JOIN users u ON u.id = p.user_id
@@ -103,13 +102,14 @@ LIMIT ? OFFSET ?;`
 		var catNames, extraImages sql.NullString
 		if err := rows.Scan(
 			&p.ID, &p.UserID, &p.Nickname, &p.Title, &p.Content,
-			&p.ImagePath, &p.CreatedAt, &p.Votes, &p.UserVote, &catNames, &extraImages,
+			&p.CreatedAt, &p.Votes, &p.UserVote, &catNames, &extraImages,
 		); err != nil {
 			continue
 		}
-		p.ImagePaths = []string{p.ImagePath}
 		if extraImages.Valid && extraImages.String != "" {
-			p.ImagePaths = append(p.ImagePaths, strings.Split(extraImages.String, ",")...)
+			p.ImagePaths = strings.Split(extraImages.String, ",")
+		} else {
+			p.ImagePaths = []string{}
 		}
 		if catNames.Valid && catNames.String != "" {
 			p.Categories = strings.Split(catNames.String, ",")
@@ -128,7 +128,7 @@ func GetPostByID(postID int) (models.Post, error) {
 	var post models.Post
 	var catNames sql.NullString
 	err := sqlite.GetDB().QueryRow(
-		`SELECT p.id, p.user_id, u.nickname, p.title, p.content, p.image_path, p.created_at,
+		`SELECT p.id, p.user_id, u.nickname, p.title, p.content, p.created_at,
            IFNULL(GROUP_CONCAT(DISTINCT c.name), '') AS cats
          FROM posts p
          JOIN users u ON p.user_id = u.id
@@ -139,8 +139,7 @@ func GetPostByID(postID int) (models.Post, error) {
 		postID,
 	).Scan(
 		&post.ID, &post.UserID, &post.Nickname, &post.Title,
-		&post.Content, &post.ImagePath, &post.CreatedAt,
-		&catNames,
+		&post.Content, &post.CreatedAt, &catNames,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -159,7 +158,7 @@ func GetPostByID(postID int) (models.Post, error) {
 	}
 	defer rows.Close()
 
-	post.ImagePaths = []string{post.ImagePath}
+	post.ImagePaths = []string{}
 	for rows.Next() {
 		var img string
 		if err := rows.Scan(&img); err != nil {

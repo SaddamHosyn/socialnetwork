@@ -99,7 +99,7 @@ func GetUserProfile(userID int) (models.UserProfile, error) {
 
 func GetPostsByUser(userID int, nick string) ([]models.Post, error) {
 	rows, err := sqlite.GetDB().Query(`
-      SELECT p.id, p.title, p.content, p.image_path, p.created_at,
+      SELECT p.id, p.title, p.content, p.created_at,
              COALESCE(SUM(v.vote_type),0)  AS votes,
              IFNULL(GROUP_CONCAT(DISTINCT c.name), '') AS categories
         FROM posts p
@@ -120,7 +120,7 @@ func GetPostsByUser(userID int, nick string) ([]models.Post, error) {
 		var p models.Post
 		var cats sql.NullString
 		if err := rows.Scan(
-			&p.ID, &p.Title, &p.Content, &p.ImagePath, &p.CreatedAt,
+			&p.ID, &p.Title, &p.Content, &p.CreatedAt,
 			&p.Votes, &cats,
 		); err != nil {
 			continue
@@ -130,7 +130,7 @@ func GetPostsByUser(userID int, nick string) ([]models.Post, error) {
 		if cats.Valid && cats.String != "" {
 			p.Categories = strings.Split(cats.String, ",")
 		}
-		p.ImagePaths = []string{p.ImagePath}
+		p.ImagePaths = []string{}
 		// Fetch extra images
 		imgRows, err := sqlite.GetDB().Query(`SELECT image_path FROM post_images WHERE post_id = ? ORDER BY position`, p.ID)
 		if err == nil {
