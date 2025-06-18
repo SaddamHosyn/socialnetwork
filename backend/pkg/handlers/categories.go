@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"net/http"
-	"social-network/backend/pkg/db"
+	"social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/utils"
 )
 

@@ -3,7 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
-	"social-network/backend/pkg/db"
+	"social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
 	"time"
@@ -79,21 +79,21 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 
 	profile := models.UserProfile{
 		User: struct {
-			ID        int    `json:"id"`
-			Nickname  string `json:"nickname"`
-			FirstName string `json:"first_name"`
-			LastName  string `json:"last_name"`
-			Age       int    `json:"age"`
-			Gender    string `json:"gender"`
-			Email     string `json:"email"`
+			ID          int       `json:"id"`
+			Nickname    string    `json:"nickname"`
+			FirstName   string    `json:"first_name"`
+			LastName    string    `json:"last_name"`
+			DateOfBirth time.Time `json:"date_of_birth"`
+			Gender      string    `json:"gender"`
+			Email       string    `json:"email"`
 		}{
-			ID:        user.ID,
-			Nickname:  user.Nickname,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Age:       user.Age,
-			Gender:    gender,
-			Email:     user.Email,
+			ID:          user.ID,
+			Nickname:    user.Nickname,
+			FirstName:   user.FirstName,
+			LastName:    user.LastName,
+			DateOfBirth: user.DateOfBirth,
+			Gender:      gender,
+			Email:       user.Email,
 		},
 		Posts:    posts,
 		Comments: comments,

@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
-	"social-network/backend/pkg/db"
+	"social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/utils"
 	"strconv"
 	"strings"
