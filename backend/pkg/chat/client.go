@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
-	"social-network/backend/pkg/db"
+	"social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/models"
 	"sync"
 )

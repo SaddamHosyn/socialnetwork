@@ -13,16 +13,11 @@ func BeginTx() (*sql.Tx, error) {
 }
 
 func InsertPost(tx *sql.Tx, userID int, title, content string) (int64, error) {
-	res, err := tx.Exec(`INSERT INTO posts(user_id, title, content) VALUES(?,?,?,?)`, userID, title, content)
+	res, err := tx.Exec(`INSERT INTO posts(user_id, title, content) VALUES(?,?,?)`, userID, title, content)
 	if err != nil {
 		return 0, err
 	}
 	return res.LastInsertId()
-}
-
-func SetPostCoverImage(tx *sql.Tx, postID int64, path string) error {
-	_, err := tx.Exec(`UPDATE posts SET image_path = ? WHERE id = ?`, path, postID)
-	return err
 }
 
 func AddPostImage(tx *sql.Tx, postID int64, path string, pos int) error {

@@ -32,10 +32,6 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	files := r.MultipartForm.File["images"]
-	// if len(files) < 1 {
-	// 	utils.Fail(w, http.StatusBadRequest, "At least one image is required")
-	// 	return
-	// }
 	if len(files) > 5 {
 		utils.Fail(w, http.StatusBadRequest, "Max 5 images per post")
 		return
@@ -56,29 +52,16 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(files) > 0 {
-		coverPath, verr := utils.SaveUploadFile(files[0])
+	for idx, fh := range files {
+		imgPath, verr := utils.SaveUploadFile(fh)
 		if verr != nil {
 			utils.Fail(w, http.StatusBadRequest, verr.Message)
 			return
 		}
-		if err := db.SetPostCoverImage(tx, postID, coverPath); err != nil {
-			log.Printf("update cover error: %v", err)
-			utils.Fail(w, http.StatusInternalServerError, "Couldn't set cover image")
+		if err := db.AddPostImage(tx, postID, imgPath, idx+1); err != nil {
+			log.Printf("image link error: %v", err)
+			utils.Fail(w, http.StatusInternalServerError, "Server error linking images")
 			return
-		}
-
-		for idx, fh := range files[1:] {
-			imgPath, verr := utils.SaveUploadFile(fh)
-			if verr != nil {
-				utils.Fail(w, http.StatusBadRequest, verr.Message)
-				return
-			}
-			if err := db.AddPostImage(tx, postID, imgPath, idx+1); err != nil {
-				log.Printf("image link error: %v", err)
-				utils.Fail(w, http.StatusInternalServerError, "Server error linking images")
-				return
-			}
 		}
 	}
 
