@@ -63,3 +63,14 @@ type Message struct {
 	Message    string `json:"message"`
 	Time       string `json:"time"`
 }
+
+
+type Notification struct {
+	ID          int       `json:"id"`
+	UserID      int       `json:"user_id"`
+	Type        string    `json:"type"`
+	ReferenceID int       `json:"reference_id"`
+	Content     string    `json:"content"`
+	IsRead      bool      `json:"is_read"`
+	CreatedAt   time.Time `json:"created_at"`
+}

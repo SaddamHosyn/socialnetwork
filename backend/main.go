@@ -34,6 +34,16 @@ func main() {
 	http.HandleFunc("/api/categories", handlers.FetchCategories)
 	http.HandleFunc("/api/comment/fetch", handlers.FetchComments)
 
+
+
+
+
+
+
+
+
+
+
 	http.Handle("/api/logout", handlers.AuthMiddleware(http.HandlerFunc(handlers.LogoutHandler)))
 	http.Handle("/api/me", handlers.AuthMiddleware(http.HandlerFunc(handlers.MeHandler)))
 	http.Handle("/api/heartbeat", handlers.AuthMiddleware(http.HandlerFunc(handlers.Heartbeat)))
@@ -43,6 +53,14 @@ func main() {
 	http.Handle("/api/profile", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchProfile)))
 	http.Handle("/api/post/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeletePostHandler)))
 	http.Handle("/api/comment/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeleteCommentHandler)))
+		
+	http.Handle("/api/notifications", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetNotificationsHandler)))
+http.Handle("/api/notifications/read", handlers.AuthMiddleware(http.HandlerFunc(handlers.MarkNotificationReadHandler)))
+
+
+
+
+
 
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)
