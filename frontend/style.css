@@ -1,0 +1,1125 @@
+/* ======================== */
+/* 1. RESET & GLOBAL BASE   */
+/* ======================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body {
+  height: 100%;
+  font-family: Arial, sans-serif;
+  overflow: hidden; /* no global scroll */
+}
+
+/* ======================== */
+/* 2. HEADER                */
+/* ======================== */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background-color: #333;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+}
+.header-left h1 {
+  font-size: 1.5em;
+}
+.header-right button {
+  margin-left: 10px;
+  background: transparent;
+  border: 1px solid #fff;
+  color: #fff;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.header-right button:hover {
+  background: #555;
+}
+
+/* ======================== */
+/* 3. LAYOUT STRUCTURE      */
+/* ======================== */
+main {
+  position: absolute;
+  top: 60px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+}
+aside, section {
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* ======================== */
+/* 4. LEFT PANEL            */
+/* ======================== */
+#left-panel {
+  width: 20%;
+  border-right: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+}
+#left-panel > h2 {
+  margin-bottom: 10px;
+  font-size: 1.2em;
+}
+#category-list {
+  list-style: none;
+  flex: 1;
+  overflow-y: auto;
+}
+#category-list li {
+  margin-bottom: 8px;
+}
+#category-list li a {
+  text-decoration: none;
+  color: #007bff;
+  display: block;
+  padding: 6px;
+  border-radius: 4px;
+}
+#category-list li a:hover,
+#category-list li.active a {
+  background-color: #e0e0e0;
+  color: #333;
+}
+#category-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.category-pill {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  background: #f6f7f8;
+  color: #333;
+  transition: background .2s, border-color .2s;
+}
+.category-pill.selected {
+  background: #007bff;
+  border-color: #007bff;
+  color: #fff;
+}
+.category-pill.disabled {
+  background: #eee;
+  border-color: #ddd;
+  color: #999;
+  cursor: not-allowed;
+}
+#left-panel .footer-content {
+  margin-top: 20px;
+  font-size: 0.8em;
+  color: #666;
+  text-align: center;
+}
+
+/* ======================== */
+/* 5. MIDDLE PANEL          */
+/* ======================== */
+#middle-panel {
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#post-bar {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+}
+#post-bar button {
+  padding: 8px 16px;
+  font-size: 1em;
+  cursor: pointer;
+}
+#post-feed {
+  width: 100%;
+  max-width: 800px;
+  padding: 10px;
+  flex: 1;
+  margin-top: 10px;
+  overflow-y: auto;
+  height: calc(100vh - 120px);
+  gap: 15px;  
+}
+
+/* ======================== */
+/* 6. POST ELEMENT STYLES   */
+/* ======================== */
+.post h3 {
+  margin-bottom: 6px;
+}
+.post p {
+  margin: 6px 0;
+}
+.post-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Add this */
+  position: relative; /* Keep this */
+  font-size: 0.85em;
+  color: #878a8c;
+  margin-bottom: 8px;
+  padding: 0 10px;
+  gap: 10px; /* Add spacing between elements */
+}
+.delete-post {
+  position: static; /* Change from absolute to static */
+  margin-left: auto; /* Push to far right */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: #ff4444;
+  opacity: 0.7;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+.delete-post:hover {
+  opacity: 1;
+  color: #cc0000;
+}
+.post-title { 
+  font-size: 1.2em;
+  margin: .5em 0;
+  color: #1a1a1b;
+  margin-bottom: 12px;
+  padding: 0 10px;
+}
+.post-content { 
+  margin-bottom: .5em;
+  color: #787c7e;
+  line-height: 1.4;
+  padding: 0 10px;
+}
+.post-tags .tag {
+  display: inline-block;
+  background: #eef;
+  padding: .2em .5em;
+  margin-right: .3em;
+  border-radius: 4px;
+  font-size: .8em;
+  background-color:  #4c235a69;
+  color: #878a8c;
+  padding: 4px 8px;
+}
+.post-tags {
+  padding: 0 10px;
+  margin-bottom: 15px;
+}
+
+/* ======================== */
+/* 7. RIGHT PANEL           */
+/* ======================== */
+#right-panel {
+  width: 20%;
+  border-left: 1px solid #ccc;
+}
+#right-panel > h2 {
+  margin-bottom: 10px;
+  font-size: 1.2em;
+}
+#user-list {
+  list-style: none;
+}
+#user-list button {
+  padding: 4px;
+  margin-bottom: 3px;
+  border-radius: 4px;
+  border: 1px
+}
+#user-list .online {
+  color: rgb(0, 150, 27);
+  background-color: beige;
+  font-weight: bold;
+}
+#user-list .offline {
+  color: rgb(255, 0, 0);
+  background-color: none;
+  font-weight: normal;
+}
+
+/* ======================== */
+/* 8. POPUPS & MODALS       */
+/* ======================== */
+.popup {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 2px solid #333;
+  padding: 20px;
+  z-index: 2000;
+  max-height: 60%;
+  overflow-y: auto;
+  width: 90%;
+  max-width: 800px;
+}
+#profile-container.popup {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+#single-post-container.popup {
+  width: 100%;
+  max-width: 1000px;
+  top: 10%;
+  height: 80vh;
+  max-height: 800px;
+  transform: translateX(-50%);
+}
+#single-post-container .form-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  width: 80%;
+  max-width: 600px;
+  margin: 0 auto; /* center it */
+}
+#single-post-container #comment-form textarea {
+  width: 80%;
+  max-width: 600px;
+  height: 100px;
+  padding: 0.6em;
+  font-size: 1.05em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+  margin-bottom: 0.5rem;
+}
+#single-post-container #comment-form button {
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  border: none;
+  border-radius: 4px;
+  background: #007bff;
+  color: #fff;
+  cursor: pointer;
+}
+#single-post-container .category-pill {
+  font-size: 1.1em;
+  padding: 8px 14px;
+  margin-right: 0.5rem;
+}
+#single-post-container .post-tags {
+  margin-bottom: 1rem;
+}
+#single-post-container .form-wrapper h2 {
+  align-self: flex-start;
+  margin-bottom: 0.5rem;
+  font-size: 1.8em;
+}
+#single-post-container .form-wrapper .single-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+#single-post-container .form-wrapper .post-title,
+#single-post-container .form-wrapper .post-content,
+#single-post-container .form-wrapper .post-tags {
+  width: 100%;
+  max-width: 600px;
+  padding: 0 0.6em;
+}
+#single-post-container .form-wrapper .post-title {
+  font-size: 1.4em;
+  margin-bottom: 0.5rem;
+}
+#single-post-container .form-wrapper .post-content {
+  font-size: 1.1em;
+  line-height: 1.5;
+}
+#single-post-container .form-wrapper .post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+#single-post-container .form-wrapper .post-tags .tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #f6f7f8;
+  color: #878a8c;
+}
+#single-post-container .form-wrapper .button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 600px;
+}
+#single-post-container .form-wrapper .button-group button {
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background: #007bff;
+  color: #fff;
+}
+#single-post-container .form-wrapper .button-group button#close-single-post {
+  background: #ccc;
+  color: #333;
+}
+
+/* ======================== */
+/* 9. CREATE POST FORM      */
+/* ======================== */
+#create-post-container.select[name="category"] option:disabled {
+  color: #aaa;
+  background: #f5f5f5;
+}
+#create-post-container.popup {
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1000px;
+  height: 80vh;
+  max-height: 800px;
+  overflow-y: auto;
+}
+#create-post-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+#create-post-form input[name="title"],
+#create-post-form textarea,
+#create-post-form input[type="file"],
+#create-post-form select {
+  width: 80%;
+  max-width: 600px;
+  font-size: 1.1em;
+  padding: 0.6em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+#create-post-form textarea {
+  height: 180px;
+  resize: vertical;
+}
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 80%;
+  max-width: 600px;
+  margin-top: 1rem;
+}
+.button-group button {
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.button-group button[type="submit"] {
+  background-color: #007bff;
+  color: white;
+}
+.button-group button#cancel-create-post {
+  background-color: #ccc;
+  color: #333;
+}
+.button-group button:hover {
+  opacity: 0.9;
+}
+
+/* ======================== */
+/* 10. INTERACTION ELEMENTS */
+/* ======================== */
+.post-actions {
+  display: flex;
+  align-items: center;
+  gap: .5em;
+  margin-top: .5em;
+  padding: 0 10px;
+  margin-bottom: 15px;
+}
+.comment-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #878a8c;
+  font-size: 0.9em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* ======================== */
+/* 11. COMMENTS & CHAT      */
+/* ======================== */
+#comment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.comment-item {
+  border-bottom: 1px solid #ddd;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.comment-header {
+  font-size: 0.9em;
+  color: #555;
+  display: flex;
+  justify-content: space-between;
+}
+.comment-author { font-weight: bold; }
+.comment-time { font-style: italic; }
+.comment-body {
+  font-size: 1em;
+  color: #333;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+.comment-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.comment-votes button {
+  background: none !important;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.vote  {
+  background: none !important;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+
+.comment-vote-count { margin: 0 0.5rem; }
+.comment-reply,
+.comment-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #007bff;
+  font-size: 0.9em;
+  padding: 0.2em 0.5em;
+}
+.comment-reply:hover,
+.comment-delete:hover {
+  text-decoration: underline;
+}
+
+/* ======================== */
+/* 12. IMAGE CAROUSEL       */
+/* ======================== */
+.image-carousel {
+  position: relative;
+  width: 100%;
+  max-height: 500px;
+  overflow: hidden;
+  text-align: center;
+  margin: 15px 0;
+}
+.carousel-img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+.carousel-prev,
+.carousel-next {
+  position: absolute;
+  top: 50%;
+  transform: scale(.6);
+
+  background: rgba(255,255,255,0.7);
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: .2em .5em;
+}
+.carousel-prev { left: .5em; }
+.carousel-next { right: .5em; }
+
+/* ======================== */
+/* 13. CHAT                 */
+/* ======================== */
+
+/* Style all user buttons inside the user list */
+#user-list button {
+  background-color:#8761f9;   /* Your desired background color */
+  border: none;
+  padding: 8px 12px;
+  margin: 4px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  width: 100%;                /* Make button full width inside list */
+  text-align: center;
+}
+
+/* Optional: Different colors for online/offline users */
+#user-list button.online {
+  background-color: #a189f9;
+  color: white;
+}
+
+#user-list button.offline {
+  background-color:#6f49e0;
+  color:#3f2d75; 
+}
+/* Hover effect */
+#user-list button:hover {
+  background-color: rgb(171, 245, 220);
+  color: rgb(1, 200, 154);
+}
+
+.chat-window {
+  background-color: rgb(137, 203, 192);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.messagearea {
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: rgb(199, 240, 226);
+  width: 100%;
+  height: 440px;
+  resize: none;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 7px;
+  font-size: 14px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.message {
+  color: black;
+  padding: 4px 8px;
+  margin: 2px;
+  border-radius: 10px;
+  max-width: 65%;
+  word-wrap: break-word;
+  font-size: 16px;
+}
+
+.message.incoming {
+  background-color: rgb(218, 251, 253);
+  align-self: flex-start;
+  margin-right: auto;
+  text-align: left;
+  border: 1px solid #aaa;
+}
+
+.message.outgoing {
+  background-color: #ffffff;
+  align-self: flex-end;
+  margin-left: auto;
+  text-align: left;
+  border: 1px solid #aaa;
+}
+
+.message-time {
+  display: block;
+  font-size: 0.65em;
+  color: rgb(115, 135, 147);
+  text-align: right;
+}
+
+.message-sender {
+  display: block;
+  font-size: 0.80em;
+  color: rgb(39, 154, 172);
+  text-align: left;
+}
+.messagearea {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 2%
+}
+
+.input-area {
+  display: flex;
+  flex-direction: column;
+  padding: 2%;
+  gap: 2%;
+}
+
+/* Row that holds input-box + send */
+.input-row {
+  display: flex;
+  gap: 2%;
+  align-items: center;
+}
+
+.input-box {
+  flex-grow: 1;
+ height: 35px;
+  max-height: 200px;
+  resize: vertical;
+  padding: 2%;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+.send{
+  background-color: #f9ff51;
+  color: #000000;
+  font-size: 16px;
+  border-radius: 7px;
+  width: 15%;
+  height: 35px;
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  margin-left: 0px;
+  margin-bottom: 1%;
+
+}
+
+.typing-indicator .dot {
+  height: 8px;
+  width: 8px;
+  margin: 0 2px;
+  background-color: #a44fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: blink 1.4s infinite;
+}
+
+.typing-indicator .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-indicator .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  10% { opacity: 1;
+    background-color: rgb(252, 166, 81); }
+  20% { background-color: rgb(0, 255, 0); }
+  100% { opacity: 0.7; 
+  background-color: #a44fff; }
+}
+
+
+/* ======================== */
+/* 14. TOAST & UTILITIES    */
+/* ======================== */
+#toast {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: .5rem 1rem;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  border-radius: .25rem;
+  opacity: 0;
+  transition: opacity .3s, transform .3s;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-.5rem);
+}
+.hidden {
+  display: none !important;
+}
+
+/* ======================== */
+/* Reset & Global Base      */
+/* ======================== */
+html, body,
+aside, section {
+  background-color: #8761f9; /* light violet panels */
+  color: #fff;               /* everything white except where overridden */
+}
+
+/* ======================== */
+/* Header                   */
+/* ======================== */
+header {
+  background-color: #111;    /* mild black */
+}
+.header-left h1 {
+  font-family: 'Permanent Marker', cursive; /* spicy font */
+  font-size: 2.2em;
+  color: #fff;
+}
+.header-right button {
+  font-family: 'Luckiest Guy', cursive;    /* spicy */
+  color: #fff;
+  border-color: #fff;
+}
+.header-right button:hover {
+  background: #333;
+  color: #ffddff;
+}
+
+/* ======================== */
+/* Post Titles & Content    */
+/* ======================== */
+.post-title {
+  font-family: 'Roboto Slab', serif;
+  font-size: 2em;           /* bigger */
+  font-weight: 700;         /* bold */
+  color: #fff;
+}
+.post-content,
+.comment-body {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 1em;
+  color: #fff;
+}
+
+/* ======================== */
+/* Post Cards               */
+/* ======================== */
+.post {
+  background: #8761f9;       /* light violet default */
+  transition: background 0.2s, transform 0.2s;
+}
+.post:hover {
+  background: #bf97ff;       /* lighter “shining” violet */
+  transform: translateY(-2px);
+}
+
+/* ======================== */
+/* Create/Post & Other Btns */
+/* ======================== */
+#post-bar button,
+.header-right button,
+.button-group button {
+  font-family: 'Luckiest Guy', cursive; /* spicy for all buttons */
+}
+
+/* ======================== */
+/* Categories & Links       */
+/* ======================== */
+a, .category-pill, .comment-reply {
+  color: #fff;
+}
+
+.category-pill {
+  background: #4c235a69;
+}
+
+a:hover, .category-pill.selected, .comment-reply:hover {
+  color: #ffddff;
+}
+
+/* ======================== */
+/* Comments Header Color    */
+/* ======================== */
+.post-meta,
+.comment-header {
+  color: #eee;  /* light gray for readability */
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* 15. SPICY FONT & WHITE FOR POSTS & CATEGORIES */
+/* ───────────────────────────────────────────────────────────────────────── */
+.post-title,
+.post-tags .tag,
+.category-pill {
+  font-family: 'Permanent Marker', cursive; /* spicy cursive */
+  color: #fff !important;                  /* always white */
+}
+
+/* also make the post author/datetime stand out in white */
+.post-meta .author,
+.post-meta .datetime {
+  color: #fff !important;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* 16. POPUP THEMING FOR SINGLE-POST, REGISTER, LOGIN, PROFILE, CREATE POST */
+/* ───────────────────────────────────────────────────────────────────────── */
+/* target all your .popup containers plus #register-container, #login-container */
+.popup,
+#register-container,
+#login-container,
+#create-post-container,
+#profile-container {
+  background-color: #8761f9;  /* your violet */
+  color: #fff;                /* white text inside */
+  width: 400px;
+}
+
+/* make their headings stand out */
+.popup h2,
+#register-container h2,
+#login-container h2,
+#create-post-container h2,
+#profile-container h2 {
+  font-family: 'Permanent Marker', cursive;
+  color: #fff;
+}
+
+/* inputs/buttons inside popups keep good contrast */
+.popup input,
+.popup textarea,
+.popup select,
+#register-container input,
+#login-container input,
+#create-post-container input,
+#create-post-container textarea {
+  background: #fff;      /* white input background for readability */
+  color: #000;           /* dark text */
+  border: 1px solid #fff;  
+}
+
+.popup button,
+#register-container button,
+#login-container button,
+#create-post-container button,
+#profile-container button {
+  background: #fff;
+  color: #8761f9;
+  border: none;
+  font-family: 'Luckiest Guy', cursive;
+}
+
+/* add a little padding so text isn’t squished against violet bg */
+.popup .form-wrapper,
+#register-container form,
+#login-container form,
+#create-post-container .form-wrapper {
+  padding: 1.5rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* Ensure category links use the spicy font & white color */
+/* ───────────────────────────────────────────────────────────────────────── */
+#category-list li a {
+  font-family: 'Permanent Marker', cursive !important;
+  color: #fff !important;
+}
+
+#category-list li a:hover,
+#category-list li.active a {
+  color: #ffddff !important;
+}
+
+/* And if you still want the little pills in the Create-Post view: */
+.category-pill {
+  font-family: 'Permanent Marker', cursive !important;
+  color: #fff !important;
+}
+.category-pill.selected {
+  color: #ffddff !important;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* 1) Thin, barely-visible scrollbars                                         */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+/* WebKit browsers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0,0,0,0.35);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* 2) Darker hover background for category names                              */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+#category-list li a:hover,
+#category-list li.active a {
+  background-color: rgba(0, 0, 0, 0.25) !important;  /* subtle dark overlay */
+  color: #fff !important;
+}
+
+.category-pill:hover {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* Carousel Arrow Buttons – blend with violet panels                         */
+/* ───────────────────────────────────────────────────────────────────────── */
+.carousel-prev,
+.carousel-next {
+  background-color: #8761f9;       /* match panel background */
+  color: #fff;                     /* white arrow icon */
+  border: none;
+  border-radius: 50%;              /* circular buttons */
+  width: 2.5em;
+  height: 2.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.carousel-prev:hover,
+.carousel-next:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Position adjustment (optional) to ensure arrows don’t overlap card edges */
+.image-carousel .carousel-prev {
+  left: 0.5em;
+}
+
+.image-carousel .carousel-next {
+  right: 0.5em;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* LOGIN & REGISTER FORM THEMING                                           */
+/*   Match Create-Post & Single-Post popups                                 */
+/* ───────────────────────────────────────────────────────────────────────── */
+#login-container,
+#register-container {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #8761f9;    /* same light violet */
+  color: #fff;                  /* white text */
+  border: 2px solid #333;
+  width: 90%;
+  max-width: 500px;
+  padding: 0;                   /* we'll let .form-wrapper handle padding */
+  z-index: 2000;
+  border-radius: 8px;
+  overflow-y: auto;
+  max-height: 80vh;
+}
+
+/* reuse the same layout container */
+#login-container .form-wrapper,
+#register-container .form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;              /* same as create-post */
+}
+
+/* form headings */
+#login-container h2,
+#register-container h2 {
+  font-family: 'Permanent Marker', cursive;
+  color: #fff;
+  font-size: 1.8em;
+  margin-bottom: 0.5rem;
+}
+
+/* inputs & textarea */
+#login-container input,
+#register-container input {
+  width: 100%;
+  font-size: 1.05em;
+  padding: 0.6em;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  background: #fff;             /* white fields for readability */
+  color: #000;                  /* dark text inside */
+}
+
+/* submit / cancel buttons */
+#login-container button,
+#register-container button {
+  font-family: 'Luckiest Guy', cursive;
+  padding: 0.6em 1.2em;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #fff;
+  color: #8761f9;
+  transition: background 0.2s, color 0.2s;
+}
+#login-container button:hover,
+#register-container button:hover {
+  background: #eee;
+}
+
+/* cancel link or button alignment */
+#login-container .button-group,
+#register-container .button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* LOGIN & REGISTER FORM – LARGER & MORE PADDING                             */
+/* ───────────────────────────────────────────────────────────────────────── */
+#login-container,
+#register-container {
+  width: 80%;               /* bigger than before */
+  max-width: 700px;         /* allow more horizontal space */
+}
+
+#login-container .form-wrapper,
+#register-container .form-wrapper {
+  padding: 2rem;            /* extra breathing room */
+  gap: 2rem;                /* larger gaps between fields */
+}
+
+#login-container h2,
+#register-container h2 {
+  font-size: 2.2em;         /* slightly larger heading */
+}
+
+#login-container input,
+#register-container input {
+  font-size: 1.2em;         /* larger input text */
+  padding: 1em;             /* more input padding */
+  border-radius: 6px;
+}
+
+#login-container button,
+#register-container button {
+  font-size: 1.1em;         /* bigger buttons */
+  padding: 0.8em 1.5em;     /* extra click area */
+}

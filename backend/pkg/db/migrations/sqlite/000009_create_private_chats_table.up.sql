@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS private_chats (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user1_id INTEGER NOT NULL,
+  user2_id INTEGER NOT NULL,
+  UNIQUE(user1_id, user2_id),
+  CHECK(user1_id < user2_id),
+  FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE
+);
