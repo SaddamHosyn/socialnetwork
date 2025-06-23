@@ -23,3 +23,14 @@ export type CategoryType = {
   id: number;
   name: string;
 };
+
+
+export interface Notification {
+  id: number;
+  user_id: number;
+  type: string;
+  reference_id: number;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
