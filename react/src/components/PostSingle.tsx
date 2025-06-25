@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import PostContent from "./PostContent";
 import type { Post, Comment } from "../types";
 import CommentList from "./CommentList";
-import CommentForm from "./CommentForm";
+import CommentCreate from "./CommentCreate";
 
 type Props = {
   postId: number;
@@ -38,8 +38,8 @@ const PostSingle: React.FC<Props> = ({ postId, onClose }) => {
       <button onClick={onClose}>Back</button>
       <PostContent post={post} />
       <h3>Comments</h3>
-      <CommentList comments={comments} />
-      <CommentForm postId={post.id} onCommentAdded={() => {}} />
+      <CommentList postId={post.id} />
+      <CommentCreate postId={post.id} onCommentAdded={() => {}} />
     </div>
   );
 };
