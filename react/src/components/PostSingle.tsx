@@ -1,32 +1,45 @@
-// PostSingle.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PostContent from "./PostContent";
+import type { Post, Comment } from "../types";
+import CommentList from "./CommentList";
+import CommentForm from "./CommentForm";
 
-const PostSingle: React.FC<{ post: Post; isOwner: boolean }> = ({
-  post,
-  isOwner,
-}) => {
-  const handleDelete = async () => {
-    if (!window.confirm("Delete this post?")) return;
-    // call delete API
-    const res = await fetch("/api/post/delete", {
-      method: "POST",
-      credentials: "include",
-      body: JSON.stringify({ post_id: post.id }),
-      headers: { "Content-Type": "application/json" },
-    });
-    // handle result: show toast, redirect, etc
-  };
+type Props = {
+  postId: number;
+  onClose: () => void;
+};
+
+const PostSingle: React.FC<Props> = ({ postId, onClose }) => {
+  const [post, setPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/post?id=${postId}`, { credentials: "include" }).then((res) =>
+        res.json()
+      ),
+      fetch(`/api/comment/fetch?post_id=${postId}`, {
+        credentials: "include",
+      }).then((res) => res.json()),
+    ])
+      .then(([postRes, commentRes]) => {
+        if (postRes.success) setPost(postRes.data.post);
+        if (commentRes.success) setComments(commentRes.data);
+      })
+      .finally(() => setLoading(false));
+  }, [postId]);
+
+  if (loading) return <div>Loading...</div>;
+  if (!post) return <div>Post not found.</div>;
 
   return (
     <div>
+      <button onClick={onClose}>Back</button>
       <PostContent post={post} />
-      {isOwner && (
-        <button onClick={handleDelete} style={{ color: "red" }}>
-          Delete
-        </button>
-      )}
-      {/* Comments, CommentForm, etc */}
+      <h3>Comments</h3>
+      <CommentList comments={comments} />
+      <CommentForm postId={post.id} onCommentAdded={() => {}} />
     </div>
   );
 };

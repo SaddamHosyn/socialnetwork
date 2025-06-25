@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Category from "./Category";
-import type { CategoryType } from "../types";
+import CategorySingle from "./CategorySingle";
+import type { Category } from "../types";
 
 const categoryIcons: Record<string, string> = {
   Aland: "🏝️",
@@ -32,9 +32,13 @@ const categoryIcons: Record<string, string> = {
   Weird: "🤪",
 };
 
-const CategoryList: React.FC = () => {
-  const [categories, setCategories] = useState<CategoryType[]>([]);
-  const [selected, setSelected] = useState<number | null>(null);
+type Props = {
+  selected: string | null;
+  onSelect: (name: string | null) => void;
+};
+
+const CategoryList: React.FC<Props> = ({ selected, onSelect }) => {
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     fetch("/api/categories", { credentials: "include" })
@@ -46,13 +50,19 @@ const CategoryList: React.FC = () => {
 
   return (
     <div>
+      <CategorySingle
+        name="All"
+        icon="🌐"
+        selected={selected === null}
+        onClick={() => onSelect(null)}
+      />
       {categories.map((cat) => (
-        <Category
+        <CategorySingle
           key={cat.id}
           name={cat.name}
-          icon={categoryIcons[cat.name]}
-          selected={selected === cat.id}
-          onClick={() => setSelected(cat.id)}
+          icon={categoryIcons[cat.name] || "?"}
+          selected={selected === cat.name}
+          onClick={() => onSelect(cat.name)}
         />
       ))}
     </div>

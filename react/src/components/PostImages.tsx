@@ -1,11 +1,10 @@
-// PostImages.tsx
 import React, { useState } from "react";
 
 type Props = { images: string[] };
 
 const PostImages: React.FC<Props> = ({ images }) => {
   const [idx, setIdx] = useState(0);
-  if (!images.length) return null;
+  if (!images || images.length === 0) return null;
   return (
     <div>
       <img
@@ -26,5 +25,4 @@ const PostImages: React.FC<Props> = ({ images }) => {
     </div>
   );
 };
-
 export default PostImages;
