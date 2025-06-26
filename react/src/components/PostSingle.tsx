@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import PostContent from "./PostContent";
-import type { Post, Comment } from "../types";
 import CommentList from "./CommentList";
 import CommentCreate from "./CommentCreate";
+import type { Post } from "../types";
 
 type Props = {
   postId: number;
@@ -11,21 +11,14 @@ type Props = {
 
 const PostSingle: React.FC<Props> = ({ postId, onClose }) => {
   const [post, setPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/post?id=${postId}`, { credentials: "include" }).then((res) =>
-        res.json()
-      ),
-      fetch(`/api/comment/fetch?post_id=${postId}`, {
-        credentials: "include",
-      }).then((res) => res.json()),
-    ])
-      .then(([postRes, commentRes]) => {
+    setLoading(true);
+    fetch(`/api/post?id=${postId}`, { credentials: "include" })
+      .then((res) => res.json())
+      .then((postRes) => {
         if (postRes.success) setPost(postRes.data.post);
-        if (commentRes.success) setComments(commentRes.data);
       })
       .finally(() => setLoading(false));
   }, [postId]);

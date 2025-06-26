@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
 import PostContent from "./PostContent";
 import type { Post } from "../types";
-import PostSingle from "./PostSingle"; // If you use single post view
 
 type Props = {
   categoryId: number | null;
+  onPostSelect: (postId: number) => void;
 };
 
-const PostList: React.FC<Props> = ({ categoryId }) => {
+const PostList: React.FC<Props> = ({ categoryId, onPostSelect }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [singlePost, setSinglePost] = useState<Post | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -26,20 +25,18 @@ const PostList: React.FC<Props> = ({ categoryId }) => {
       .finally(() => setLoading(false));
   }, [categoryId]);
 
-  if (singlePost) {
-    return (
-      <PostSingle postId={singlePost.id} onClose={() => setSinglePost(null)} />
-    );
-  }
-
   if (loading) return <div>Loading...</div>;
   if (posts.length === 0) return <div>No posts yet.</div>;
 
   return (
     <div>
       {posts.map((post) => (
-        <div key={post.id} style={{ marginBottom: 32 }}>
-          <PostContent post={post} onCommentClick={() => setSinglePost(post)} />
+        <div
+          key={post.id}
+          style={{ marginBottom: 32, cursor: "pointer" }}
+          onClick={() => onPostSelect(post.id)}
+        >
+          <PostContent post={post} />
         </div>
       ))}
     </div>

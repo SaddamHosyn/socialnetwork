@@ -33,8 +33,8 @@ const categoryIcons: Record<string, string> = {
 };
 
 type Props = {
-  selected: string | null;
-  onSelect: (name: string | null) => void;
+  selected: number | null;
+  onSelect: (id: number | null) => void;
 };
 
 const CategoryList: React.FC<Props> = ({ selected, onSelect }) => {
@@ -61,8 +61,8 @@ const CategoryList: React.FC<Props> = ({ selected, onSelect }) => {
           key={cat.id}
           name={cat.name}
           icon={categoryIcons[cat.name] || "?"}
-          selected={selected === cat.name}
-          onClick={() => onSelect(cat.name)}
+          selected={selected === cat.id}
+          onClick={() => onSelect(cat.id)}
         />
       ))}
     </div>
