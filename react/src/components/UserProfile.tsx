@@ -1,23 +1,6 @@
 import React, { useEffect, useState } from "react";
 import PostContent from "./PostContent";
-import CommentContent from "./CommentContent";
-import type { Post, Comment } from "../types";
-
-type User = {
-  id: number;
-  nickname: string;
-  first_name: string;
-  last_name: string;
-  date_of_birth: string; // or Date if parsed
-  gender: string;
-  email: string;
-};
-
-type ProfileData = {
-  user: User;
-  posts: Post[];
-  comments: Comment[];
-};
+import type { ProfileData } from "../types";
 
 const UserProfile: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -35,7 +18,7 @@ const UserProfile: React.FC = () => {
   if (loading) return <div>Loading…</div>;
   if (!profile) return <div>Profile not found.</div>;
 
-  const { user, posts, comments } = profile;
+  const { user, posts } = profile;
 
   return (
     <div>
@@ -49,21 +32,15 @@ const UserProfile: React.FC = () => {
         <br />
         <b>Email:</b> {user.email}
       </div>
-
-      <button /* logout logic here */>Logout</button>
-
+      {/* If it's the current user's profile, you could show a logout or privacy toggle here */}
+      {/* <button>Logout</button> */}
       <h3>User's Posts</h3>
       <div>
-        {posts.map((post) => (
-          <PostContent key={post.id} post={post} />
-        ))}
-      </div>
-
-      <h3>User's Comments</h3>
-      <div>
-        {comments.map((comment) => (
-          <CommentContent key={comment.id} comment={comment} />
-        ))}
+        {posts.length === 0 ? (
+          <div>No posts yet.</div>
+        ) : (
+          posts.map((post) => <PostContent key={post.id} post={post} />)
+        )}
       </div>
     </div>
   );

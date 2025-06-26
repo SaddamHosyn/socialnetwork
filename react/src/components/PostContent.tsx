@@ -1,6 +1,7 @@
 import React from "react";
 import PostImages from "./PostImages";
 import type { Post } from "../types";
+import Vote from "./Vote";
 
 type Props = {
   post: Post;
@@ -21,7 +22,6 @@ const PostContent: React.FC<Props> = ({ post, onCommentClick, onVote }) => (
     {post.image_paths && post.image_paths.length > 0 && (
       <PostImages images={post.image_paths} />
     )}
-    {/* CATEGORY TAGS */}
     <div style={{ margin: "8px 0" }}>
       {post.categories.map((cat) => (
         <span
@@ -40,12 +40,18 @@ const PostContent: React.FC<Props> = ({ post, onCommentClick, onVote }) => (
       ))}
     </div>
     <div style={{ marginTop: 8 }}>
-      <button onClick={() => onVote?.(1)}>⬆️</button>
-      <span>{post.votes}</span>
-      <button onClick={() => onVote?.(-1)}>⬇️</button>
-      <button onClick={onCommentClick} style={{ marginLeft: 8 }}>
-        💬 {post.comments_count ?? ""}
-      </button>
+      {onVote ? (
+        <Vote votes={post.votes} onVote={onVote} />
+      ) : (
+        <span style={{ marginRight: 8, fontWeight: 600 }}>
+          {post.votes} votes
+        </span>
+      )}
+      {onCommentClick && (
+        <button onClick={onCommentClick} style={{ marginLeft: 8 }}>
+          💬 {post.comments_count ?? ""}
+        </button>
+      )}
     </div>
   </div>
 );

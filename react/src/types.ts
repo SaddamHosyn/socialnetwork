@@ -25,3 +25,19 @@ export type Comment = {
   created_at: string;
   votes: number;
 };
+
+export type User = {
+  id: number;
+  nickname: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string; // or Date if parsed
+  gender: string;
+  email: string;
+};
+
+export type ProfileData = {
+  user: User;
+  posts: Post[];
+  comments: Comment[];
+};

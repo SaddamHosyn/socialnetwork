@@ -14,9 +14,7 @@ const PostList: React.FC<Props> = ({ categoryId, onPostSelect }) => {
   useEffect(() => {
     setLoading(true);
     let url = "/api/posts";
-    if (categoryId) {
-      url += `?category_id=${categoryId}`;
-    }
+    if (categoryId) url += `?category_id=${categoryId}`;
     fetch(url, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
@@ -24,6 +22,24 @@ const PostList: React.FC<Props> = ({ categoryId, onPostSelect }) => {
       })
       .finally(() => setLoading(false));
   }, [categoryId]);
+
+  // --- POST VOTING LOGIC ---
+  const handleVote = async (postId: number, vote: 1 | -1) => {
+    const res = await fetch("/api/post/vote", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        post_id: postId.toString(),
+        vote: vote.toString(),
+      }),
+    });
+    if (res.ok) {
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, votes: p.votes + vote } : p))
+      );
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
   if (posts.length === 0) return <div>No posts yet.</div>;
@@ -36,7 +52,7 @@ const PostList: React.FC<Props> = ({ categoryId, onPostSelect }) => {
           style={{ marginBottom: 32, cursor: "pointer" }}
           onClick={() => onPostSelect(post.id)}
         >
-          <PostContent post={post} />
+          <PostContent post={post} onVote={(v) => handleVote(post.id, v)} />
         </div>
       ))}
     </div>

@@ -13,6 +13,26 @@ const CommentList: React.FC<Props> = ({ postId, pageSize = 50 }) => {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
+  // Voting logic for comments
+  const handleVote = async (commentId: number, vote: 1 | -1) => {
+    const res = await fetch("/api/comment/vote", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        comment_id: commentId.toString(),
+        vote: vote.toString(),
+      }),
+    });
+    if (res.ok) {
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId ? { ...c, votes: c.votes + vote } : c
+        )
+      );
+    }
+  };
+
   // Load comments for the current page
   const fetchComments = async () => {
     setLoading(true);
@@ -45,12 +65,7 @@ const CommentList: React.FC<Props> = ({ postId, pageSize = 50 }) => {
       <ul>
         {comments.map((c) => (
           <li key={c.id} style={{ marginBottom: 16 }}>
-            <CommentContent
-              comment={c}
-              onVote={(v) => {
-                /* vote logic */
-              }}
-            />
+            <CommentContent comment={c} onVote={(v) => handleVote(c.id, v)} />
           </li>
         ))}
       </ul>

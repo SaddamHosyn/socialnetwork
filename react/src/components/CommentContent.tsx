@@ -1,10 +1,10 @@
-// CommentContent.tsx
 import React from "react";
 import type { Comment } from "../types";
+import Vote from "./Vote";
 
 type Props = {
   comment: Comment;
-  onVote?: (vote: 1 | -1) => void;
+  onVote: (vote: 1 | -1) => void;
 };
 
 const CommentContent: React.FC<Props> = ({ comment, onVote }) => (
@@ -17,9 +17,7 @@ const CommentContent: React.FC<Props> = ({ comment, onVote }) => (
     </div>
     <div style={{ margin: "4px 0 8px 0", fontSize: 15 }}>{comment.content}</div>
     <div>
-      <button onClick={() => onVote?.(1)}>⬆️</button>
-      <span style={{ margin: "0 8px" }}>{comment.votes}</span>
-      <button onClick={() => onVote?.(-1)}>⬇️</button>
+      <Vote votes={comment.votes} onVote={onVote} />
     </div>
   </div>
 );
