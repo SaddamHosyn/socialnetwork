@@ -14,7 +14,7 @@ const PostList: React.FC<Props> = ({ categoryId, onPostSelect }) => {
   useEffect(() => {
     setLoading(true);
     let url = "/api/posts";
-    if (categoryId) url += `?category_id=${categoryId}`;
+    if (categoryId !== null) url += `?category_id=${categoryId}`;
     fetch(url, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {

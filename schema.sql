@@ -163,7 +163,6 @@ CREATE TABLE IF NOT EXISTS followers (
     PRIMARY KEY (follower_id, followee_id)
 );
 
-
 -- 2. GROUPS & GROUP MEMBERSHIPS
 
 -- Basic group info
@@ -202,7 +201,6 @@ CREATE TABLE IF NOT EXISTS group_invitations (
     FOREIGN KEY (invitee_id) REFERENCES users(id)  ON DELETE CASCADE,
     UNIQUE (group_id, invitee_id)
 );
-
 
 -- 3. NOTIFICATIONS
 
