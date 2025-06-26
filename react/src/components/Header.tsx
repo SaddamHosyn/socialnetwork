@@ -2,18 +2,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 type Props = {
-  onLogin: () => void;
-  onRegister: () => void;
   onLogout: () => void;
   isLoggedIn: boolean;
 };
 
-const Header: React.FC<Props> = ({
-  onLogin,
-  onRegister,
-  onLogout,
-  isLoggedIn,
-}) => (
+const Header: React.FC<Props> = ({ onLogout, isLoggedIn }) => (
   <header
     style={{
       background: "#fff",
@@ -37,17 +30,20 @@ const Header: React.FC<Props> = ({
       >
         SocialNet
       </Link>
-      {/* Navigation (middle, add more if needed) */}
       <div style={{ flex: 1 }} />
       {/* Auth buttons (right) */}
       {!isLoggedIn ? (
         <>
-          <button onClick={onLogin}>Login</button>
-          <button onClick={onRegister}>Register</button>
+          <Link to="/login" style={{ marginRight: 10 }}>
+            Login
+          </Link>
+          <Link to="/register">Register</Link>
         </>
       ) : (
         <>
-          <Link to="/profile">Profile</Link>
+          <Link to="/profile" style={{ marginRight: 10 }}>
+            Profile
+          </Link>
           <button onClick={onLogout}>Logout</button>
         </>
       )}
