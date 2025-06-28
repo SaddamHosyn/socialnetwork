@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-func RegisterUser(nickname, email, hashedPassword, firstName, lastName string, dob time.Time, gender int) error {
-	_, err := sqlite.GetDB().Exec(
-		`INSERT INTO users (nickname, email, password, date_of_birth, gender, first_name, last_name)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		nickname, email, hashedPassword, dob.Format("2006-01-02"), gender, firstName, lastName)
+func RegisterUser(email, hashedPassword, firstName, lastName, nickname, aboutMe, avatarPath string, dob time.Time, genderInt int) error {
+	_, err := sqlite.GetDB().Exec(`
+	    INSERT INTO users (email, password, date_of_birth, gender, first_name, last_name, nickname, about_me, avatar)
+	    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		email, hashedPassword, dob.Format("2006-01-02"), genderInt, firstName, lastName, nickname, aboutMe, avatarPath)
 	return err
 }
 

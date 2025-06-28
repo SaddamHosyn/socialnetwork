@@ -18,7 +18,7 @@ const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
   const [lastName, setLastName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("1");
-  const [avatar, setAvatar] = useState("");
+  const [avatar, setAvatar] = useState<File | null>(null);
   const [nickname, setNickname] = useState("");
   const [aboutMe, setAboutMe] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,22 +29,21 @@ const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
     setLoading(true);
     setError(null);
 
-    const form = new URLSearchParams();
+    const form = new FormData();
     form.append("email", email.trim());
     form.append("password", password);
     form.append("first_name", firstName.trim());
     form.append("last_name", lastName.trim());
     form.append("date_of_birth", dateOfBirth);
     form.append("gender", gender);
-    if (avatar.trim()) form.append("avatar", avatar.trim());
+    if (avatar) form.append("avatar", avatar);
     if (nickname.trim()) form.append("nickname", nickname.trim());
     if (aboutMe.trim()) form.append("aboutMe", aboutMe.trim());
 
     const res = await fetch("/api/register", {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: form.toString(),
+      body: form,
     });
 
     setLoading(false);
@@ -114,7 +113,7 @@ const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
       <input
         type="file"
         accept="image/*"
-        onChange={(e) => setAvatar(e.target.files?.[0])}
+        onChange={(e) => setAvatar(e.target.files?.[0] || null)}
       />
       <input
         type="text"
