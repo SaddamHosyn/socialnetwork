@@ -86,7 +86,7 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 			DateOfBirth time.Time `json:"date_of_birth"`
 			Gender      string    `json:"gender"`
 			Nickname    string    `json:"nickname"`
-			Avatar      string    `json:"avatar	"`
+			Avatar      string    `json:"avatar"`
 			AboutMe     string    `json:"about_me"`
 		}{
 			ID:          user.ID,
