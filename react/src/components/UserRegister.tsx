@@ -8,17 +8,19 @@ type Props = {
 const genders = [
   { value: "1", label: "Male" },
   { value: "2", label: "Female" },
-  { value: "0", label: "Other" },
+  { value: "0", label: "Alien" },
 ];
 
-const Register: React.FC<Props> = ({ onSuccess, onCancel }) => {
-  const [nickname, setNickname] = useState("");
+const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("1");
+  const [avatar, setAvatar] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [aboutMe, setAboutMe] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,13 +30,15 @@ const Register: React.FC<Props> = ({ onSuccess, onCancel }) => {
     setError(null);
 
     const form = new URLSearchParams();
-    form.append("nickname", nickname.trim());
     form.append("email", email.trim());
     form.append("password", password);
     form.append("first_name", firstName.trim());
     form.append("last_name", lastName.trim());
     form.append("date_of_birth", dateOfBirth);
     form.append("gender", gender);
+    if (avatar.trim()) form.append("avatar", avatar.trim());
+    if (nickname.trim()) form.append("nickname", nickname.trim());
+    if (aboutMe.trim()) form.append("aboutMe", aboutMe.trim());
 
     const res = await fetch("/api/register", {
       method: "POST",
@@ -55,14 +59,6 @@ const Register: React.FC<Props> = ({ onSuccess, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 350 }}>
-      <input
-        type="text"
-        placeholder="Nickname"
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-        required
-        maxLength={40}
-      />
       <input
         type="email"
         placeholder="Email"
@@ -115,6 +111,25 @@ const Register: React.FC<Props> = ({ onSuccess, onCancel }) => {
           </option>
         ))}
       </select>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setAvatar(e.target.files?.[0])}
+      />
+      <input
+        type="text"
+        placeholder="Nickname"
+        value={nickname}
+        onChange={(e) => setNickname(e.target.value)}
+        maxLength={40}
+      />
+      <input
+        type="text"
+        placeholder="About Me"
+        value={aboutMe}
+        onChange={(e) => setAboutMe(e.target.value)}
+        maxLength={40}
+      />
       <button type="submit" disabled={loading}>
         {loading ? "Registering..." : "Register"}
       </button>
@@ -128,4 +143,4 @@ const Register: React.FC<Props> = ({ onSuccess, onCancel }) => {
   );
 };
 
-export default Register;
+export default UserRegister;
