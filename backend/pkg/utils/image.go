@@ -101,17 +101,17 @@ func ValidateImage(r io.Reader, mimeType string) ([]byte, string, *ValidationErr
 }
 
 func SaveAvatarFile(imgData []byte, ext string) (string, error) {
-	// Make sure the avatars directory exists
 	if err := os.MkdirAll("./uploads/avatars", 0755); err != nil {
 		return "", err
 	}
-	filename := fmt.Sprintf("./uploads/avatars/%s%s", uuid.New().String(), ext)
-	if err := os.WriteFile(filename, imgData, 0644); err != nil {
+	filename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+	fullPath := fmt.Sprintf("./uploads/avatars/%s", filename)
+	if err := os.WriteFile(fullPath, imgData, 0644); err != nil {
 		return "", err
 	}
-	// You probably want to return a path relative to the static root
+	// Return path relative to static root for serving by your HTTP server
 	// Example: "/uploads/avatars/abc123.jpg"
-	return filename, nil
+	return "/uploads/avatars/" + filename, nil
 }
 
 func ValidateAvatar(r io.Reader, mimeType string) ([]byte, string, *ValidationError) {

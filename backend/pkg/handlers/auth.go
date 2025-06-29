@@ -56,6 +56,17 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if validationErr := utils.ValidateRegister(email, password, firstName, lastName, nickname, aboutMe, dob, genderInt); validationErr != nil {
+		utils.Fail(w, http.StatusBadRequest, validationErr.Message)
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Server error: password")
+		return
+	}
+
 	var avatarPath string
 
 	avatarFile, handler, err := r.FormFile("avatar")
@@ -73,17 +84,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			utils.Fail(w, http.StatusInternalServerError, "Could not save avatar")
 			return
 		}
-	}
-
-	if validationErr := utils.ValidateRegister(email, password, firstName, lastName, nickname, aboutMe, dob, genderInt); validationErr != nil {
-		utils.Fail(w, http.StatusBadRequest, validationErr.Message)
-		return
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Server error: password")
-		return
 	}
 
 	err = db.RegisterUser(email, string(hashedPassword), firstName, lastName, nickname, aboutMe, avatarPath, dob, genderInt)
