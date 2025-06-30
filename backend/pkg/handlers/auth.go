@@ -79,11 +79,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			utils.Fail(w, http.StatusBadRequest, verr.Message)
 			return
 		}
-		avatarPath, saveErr := utils.SaveAvatarFile(processed, ext)
+		savedPath, saveErr := utils.SaveAvatarFile(processed, ext)
 		if saveErr != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Could not save avatar")
 			return
 		}
+		avatarPath = savedPath
 	}
 
 	err = db.RegisterUser(email, string(hashedPassword), firstName, lastName, nickname, aboutMe, avatarPath, dob, genderInt)
