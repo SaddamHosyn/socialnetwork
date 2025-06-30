@@ -28,8 +28,6 @@ const AppRouter: React.FC = () => {
 
   return (
     <BrowserRouter>
-      {/* Header stays at top */}
-      <div style={{ color: "red" }}>Hello World</div>
       <Header onLogout={handleLogout} isLoggedIn={isLoggedIn} />
       <div style={{ flex: 1, display: "flex" }}>
         <PanelLeft

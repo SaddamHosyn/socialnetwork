@@ -28,7 +28,7 @@ const Header: React.FC<Props> = ({ onLogout, isLoggedIn }) => (
           textDecoration: "none",
         }}
       >
-        SocialNet
+        Gritlab Gossiper
       </Link>
       <div style={{ flex: 1 }} />
       {/* Auth buttons (right) */}

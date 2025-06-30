@@ -38,7 +38,7 @@ const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
     form.append("gender", gender);
     if (avatar) form.append("avatar", avatar);
     if (nickname.trim()) form.append("nickname", nickname.trim());
-    if (aboutMe.trim()) form.append("aboutMe", aboutMe.trim());
+    if (aboutMe.trim()) form.append("about_me", aboutMe.trim());
 
     const res = await fetch("/api/register", {
       method: "POST",

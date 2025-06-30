@@ -28,12 +28,14 @@ export type Comment = {
 
 export type User = {
   id: number;
-  nickname: string;
+  email: string;
   first_name: string;
   last_name: string;
-  date_of_birth: string; // or Date if parsed
+  date_of_birth: string;
   gender: string;
-  email: string;
+  nickname?: string;
+  about_me?: string;
+  avatar?: string;
 };
 
 export type ProfileData = {
