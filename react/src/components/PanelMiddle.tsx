@@ -23,15 +23,11 @@ const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
   }, []);
 
   return (
-    <main style={{ flex: 1, padding: "0 32px" }}>
-      <button
-        style={{ position: "sticky", top: 0, marginBottom: 16 }}
-        onClick={() => setShowPostCreate(true)}
-      >
-        + Create Post
-      </button>
+    <section id="middle-panel">
+      <div id="post-bar">
+        <button onClick={() => setShowPostCreate(true)}>+ Create Post</button>
+      </div>
 
-      {/* Post creation modal */}
       <Modal open={showPostCreate} onClose={() => setShowPostCreate(false)}>
         <PostCreate
           categories={categories}
@@ -39,7 +35,6 @@ const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
         />
       </Modal>
 
-      {/* Post single modal */}
       <Modal open={!!showPostSingle} onClose={() => setShowPostSingle(null)}>
         {showPostSingle && (
           <PostSingle
@@ -49,12 +44,13 @@ const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
         )}
       </Modal>
 
-      {/* Post feed */}
-      <PostList
-        categoryId={selectedCategoryId}
-        onPostSelect={setShowPostSingle}
-      />
-    </main>
+      <div id="post-feed">
+        <PostList
+          categoryId={selectedCategoryId}
+          onPostSelect={setShowPostSingle}
+        />
+      </div>
+    </section>
   );
 };
 

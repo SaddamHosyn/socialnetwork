@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import CategorySingle from "./CategorySingle";
 import type { Category } from "../types";
 
 const categoryIcons: Record<string, string> = {
@@ -49,23 +48,30 @@ const CategoryList: React.FC<Props> = ({ selected, onSelect }) => {
   }, []);
 
   return (
-    <div>
-      <CategorySingle
-        name="All"
-        icon="🌐"
-        selected={selected === null}
-        onClick={() => onSelect(null)}
-      />
+    <ul id="category-list">
+      <li>
+        <span
+          className={`category-pill${selected === null ? " selected" : ""}`}
+          onClick={() => onSelect(null)}
+          tabIndex={0}
+          role="button"
+        >
+          🌐 All
+        </span>
+      </li>
       {categories.map((cat) => (
-        <CategorySingle
-          key={cat.id}
-          name={cat.name}
-          icon={categoryIcons[cat.name] || "?"}
-          selected={selected === cat.id}
-          onClick={() => onSelect(cat.id)}
-        />
+        <li key={cat.id}>
+          <span
+            className={`category-pill${selected === cat.id ? " selected" : ""}`}
+            onClick={() => onSelect(cat.id)}
+            tabIndex={0}
+            role="button"
+          >
+            {categoryIcons[cat.name] || "❓"} {cat.name}
+          </span>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 };
 

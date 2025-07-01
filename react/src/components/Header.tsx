@@ -16,26 +16,23 @@ const Header: React.FC<Props> = ({
   onRegister,
   onProfile,
 }) => (
-  <header /* ...styles... */>
-    <nav /* ...styles... */>
-      <Link to="/" /* ...logo styles... */>Gritlab Gossiper</Link>
-      <div style={{ flex: 1 }} />
+  <header>
+    <div className="header-left">
+      <h1>Gritlab Gossiper</h1>
+    </div>
+    <div className="header-right">
       {!isLoggedIn ? (
         <>
-          <button onClick={onLogin} style={{ marginRight: 10 }}>
-            Login
-          </button>
+          <button onClick={onLogin}>Login</button>
           <button onClick={onRegister}>Register</button>
         </>
       ) : (
         <>
-          <button onClick={onProfile} style={{ marginRight: 10 }}>
-            Profile
-          </button>
+          <button onClick={onProfile}>Profile</button>
           <button onClick={onLogout}>Logout</button>
         </>
       )}
-    </nav>
+    </div>
   </header>
 );
 

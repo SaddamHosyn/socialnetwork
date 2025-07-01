@@ -1,40 +1,27 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  containerId?: string; // Add this optional prop
 };
 
-const Modal: React.FC<Props> = ({ open, onClose, children }) => {
+const Modal: React.FC<Props> = ({ open, onClose, children, containerId }) => {
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        background: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 8,
-          padding: 24,
-          minWidth: 350,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
+    // Apply the passed ID here
+    <div id={containerId} className="popup" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>
   );
 };

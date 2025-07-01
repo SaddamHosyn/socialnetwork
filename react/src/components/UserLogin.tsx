@@ -38,7 +38,8 @@ const Login: React.FC<Props> = ({ onSuccess, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 350 }}>
+    <form onSubmit={handleSubmit} className="form-wrapper">
+      <h2>Login</h2>
       <input
         type="text"
         placeholder="Email"
@@ -56,15 +57,21 @@ const Login: React.FC<Props> = ({ onSuccess, onCancel }) => {
         minLength={6}
         maxLength={128}
       />
-      <button type="submit" disabled={loading}>
-        {loading ? "Logging in..." : "Login"}
-      </button>
-      {onCancel && (
-        <button type="button" onClick={onCancel} disabled={loading}>
-          Cancel
+      <div className="button-group">
+        <button type="submit" disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
         </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} disabled={loading}>
+            Cancel
+          </button>
+        )}
+      </div>
+      {error && (
+        <div className="form-error" style={{ color: "red", marginTop: "1rem" }}>
+          {error}
+        </div>
       )}
-      {error && <div style={{ color: "red", marginTop: 8 }}>{error}</div>}
     </form>
   );
 };

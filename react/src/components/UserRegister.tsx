@@ -11,6 +11,12 @@ const genders = [
   { value: "0", label: "Alien" },
 ];
 
+/**
+ * CORRECTED UserRegister Component.
+ * This component is now ONLY the form's content. It no longer creates its own
+ * popup container, preventing conflicts with the generic Modal component.
+ * The root element is the <form> itself.
+ */
 const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,24 +46,35 @@ const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
     if (nickname.trim()) form.append("nickname", nickname.trim());
     if (aboutMe.trim()) form.append("about_me", aboutMe.trim());
 
-    const res = await fetch("/api/register", {
-      method: "POST",
-      credentials: "include",
-      body: form,
-    });
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        credentials: "include",
+        body: form,
+      });
 
-    setLoading(false);
-
-    if (res.ok) {
-      onSuccess?.();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Registration failed");
+      if (res.ok) {
+        onSuccess?.();
+      } else {
+        // Try to parse error message from server, with a fallback.
+        const data = await res
+          .json()
+          .catch(() => ({ error: "An unknown error occurred." }));
+        setError(data.error || "Registration failed");
+      }
+    } catch (err) {
+      setError("A network error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // The root element is now the form.
+  // The CSS class "form-wrapper" is used for internal padding and layout,
+  // which is correct. The popup container itself is handled by the Modal.
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 350 }}>
+    <form onSubmit={handleSubmit} className="form-wrapper">
+      <h2>Register</h2>
       <input
         type="email"
         placeholder="Email"
@@ -97,7 +114,7 @@ const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
         value={dateOfBirth}
         onChange={(e) => setDateOfBirth(e.target.value)}
         required
-        max="2100-01-01"
+        max="2100-01-01" // It's good practice to set a reasonable max date
       />
       <select
         value={gender}
@@ -112,32 +129,39 @@ const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
       </select>
       <input
         type="file"
-        accept="image/*"
+        accept="image/jpeg, image/png, image/webp"
         onChange={(e) => setAvatar(e.target.files?.[0] || null)}
       />
       <input
         type="text"
-        placeholder="Nickname"
+        placeholder="Nickname (optional)"
         value={nickname}
         onChange={(e) => setNickname(e.target.value)}
         maxLength={40}
       />
-      <input
-        type="text"
-        placeholder="About Me"
+      <textarea
+        placeholder="About Me (optional)"
         value={aboutMe}
         onChange={(e) => setAboutMe(e.target.value)}
-        maxLength={40}
+        maxLength={500} // Increased from 40 to a more reasonable length
+        rows={4}
       />
-      <button type="submit" disabled={loading}>
-        {loading ? "Registering..." : "Register"}
-      </button>
-      {onCancel && (
-        <button type="button" onClick={onCancel} disabled={loading}>
-          Cancel
+
+      <div className="button-group">
+        <button type="submit" disabled={loading}>
+          {loading ? "Registering..." : "Register"}
         </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} disabled={loading}>
+            Cancel
+          </button>
+        )}
+      </div>
+      {error && (
+        <div className="form-error" style={{ color: "red", marginTop: "1rem" }}>
+          {error}
+        </div>
       )}
-      {error && <div style={{ color: "red", marginTop: 8 }}>{error}</div>}
     </form>
   );
 };

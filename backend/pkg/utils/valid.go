@@ -13,9 +13,9 @@ var (
 	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 )
 
-func ValidateRegister(nickname, email, password, firstName, lastName, aboutMe string, dob time.Time, gender int) *ValidationError {
+func ValidateRegister(email, password, firstName, lastName, nickname, aboutMe string, dob time.Time, gender int) *ValidationError {
 	if email == "" || password == "" || firstName == "" || lastName == "" {
-		return &ValidationError{Message: "All fields are required"}
+		return &ValidationError{Message: "Email, password and full name fields are required"}
 	}
 
 	if !emailRegex.MatchString(email) {
