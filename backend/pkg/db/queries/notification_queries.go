@@ -1,23 +1,13 @@
-
-
-
 package db
 
 import (
-
-	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/db/sqlite"
-
-
-
-
-
-
+	"social-network/backend/pkg/models"
 )
 
 // CreateNotification inserts a new notification
 func CreateNotification(userID int, notifType string, refID int, content string) error {
-	_, err :=  sqlite.GetDB().Exec(`
+	_, err := sqlite.GetDB().Exec(`
 		INSERT INTO notifications (user_id, type, reference_id, content)
 		VALUES (?, ?, ?, ?)`, userID, notifType, refID, content)
 	return err

@@ -49,7 +49,11 @@ const AppRouter: React.FC = () => {
         <PanelRight />
       </main>
       {/* Modals go here, INSIDE the BrowserRouter return */}
-      <Modal open={showLogin} onClose={() => setShowLogin(false)}>
+      <Modal
+        open={showLogin}
+        onClose={() => setShowLogin(false)}
+        containerId="login-container"
+      >
         <UserLogin
           onSuccess={() => {
             setIsLoggedIn(true);
@@ -58,7 +62,11 @@ const AppRouter: React.FC = () => {
           onCancel={() => setShowLogin(false)}
         />
       </Modal>
-      <Modal open={showRegister} onClose={() => setShowRegister(false)}>
+      <Modal
+        open={showRegister}
+        onClose={() => setShowRegister(false)}
+        containerId="register-container"
+      >
         <UserRegister
           onSuccess={() => {
             setIsLoggedIn(true);
@@ -67,7 +75,11 @@ const AppRouter: React.FC = () => {
           onCancel={() => setShowRegister(false)}
         />
       </Modal>
-      <Modal open={showProfile} onClose={() => setShowProfile(false)}>
+      <Modal
+        open={showProfile}
+        onClose={() => setShowProfile(false)}
+        containerId="profile-container"
+      >
         <UserProfile />
       </Modal>
     </BrowserRouter>

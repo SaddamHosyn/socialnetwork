@@ -39,7 +39,11 @@ const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
         />
       </Modal>
 
-      <Modal open={!!showPostSingle} onClose={() => setShowPostSingle(null)}>
+      <Modal
+        open={!!showPostSingle}
+        onClose={() => setShowPostSingle(null)}
+        containerId="single-post-container"
+      >
         {showPostSingle && (
           <PostSingle
             postId={showPostSingle}

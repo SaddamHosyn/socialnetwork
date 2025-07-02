@@ -46,14 +46,12 @@ type UserProfile struct {
 
 type User struct {
 	ID          int       `json:"id"`
-	Email       string    `json:"email"`
+	Nickname    string    `json:"nickname"`
 	FirstName   string    `json:"first_name"`
 	LastName    string    `json:"last_name"`
 	DateOfBirth time.Time `json:"date_of_birth"`
 	Gender      string    `json:"gender"`
-	Nickname    string    `json:"nickname"`
-	Avatar      string    `json:"avatar"`
-	AboutMe     string    `json:"about_me"`
+	Email       string    `json:"email"`
 }
 
 type Message struct {
