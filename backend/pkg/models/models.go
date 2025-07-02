@@ -64,7 +64,6 @@ type Message struct {
 	Time       string `json:"time"`
 }
 
-// Group represents a group in the social network
 type Group struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
@@ -85,7 +84,6 @@ type GroupDetails struct {
 	Events  []GroupEvent  `json:"events"`
 }
 
-// GroupMember represents a member of a group
 type GroupMember struct {
 	UserID    int       `json:"user_id"`
 	Nickname  string    `json:"nickname"`
@@ -93,7 +91,6 @@ type GroupMember struct {
 	IsCreator bool      `json:"is_creator"`
 }
 
-// GroupPost represents a post within a group
 type GroupPost struct {
 	ID         int       `json:"id"`
 	GroupID    int       `json:"group_id"`
@@ -107,7 +104,6 @@ type GroupPost struct {
 	UserVote   int       `json:"user_vote"`
 }
 
-// GroupComment represents a comment on a group post
 type GroupComment struct {
 	ID        int       `json:"id"`
 	PostID    int       `json:"post_id"`
@@ -118,7 +114,6 @@ type GroupComment struct {
 	Votes     int       `json:"votes"`
 }
 
-// GroupEvent represents an event in a group
 type GroupEvent struct {
 	ID           int                  `json:"id"`
 	GroupID      int                  `json:"group_id"`
@@ -132,7 +127,6 @@ type GroupEvent struct {
 	UserResponse *GroupEventResponse  `json:"user_response,omitempty"`
 }
 
-// GroupEventResponse represents a user's response to an event
 type GroupEventResponse struct {
 	UserID    int       `json:"user_id"`
 	Nickname  string    `json:"nickname"`
@@ -140,7 +134,6 @@ type GroupEventResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// GroupInvitation represents an invitation to join a group
 type GroupInvitation struct {
 	ID          int       `json:"id"`
 	GroupID     int       `json:"group_id"`
@@ -152,7 +145,6 @@ type GroupInvitation struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
-// GroupJoinRequest represents a request to join a group
 type GroupJoinRequest struct {
 	ID            int       `json:"id"`
 	GroupID       int       `json:"group_id"`
@@ -163,7 +155,6 @@ type GroupJoinRequest struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
-// GroupMessage represents a message in a group chat
 type GroupMessage struct {
 	ID         int       `json:"id"`
 	GroupID    int       `json:"group_id"`
