@@ -24,13 +24,18 @@ export type CategoryType = {
   name: string;
 };
 
+export type NotificationType =
+  | "FOLLOW_REQUEST"
+  | "GROUP_INVITE"
+  | "GROUP_JOIN_REQUEST"
+  | "GROUP_EVENT";
 
-export interface Notification {
+export type Notification = {
   id: number;
   user_id: number;
-  type: string;
+  type: NotificationType; // use the union type here
   reference_id: number;
   content: string;
   is_read: boolean;
   created_at: string;
-}
+};

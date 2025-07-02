@@ -1,4 +1,4 @@
-import { Notification } from '../types';
+import type { Notification} from '../types';
 
 export async function fetchNotifications(): Promise<Notification[]> {
   const response = await fetch('/api/notifications', {

@@ -1,37 +1,27 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import Notifications from './components/Notifications' 
+import './App.css';
+import NotificationsMenu from './components/NotificationsMenu';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      <Notifications /> {/* ✅ Render your notification component */}
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <header className="main-header">
+        <div className="header-left">
+          <h1>GritLab Gossiper</h1>
+        </div>
+        <div className="header-right">
+          <NotificationsMenu />
+          {/* Add other header buttons here if needed */}
+        </div>
+      </header>
+      <main>
+        {/* ...rest of your app... */}
+        <div>
+          {/* Example content */}
+          <h1>Vite + React</h1>
+        </div>
+      </main>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
