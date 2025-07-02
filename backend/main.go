@@ -44,6 +44,9 @@ func main() {
 	http.Handle("/api/post/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeletePostHandler)))
 	http.Handle("/api/comment/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeleteCommentHandler)))
 
+	http.Handle("/api/notifications", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetNotificationsHandler)))
+	http.Handle("/api/notifications/read", handlers.AuthMiddleware(http.HandlerFunc(handlers.MarkNotificationReadHandler)))
+
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)
 	http.HandleFunc("/api/chat/history", chat.HandleChatHistory)

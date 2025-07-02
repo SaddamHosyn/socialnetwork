@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>GritLab Gossiper</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/icons/favicon-32x32.png"
+    />
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <div class="header-left">
+        <h1>GritLab Gossiper</h1>
+      </div>
+      <div class="header-right">
+        <button id="btn-register">Register</button>
+        <button id="btn-login">Login</button>
+        <button id="btn-profile" class="hidden">Profile</button>
+        <button id="btn-logout" class="hidden">Logout</button>
+      </div>
+    </header>
+
+    <!-- Info container -->
+    <div id="info-container" class="popup hidden">
+      <h2>Please login first to enter the forum</h2>
+    </div>
+    <!-- Registration Form -->
+    <div id="register-container" class="popup hidden">
+      <h2>Register</h2>
+      <form id="register-form">
+        <input
+          type="text"
+          name="nickname"
+          placeholder="Nickname"
+          required
+        /><br />
+        <input type="email" name="email" placeholder="Email" required /><br />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          required
+        /><br />
+        <input
+          type="date"
+          name="date_of_birth"
+          placeholder="Date of Birth"
+          required
+        /><br />
+        <select name="gender" required>
+          <option value="">Select Gender</option>
+          <option value="1">Male</option>
+          <option value="2">Female</option>
+          <option value="3">Alien</option></select
+        ><br />
+        <input
+          type="text"
+          name="first_name"
+          placeholder="First Name"
+          required
+        /><br />
+        <input
+          type="text"
+          name="last_name"
+          placeholder="Last Name"
+          required
+        /><br />
+        <button type="submit">Register</button>
+        <button type="button" id="cancel-register">Cancel</button>
+      </form>
+    </div>
+    <!-- Login Form -->
+    <div id="login-container" class="popup hidden">
+      <h2>Login</h2>
+      <form id="login-form">
+        <input
+          type="text"
+          name="login"
+          placeholder="Nickname or Email"
+          required
+        /><br />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          required
+        /><br />
+        <button type="submit">Login</button>
+        <button type="button" id="cancel-login">Cancel</button>
+      </form>
+    </div>
+    <!-- Profile Popup -->
+    <div id="profile-container" class="popup hidden">
+      <h2>Your Profile</h2>
+      <div id="profile-info"></div>
+      <button id="close-profile">Close</button>
+    </div>
+    <!-- Single Post + Comments Popup -->
+    <div id="single-post-container" class="popup hidden">
+      <div class="form-wrapper">
+        <div class="single-content">
+          <!-- title -->
+          <h3 class="post-title">…</h3>
+          <!-- body -->
+          <p class="post-content">…</p>
+          <!-- images carousel, tags, etc. -->
+        </div>
+        <div class="button-group">
+          <button id="close-single-post">Close</button>
+        </div>
+      </div>
+    </div>
+    <!-- Main (3‑column layout) -->
+    <main>
+      <!-- LEFT PANEL: Categories + mini‑footer -->
+      <aside id="left-panel">
+        <h2>Categories</h2>
+        <ul id="category-list">
+          <li class="category-item active" data-category-id="all">
+            <a href="#">All Posts</a>
+          </li>
+          <!-- JS will append .dynamic-category items here -->
+        </ul>
+        <div class="mini-footer">
+          <p>
+            Made by <strong>Sagyn Osmonaliev</strong> &amp;
+            <strong>Saddam Hocain</strong> &amp; <strong>Richard</strong> &amp;
+            <strong>Chan</strong> &amp; <strong>Milli the monkey</strong>
+          </p>
+        </div>
+      </aside>
+
+      <!-- MIDDLE PANEL: Create‑post + feed -->
+      <section id="middle-panel">
+        <div id="post-bar">
+          <button id="btn-create-post">Create Post</button>
+        </div>
+        <!-- Create‑Post Popup -->
+        <div id="create-post-container" class="popup hidden">
+          <div class="form-wrapper">
+            <h2>Create Post</h2>
+            <form id="create-post-form" enctype="multipart/form-data">
+              <input type="text" name="title" placeholder="Title" required />
+              <textarea
+                name="content"
+                placeholder="Content"
+                required
+              ></textarea>
+              <div id="category-picker"></div>
+              <input
+                type="file"
+                name="images"
+                accept="image/*"
+                multiple
+                data-max-files="5"
+              />
+              <!-- <select name="category" multiple required></select> -->
+              <div class="button-group">
+                <button type="button" id="cancel-create-post">Cancel</button>
+                <button type="submit">Post</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- Posts feed container -->
+        <div id="post-feed"></div>
+      </section>
+      <!-- RIGHT PANEL: Users -->
+      <aside id="right-panel">
+        <h2>Chat with a user:</h2>
+        <ul id="user-list"></ul>
+      </aside>
+    </main>
+    <div id="toast" class="hidden"></div>
+
+    <script type="module" src="frontend.js"></script>
+    <script type="module" src="chat.js"></script>
+  </body>
+</html>
