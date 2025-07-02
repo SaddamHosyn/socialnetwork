@@ -3,7 +3,7 @@ import type { Category } from "../types";
 
 type Props = {
   categories: Category[];
-  onSubmit?: () => void; // callback for success (optional)
+  onSubmit?: () => void;
   onCancel: () => void;
 };
 
@@ -50,21 +50,24 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
 
     if (res.ok) {
       onSubmit?.();
-      // Optionally reset the form here
       setTitle("");
       setContent("");
       setSelectedCats([]);
       setImages([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    } else {
-      // handle error (show toast etc)
     }
+    // handle error...
   };
 
   return (
-    <form onSubmit={handleSubmit} encType="multipart/form-data">
+    <form
+      id="create-post-form"
+      onSubmit={handleSubmit}
+      encType="multipart/form-data"
+    >
       <input
         type="text"
+        name="title"
         placeholder="Title"
         value={title}
         maxLength={100}
@@ -72,6 +75,7 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
         required
       />
       <textarea
+        name="content"
         placeholder="Content"
         value={content}
         maxLength={2000}
@@ -113,15 +117,17 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
           </ul>
         )}
       </div>
-      <button
-        type="submit"
-        disabled={!title || !content || selectedCats.length === 0}
-      >
-        Post
-      </button>
-      <button type="button" onClick={onCancel}>
-        Cancel
-      </button>
+      <div className="button-group">
+        <button
+          type="submit"
+          disabled={!title || !content || selectedCats.length === 0}
+        >
+          Post
+        </button>
+        <button type="button" id="cancel-create-post" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
     </form>
   );
 };

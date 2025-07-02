@@ -28,7 +28,11 @@ const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
         <button onClick={() => setShowPostCreate(true)}>+ Create Post</button>
       </div>
 
-      <Modal open={showPostCreate} onClose={() => setShowPostCreate(false)}>
+      <Modal
+        open={showPostCreate}
+        onClose={() => setShowPostCreate(false)}
+        containerId="create-post-container"
+      >
         <PostCreate
           categories={categories}
           onCancel={() => setShowPostCreate(false)}
