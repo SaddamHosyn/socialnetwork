@@ -32,7 +32,7 @@ const AppRouter: React.FC = () => {
         onRegister={() => setShowRegister(true)}
         onProfile={() => setShowProfile(true)}
       />
-      <div style={{ flex: 1, display: "flex" }}>
+      <main>
         <PanelLeft
           selectedCategoryId={selectedCategoryId}
           onCategorySelect={setSelectedCategoryId}
@@ -47,7 +47,7 @@ const AppRouter: React.FC = () => {
           </Routes>
         </div>
         <PanelRight />
-      </div>
+      </main>
       {/* Modals go here, INSIDE the BrowserRouter return */}
       <Modal open={showLogin} onClose={() => setShowLogin(false)}>
         <UserLogin
