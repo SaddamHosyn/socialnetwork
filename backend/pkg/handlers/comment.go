@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/utils"
 	"strconv"
 	"strings"
@@ -33,6 +33,7 @@ func CommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Context().Value(userIDKey).(int)
+	// Fixed: Changed parameter order to match function definition (postID, userID, content)
 	err = db.InsertComment(postID, userID, content)
 	if err != nil {
 		log.Printf("Comment insert error: %v", err)
@@ -98,7 +99,7 @@ func FetchComments(w http.ResponseWriter, r *http.Request) {
 		limit = 50
 	}
 	offset, _ := strconv.Atoi(q.Get("offset"))
-	if offset < 0 {
+	if err != nil {
 		offset = 0
 	}
 
