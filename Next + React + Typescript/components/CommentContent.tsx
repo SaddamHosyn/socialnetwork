@@ -1,4 +1,3 @@
-import React from "react";
 import type { Comment } from "../types/types";
 import Vote from "./Vote";
 

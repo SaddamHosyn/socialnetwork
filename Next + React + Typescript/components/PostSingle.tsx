@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import PostContent from "./PostContent";
 import CommentList from "./CommentList";
 import CommentCreate from "./CommentCreate";

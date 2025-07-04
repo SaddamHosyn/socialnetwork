@@ -1,5 +1,3 @@
-import React from "react";
-
 const PanelRight: React.FC = () => (
   <aside id="right-panel">
     <h2>Users</h2>

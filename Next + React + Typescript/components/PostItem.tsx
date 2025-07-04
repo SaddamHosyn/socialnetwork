@@ -1,5 +1,4 @@
-import React from "react";
-import type { Post } from "../types";
+import type { Post } from "../types/types";
 
 type Props = {
   post: Post;

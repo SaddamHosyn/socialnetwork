@@ -1,5 +1,4 @@
 import Modal from "./Modal";
-import { useEffect, useState } from "react";
 import PostCreate from "./PostCreate";
 import PostSingle from "./PostSingle";
 import PostList from "./PostList";

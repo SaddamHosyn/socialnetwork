@@ -1,4 +1,3 @@
-import React from "react";
 import CategoryList from "./CategoryList";
 
 type Props = {

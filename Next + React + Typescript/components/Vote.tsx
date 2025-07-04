@@ -1,5 +1,3 @@
-import React from "react";
-
 type Props = {
   votes: number;
   onVote: (v: 1 | -1) => void;

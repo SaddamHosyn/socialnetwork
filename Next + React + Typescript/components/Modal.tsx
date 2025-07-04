@@ -1,5 +1,3 @@
-import React, { useEffect } from "react";
-
 type Props = {
   open: boolean;
   onClose: () => void;

@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import type { Category } from "../types/types";
 
 const categoryIcons: Record<string, string> = {

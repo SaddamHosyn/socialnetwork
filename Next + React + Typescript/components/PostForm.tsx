@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Category } from "../types";
+import { Category } from "../types/types";
 
 type Props = {
   categories: Category[]; // fetched in parent, passed as prop

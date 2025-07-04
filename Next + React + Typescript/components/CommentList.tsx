@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import CommentContent from "./CommentContent";
 import type { Comment } from "../types/types";
 

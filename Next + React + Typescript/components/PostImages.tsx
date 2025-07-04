@@ -1,5 +1,3 @@
-import React, { useState } from "react";
-
 type Props = { images: string[] };
 
 const PostImages: React.FC<Props> = ({ images }) => {

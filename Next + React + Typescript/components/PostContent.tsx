@@ -1,4 +1,3 @@
-import React from "react";
 import PostImages from "./PostImages";
 import type { Post } from "../types/types";
 import Vote from "./Vote";

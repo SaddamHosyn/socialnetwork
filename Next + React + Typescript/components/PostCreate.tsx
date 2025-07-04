@@ -1,4 +1,3 @@
-import React, { useState, useRef } from "react";
 import type { Category } from "../types/types";
 
 type Props = {
