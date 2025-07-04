@@ -1,14 +1,13 @@
+"use client";
+import { useState } from "react";
+
 type Props = {
   postId: number;
   onCommentAdded?: () => void;
   onCancel?: () => void; // optional
 };
 
-const CommentCreate: React.FC<Props> = ({
-  postId,
-  onCommentAdded,
-  onCancel,
-}) => {
+const CommentCreate = ({ postId, onCommentAdded, onCancel }: Props) => {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
 

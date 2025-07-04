@@ -1,3 +1,5 @@
+"use client";
+import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import PostCreate from "./PostCreate";
 import PostSingle from "./PostSingle";
@@ -8,7 +10,7 @@ type Props = {
   selectedCategoryId: number | null;
 };
 
-const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
+const PanelMiddle = ({ selectedCategoryId }: Props) => {
   const [showPostSingle, setShowPostSingle] = useState<null | number>(null);
   const [showPostCreate, setShowPostCreate] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -26,7 +28,6 @@ const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
       <div id="post-bar">
         <button onClick={() => setShowPostCreate(true)}>+ Create Post</button>
       </div>
-
       <Modal
         open={showPostCreate}
         onClose={() => setShowPostCreate(false)}
@@ -37,7 +38,6 @@ const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
           onCancel={() => setShowPostCreate(false)}
         />
       </Modal>
-
       <Modal
         open={!!showPostSingle}
         onClose={() => setShowPostSingle(null)}
@@ -50,7 +50,6 @@ const PanelMiddle: React.FC<Props> = ({ selectedCategoryId }) => {
           />
         )}
       </Modal>
-
       <div id="post-feed">
         <PostList
           categoryId={selectedCategoryId}

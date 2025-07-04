@@ -1,3 +1,5 @@
+"use client";
+import { useState, useEffect } from "react";
 import CommentContent from "./CommentContent";
 import type { Comment } from "../types/types";
 
@@ -6,7 +8,7 @@ type Props = {
   pageSize?: number; // Optional, default to 50
 };
 
-const CommentList: React.FC<Props> = ({ postId, pageSize = 50 }) => {
+const CommentList = ({ postId, pageSize = 50 }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);

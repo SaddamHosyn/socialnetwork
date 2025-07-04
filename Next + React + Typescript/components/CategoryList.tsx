@@ -1,3 +1,5 @@
+"use client";
+import { useState, useEffect } from "react";
 import type { Category } from "../types/types";
 
 const categoryIcons: Record<string, string> = {
@@ -35,7 +37,7 @@ type Props = {
   onSelect: (id: number | null) => void;
 };
 
-const CategoryList: React.FC<Props> = ({ selected, onSelect }) => {
+const CategoryList = ({ selected, onSelect }: Props) => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {

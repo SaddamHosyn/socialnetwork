@@ -1,11 +1,14 @@
+"use client";
+import { useEffect } from "react";
+
 type Props = {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  containerId?: string; // Add this optional prop
+  containerId?: string;
 };
 
-const Modal: React.FC<Props> = ({ open, onClose, children, containerId }) => {
+const Modal = ({ open, onClose, children, containerId }: Props) => {
   useEffect(() => {
     if (!open) return;
     const handleEsc = (e: KeyboardEvent) => {
@@ -17,7 +20,6 @@ const Modal: React.FC<Props> = ({ open, onClose, children, containerId }) => {
 
   if (!open) return null;
   return (
-    // Apply the passed ID here
     <div id={containerId} className="popup" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>

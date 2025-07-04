@@ -6,7 +6,7 @@ type Props = {
   onClick: () => void;
 };
 
-const CategorySingle: React.FC<Props> = ({ category, selected, onClick }) => (
+const CategorySingle = ({ category, selected, onClick }: Props) => (
   <span
     className={`category-pill${selected ? " selected" : ""}`}
     onClick={onClick}

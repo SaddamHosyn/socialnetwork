@@ -6,13 +6,13 @@ type Props = {
   onProfile: () => void;
 };
 
-const Header: React.FC<Props> = ({
+const Header = ({
   onLogout,
   isLoggedIn,
   onLogin,
   onRegister,
   onProfile,
-}) => (
+}: Props) => (
   <header>
     <div className="header-left">
       <h1>Gritlab Gossiper</h1>

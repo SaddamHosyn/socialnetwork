@@ -5,10 +5,7 @@ type Props = {
   onCategorySelect: (id: number | null) => void;
 };
 
-const PanelLeft: React.FC<Props> = ({
-  selectedCategoryId,
-  onCategorySelect,
-}) => (
+const PanelLeft = ({ selectedCategoryId, onCategorySelect }: Props) => (
   <aside id="left-panel">
     <h2>Categories</h2>
     <CategoryList selected={selectedCategoryId} onSelect={onCategorySelect} />

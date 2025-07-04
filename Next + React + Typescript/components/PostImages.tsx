@@ -1,3 +1,6 @@
+"use client";
+import { useState } from "react";
+
 type Props = { images: string[] };
 
 const PostImages: React.FC<Props> = ({ images }) => {

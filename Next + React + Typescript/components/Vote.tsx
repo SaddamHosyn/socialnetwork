@@ -1,10 +1,10 @@
 type Props = {
   votes: number;
   onVote: (v: 1 | -1) => void;
-  userVote?: 1 | -1 | 0; // Optional for highlighting, not required
+  userVote?: 1 | -1 | 0;
 };
 
-const Vote: React.FC<Props> = ({ votes, onVote, userVote = 0 }) => (
+const Vote = ({ votes, onVote, userVote = 0 }: Props) => (
   <span>
     <button
       onClick={(e) => {

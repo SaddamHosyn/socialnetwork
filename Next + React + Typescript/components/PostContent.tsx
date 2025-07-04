@@ -8,7 +8,7 @@ type Props = {
   onVote?: (v: 1 | -1) => void;
 };
 
-const PostContent: React.FC<Props> = ({ post, onCommentClick, onVote }) => (
+const PostContent = ({ post, onCommentClick, onVote }: Props) => (
   <div className="post-card">
     <div style={{ fontSize: 12, color: "#888" }}>
       {post.group && <span>[{post.group}] </span>}
