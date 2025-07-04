@@ -1,0 +1,10 @@
+import React from "react";
+
+const PanelRight: React.FC = () => (
+  <aside id="right-panel">
+    <h2>Users</h2>
+    <ul id="user-list">{/* User list rendering goes here */}</ul>
+  </aside>
+);
+
+export default PanelRight;

@@ -1,4 +1,3 @@
-
 package handlers
 
 import (
@@ -8,7 +7,6 @@ import (
 	"social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/utils"
 )
-
 
 func GetNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(int)
@@ -43,5 +41,3 @@ func MarkNotificationReadHandler(w http.ResponseWriter, r *http.Request) {
 
 	utils.Success(w, http.StatusOK, "Notification marked as read")
 }
-
-
