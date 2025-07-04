@@ -33,15 +33,18 @@ func CommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Context().Value(userIDKey).(int)
-	// Fixed: Changed parameter order to match function definition (postID, userID, content)
-	err = db.InsertComment(postID, userID, content)
+
+	commentID, err := db.InsertComment(postID, userID, content)
 	if err != nil {
 		log.Printf("Comment insert error: %v", err)
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return
 	}
 
-	utils.Success(w, http.StatusCreated, map[string]string{"message": "Comment posted"})
+	utils.Success(w, http.StatusCreated, map[string]any{
+		"message":    "Comment posted",
+		"comment_id": commentID,
+	})
 }
 
 func DeleteCommentHandler(w http.ResponseWriter, r *http.Request) {

@@ -75,7 +75,7 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 			utils.Fail(w, http.StatusBadRequest, verr.Message)
 			return
 		}
-		if err := db.AddPostImage(tx, postID, imgPath, idx+1); err != nil {
+		if err := db.AddPostImage(tx, int64(postID), imgPath, idx+1); err != nil {
 			log.Printf("image link error: %v", err)
 			utils.Fail(w, http.StatusInternalServerError, "Server error linking images")
 			return
@@ -88,7 +88,7 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 			utils.Fail(w, http.StatusBadRequest, "Invalid category ID")
 			return
 		}
-		if err := db.LinkPostCategory(tx, postID, id); err != nil {
+		if err := db.LinkPostCategory(tx, int64(postID), id); err != nil {
 			log.Printf("cat link error: %v", err)
 			utils.Fail(w, http.StatusInternalServerError, "Server error linking category")
 			return

@@ -6,12 +6,13 @@ import (
 	"social-network/backend/pkg/models"
 )
 
-func InsertComment(postID, userID int, content string) error {
-	_, err := sqlite.GetDB().Exec(
-		`INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)`,
+func InsertComment(postID, userID int, content string) (int, error) {
+	var commentID int
+	err := sqlite.GetDB().QueryRow(
+		`INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?) RETURNING id`,
 		postID, userID, content,
-	)
-	return err
+	).Scan(&commentID)
+	return commentID, err
 }
 
 func IsCommentOwner(commentID, userID int) (bool, error) {
