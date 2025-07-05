@@ -67,11 +67,15 @@ type Message struct {
 }
 
 type Notification struct {
-	ID          int       `json:"id"`
-	UserID      int       `json:"user_id"`
-	Type        string    `json:"type"`
-	ReferenceID int       `json:"reference_id"`
-	Content     string    `json:"content"`
-	IsRead      bool      `json:"is_read"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID             int       `json:"id"`
+	UserID         int       `json:"user_id"`
+	Type           string    `json:"type"`
+	ReferenceID    int       `json:"reference_id"`
+	Content        string    `json:"content"`
+	IsRead         bool      `json:"is_read"`
+	CreatedAt      time.Time `json:"created_at"`
+	RequiresAction bool      `json:"requires_action"`
+	ActionTaken    string    `json:"action_taken"`
+	SenderID       int       `json:"sender_id"`
+	SenderName     string    `json:"sender_name"`
 }

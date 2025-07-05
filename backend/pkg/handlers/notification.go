@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/utils"
 )
 
