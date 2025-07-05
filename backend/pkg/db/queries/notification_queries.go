@@ -5,21 +5,21 @@ import (
 	"social-network/backend/pkg/models"
 )
 
-// CreateNotification inserts a new notification
-func CreateNotification(userID int, notifType string, refID int, content string) error {
+func CreateNotification(userID int, notifType string, refID int, content string, requiresAction bool, senderID int, senderName string) error {
 	_, err := sqlite.GetDB().Exec(`
-		INSERT INTO notifications (user_id, type, reference_id, content)
-		VALUES (?, ?, ?, ?)`, userID, notifType, refID, content)
+        INSERT INTO notifications (user_id, type, reference_id, content, requires_action, sender_id, sender_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		userID, notifType, refID, content, requiresAction, senderID, senderName)
 	return err
 }
 
-// GetNotificationsForUser returns all notifications for a user
 func GetNotificationsForUser(userID int) ([]models.Notification, error) {
 	rows, err := sqlite.GetDB().Query(`
-		SELECT id, user_id, type, reference_id, content, is_read, created_at
-		FROM notifications
-		WHERE user_id = ?
-		ORDER BY created_at DESC`, userID)
+        SELECT id, user_id, type, reference_id, content, is_read, created_at, 
+               requires_action, action_taken, sender_id, sender_name
+        FROM notifications
+        WHERE user_id = ?
+        ORDER BY created_at DESC`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -28,14 +28,22 @@ func GetNotificationsForUser(userID int) ([]models.Notification, error) {
 	var notifications []models.Notification
 	for rows.Next() {
 		var n models.Notification
-		var isRead int
-		if err := rows.Scan(&n.ID, &n.UserID, &n.Type, &n.ReferenceID, &n.Content, &isRead, &n.CreatedAt); err != nil {
+		var isRead, requiresAction int
+		if err := rows.Scan(&n.ID, &n.UserID, &n.Type, &n.ReferenceID, &n.Content,
+			&isRead, &n.CreatedAt, &requiresAction, &n.ActionTaken,
+			&n.SenderID, &n.SenderName); err != nil {
 			return nil, err
 		}
 		n.IsRead = isRead == 1
+		n.RequiresAction = requiresAction == 1
 		notifications = append(notifications, n)
 	}
 	return notifications, nil
+}
+
+func UpdateNotificationAction(notifID int, action string) error {
+	_, err := sqlite.GetDB().Exec(`UPDATE notifications SET action_taken = ? WHERE id = ?`, action, notifID)
+	return err
 }
 
 // MarkNotificationAsRead sets is_read = 1
