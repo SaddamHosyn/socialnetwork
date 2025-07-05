@@ -43,3 +43,25 @@ export type ProfileData = {
   posts: Post[];
   comments: Comment[];
 };
+
+
+
+export interface Notification {
+  id: number;
+  user_id: number;
+  type: string;
+  reference_id: number;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  requires_action: boolean;
+  action_taken: string;
+  sender_id: number;
+  sender_name: string;
+}
+
+export type NotificationType = 
+  | 'follow_request'
+  | 'group_invite'
+  | 'join_request'
+  | 'group_event';
