@@ -16,19 +16,60 @@ export default function Page() {
     null
   );
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false); // Track if initial auth check is done
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  const handleLogout = () => setIsLoggedIn(false);
+  // --- UPDATED LOGOUT FUNCTION ---
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/logout", {
+        method: "POST",
+      });
 
+      if (res.ok) {
+        setIsLoggedIn(false);
+      } else {
+        console.error("Logout failed:", await res.text());
+      }
+    } catch (error) {
+      console.error("An error occurred during logout:", error);
+    }
+  };
+
+  // --- USE EFFECT FOR AUTH CHECK & DATA FETCHING ---
   useEffect(() => {
-    fetch("/api/categories", { credentials: "include" })
+    // Function to check the user's authentication status
+    const checkAuthStatus = async () => {
+      try {
+        const res = await fetch("/api/me");
+        if (res.ok) {
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        setIsLoggedIn(false);
+      } finally {
+        setAuthChecked(true); // Mark auth check as complete
+      }
+    };
+
+    checkAuthStatus();
+
+    // Fetch categories (can run in parallel with auth check)
+    fetch("/api/categories")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setCategories(data.data);
       });
   }, []);
+
+  // Don't render the main content until the initial auth check is complete
+  if (!authChecked) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
 
   return (
     <>
@@ -73,8 +114,8 @@ export default function Page() {
       >
         <UserRegister
           onSuccess={() => {
-            setIsLoggedIn(true);
             setShowRegister(false);
+            setShowLogin(true);
           }}
           onCancel={() => setShowRegister(false)}
         />
