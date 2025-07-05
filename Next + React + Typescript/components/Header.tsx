@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import NotificationBell from './NotificationBell';
 import NotificationDropdown from './NotificationDropdown';
 import { Notification } from '../types/types';
+import { useNotificationWebSocket } from '../hooks/useNotificationWebSocket';
 
 type Props = {
   onLogout: () => void;
