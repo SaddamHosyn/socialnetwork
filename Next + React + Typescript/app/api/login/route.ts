@@ -12,6 +12,14 @@ export async function POST(req: Request) {
     credentials: "include",
   });
 
+  const setCookie = res.headers.get("set-cookie");
+
   const data = await res.json().catch(() => ({}));
-  return NextResponse.json(data, { status: res.status });
+  const response = NextResponse.json(data, { status: res.status });
+
+  if (setCookie) {
+    response.headers.set("set-cookie", setCookie);
+  }
+
+  return response;
 }

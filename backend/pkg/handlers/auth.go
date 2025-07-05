@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"io"
 	"log"
 	"net/http"
@@ -14,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type contextKey string
@@ -146,7 +147,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Expires:  expiresAt,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
 	})
