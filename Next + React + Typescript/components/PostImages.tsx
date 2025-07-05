@@ -6,10 +6,14 @@ type Props = { images: string[] };
 const PostImages: React.FC<Props> = ({ images }) => {
   const [idx, setIdx] = useState(0);
   if (!images || images.length === 0) return null;
+
+  const imagePath = images[idx].replace(/^\./, ""); // Remove leading dot
+  const imageUrl = `http://localhost:8080${imagePath}`;
+
   return (
     <div>
       <img
-        src={images[idx]}
+        src={imageUrl}
         alt={`post-img-${idx}`}
         style={{ maxWidth: 300, borderRadius: 8 }}
       />
