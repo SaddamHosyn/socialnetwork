@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Modal from "./Modal";
 import PostCreate from "./PostCreate";
 import PostSingle from "./PostSingle";
@@ -8,20 +8,12 @@ import type { Category } from "../types/types";
 
 type Props = {
   selectedCategoryId: number | null;
+  categories: Category[];
 };
 
-const PanelMiddle = ({ selectedCategoryId }: Props) => {
+const PanelMiddle = ({ selectedCategoryId, categories }: Props) => {
   const [showPostSingle, setShowPostSingle] = useState<null | number>(null);
   const [showPostCreate, setShowPostCreate] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  useEffect(() => {
-    fetch("/api/categories", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setCategories(data.data);
-      });
-  }, []);
 
   return (
     <section id="middle-panel">

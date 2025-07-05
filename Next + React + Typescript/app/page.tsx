@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Modal from "../components/Modal";
 import UserLogin from "../components/UserLogin";
@@ -9,8 +8,10 @@ import UserProfile from "../components/UserProfile";
 import PanelLeft from "../components/PanelLeft";
 import PanelRight from "../components/PanelRight";
 import PanelMiddle from "../components/PanelMiddle";
+import type { Category } from "../types/types";
 
 export default function Page() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
@@ -20,6 +21,14 @@ export default function Page() {
   const [showProfile, setShowProfile] = useState(false);
 
   const handleLogout = () => setIsLoggedIn(false);
+
+  useEffect(() => {
+    fetch("/api/categories", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setCategories(data.data);
+      });
+  }, []);
 
   return (
     <>
@@ -32,11 +41,15 @@ export default function Page() {
       />
       <main>
         <PanelLeft
+          categories={categories}
           selectedCategoryId={selectedCategoryId}
           onCategorySelect={setSelectedCategoryId}
         />
         <div style={{ flex: 1 }}>
-          <PanelMiddle selectedCategoryId={selectedCategoryId} />
+          <PanelMiddle
+            selectedCategoryId={selectedCategoryId}
+            categories={categories}
+          />
         </div>
         <PanelRight />
       </main>
