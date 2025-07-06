@@ -43,3 +43,4 @@ export type ProfileData = {
   posts: Post[];
   comments: Comment[];
 };
+
