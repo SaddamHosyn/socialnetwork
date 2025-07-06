@@ -1,16 +1,17 @@
 package main
 
 import (
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
 	"social-network/backend/pkg/chat"
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/handlers"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	database := sqlite.InitDB("backend/database/forum.db")
+	database := sqlite.InitDB("database/forum.db")
 	defer database.Close()
 
 	err := sqlite.ApplyMigrations(database)
