@@ -1,12 +1,13 @@
 package main
 
 import (
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
 	"social-network/backend/pkg/chat"
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/handlers"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -23,7 +24,6 @@ func main() {
 
 	sqlite.SetDB(database)
 
-	http.Handle("/", http.FileServer(http.Dir("frontend")))
 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 
 	http.HandleFunc("/api/register", handlers.RegisterHandler)

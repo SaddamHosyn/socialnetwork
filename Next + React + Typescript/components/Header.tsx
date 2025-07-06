@@ -1,8 +1,8 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import NotificationBell from './NotificationBell';
 import NotificationDropdown from './NotificationDropdown';
 import { Notification } from '../types/types';
-import { useNotificationWebSocket } from '../hooks/useNotificationWebSocket';
 
 type Props = {
   onLogout: () => void;
@@ -29,18 +29,32 @@ const Header = ({
       fetchNotifications();
       const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
       return () => clearInterval(interval);
+    } else {
+      // Clear notifications when not logged in
+      setNotifications([]);
     }
   }, [isLoggedIn]);
 
   const fetchNotifications = async () => {
+    if (!isLoggedIn) return;
+    
     try {
       const response = await fetch('/api/notifications');
+      
+      if (response.status === 401) {
+        console.log('User not authenticated - clearing notifications');
+        setNotifications([]);
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data);
+        // Ensure data is an array to prevent filter errors
+        setNotifications(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      setNotifications([]); // Set to empty array on error
     }
   };
 

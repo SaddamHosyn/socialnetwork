@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+import React from 'react';
 import { Notification } from '../types/types';
 
 interface NotificationBellProps {
@@ -12,7 +13,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   onMarkAsRead,
   onMarkAllAsRead
 }) => {
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  // Add safety check for notifications array to prevent filter errors
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+  const unreadCount = safeNotifications.filter(n => !n.is_read).length;
   
   return (
     <div className="notification-bell">
@@ -26,3 +29,4 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   );
 };
 
+export default NotificationBell;

@@ -1,4 +1,4 @@
-// File: /Users/borsokman/Documents/CODING/social-network/Next + React + Typescript/app/layout.tsx
+// File: C:\Users\sadda\Desktop\Projects\social-network-project\Next + React + Typescript\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

@@ -6,7 +6,7 @@ interface UseNotificationWebSocketProps {
   isLoggedIn: boolean;
 }
 
-export const useNotificationWebSocket = ({
+export const NotificationWebSocket = ({
   onNewNotification,
   isLoggedIn
 }: UseNotificationWebSocketProps) => {

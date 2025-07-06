@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { Notification } from '../types/types';
 import NotificationItem from './NotificationItem';
@@ -19,6 +20,9 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  // Add safety check for notifications array
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
   return (
     <div className="notification-dropdown">
       <div className="notification-header">
@@ -26,10 +30,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         <button onClick={onClose}>×</button>
       </div>
       <div className="notification-list">
-        {notifications.length === 0 ? (
+        {safeNotifications.length === 0 ? (
           <p>No notifications</p>
         ) : (
-          notifications.map(notification => (
+          safeNotifications.map(notification => (
             <NotificationItem
               key={notification.id}
               notification={notification}
@@ -42,3 +46,5 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     </div>
   );
 };
+
+export default NotificationDropdown;

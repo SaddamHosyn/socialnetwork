@@ -46,7 +46,7 @@ export type ProfileData = {
 
 
 
-export interface Notification {
+export type Notification = {
   id: number;
   user_id: number;
   type: string;
