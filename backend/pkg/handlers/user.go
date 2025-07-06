@@ -80,20 +80,24 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 	profile := models.UserProfile{
 		User: struct {
 			ID          int       `json:"id"`
-			Nickname    string    `json:"nickname"`
+			Email       string    `json:"email"`
 			FirstName   string    `json:"first_name"`
 			LastName    string    `json:"last_name"`
 			DateOfBirth time.Time `json:"date_of_birth"`
 			Gender      string    `json:"gender"`
-			Email       string    `json:"email"`
+			Nickname    string    `json:"nickname"`
+			Avatar      string    `json:"avatar"`
+			AboutMe     string    `json:"about_me"`
 		}{
 			ID:          user.ID,
-			Nickname:    user.Nickname,
+			Email:       user.Email,
 			FirstName:   user.FirstName,
 			LastName:    user.LastName,
 			DateOfBirth: user.DateOfBirth,
 			Gender:      gender,
-			Email:       user.Email,
+			Nickname:    user.Nickname,
+			Avatar:      user.Avatar,
+			AboutMe:     user.AboutMe,
 		},
 		Posts:    posts,
 		Comments: comments,

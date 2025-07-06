@@ -10,17 +10,12 @@ type ValidationError struct {
 }
 
 var (
-	nicknameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]{3,20}$`)
-	emailRegex    = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 )
 
-func ValidateRegister(nickname, email, password, firstName, lastName string, dob time.Time, gender int) *ValidationError {
-	if nickname == "" || email == "" || password == "" || firstName == "" || lastName == "" {
-		return &ValidationError{Message: "All fields are required"}
-	}
-
-	if !nicknameRegex.MatchString(nickname) {
-		return &ValidationError{Message: "Nickname must be 3-20 characters (alphanumeric, _, -)"}
+func ValidateRegister(email, password, firstName, lastName, nickname, aboutMe string, dob time.Time, gender int) *ValidationError {
+	if email == "" || password == "" || firstName == "" || lastName == "" {
+		return &ValidationError{Message: "Email, password and full name fields are required"}
 	}
 
 	if !emailRegex.MatchString(email) {
@@ -46,6 +41,10 @@ func ValidateRegister(nickname, email, password, firstName, lastName string, dob
 
 	if len(firstName) > 20 || len(lastName) > 20 {
 		return &ValidationError{Message: "Names must be 1-20 characters"}
+	}
+
+	if len(aboutMe) > 500 {
+		return &ValidationError{Message: "Maximum 500 characeters"}
 	}
 
 	return nil

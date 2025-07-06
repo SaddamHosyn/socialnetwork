@@ -101,6 +101,59 @@ func ValidateImage(r io.Reader, mimeType string) ([]byte, string, *ValidationErr
 	return buf.Bytes(), ext, nil
 }
 
+func SaveAvatarFile(imgData []byte, ext string) (string, error) {
+	if err := os.MkdirAll("./uploads/avatars", 0755); err != nil {
+		return "", err
+	}
+	filename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+	fullPath := fmt.Sprintf("./uploads/avatars/%s", filename)
+	if err := os.WriteFile(fullPath, imgData, 0644); err != nil {
+		return "", err
+	}
+	// Return path relative to static root for serving by your HTTP server
+	// Example: "/uploads/avatars/abc123.jpg"
+	return "/uploads/avatars/" + filename, nil
+}
+
+func ValidateAvatar(r io.Reader, mimeType string) ([]byte, string, *ValidationError) {
+	var (
+		ext    string
+		encode func(io.Writer, image.Image) error
+	)
+	switch mimeType {
+	case "image/jpeg", "image/jpg":
+		ext = ".jpg"
+		encode = func(w io.Writer, img image.Image) error {
+			return jpeg.Encode(w, img, &jpeg.Options{Quality: 85})
+		}
+	case "image/png":
+		ext = ".png"
+		encode = png.Encode
+	default:
+		return nil, "", &ValidationError{Message: "Only JPG and PNG avatars allowed"}
+	}
+
+	img, _, err := image.Decode(r)
+	if err != nil {
+		return nil, "", &ValidationError{Message: "Invalid image data"}
+	}
+
+	// Crop to center square
+	img = CropCenterSquare(img)
+
+	// Resize to max 256x256 (for example)
+	maxSize := 256
+	if img.Bounds().Dx() > maxSize {
+		img = NearestNeighborResize(img, maxSize, maxSize)
+	}
+
+	buf := &bytes.Buffer{}
+	if err := encode(buf, img); err != nil {
+		return nil, "", &ValidationError{Message: "Failed to re-encode image"}
+	}
+	return buf.Bytes(), ext, nil
+}
+
 func NearestNeighborResize(src image.Image, w2, h2 int) *image.RGBA {
 	b := src.Bounds()
 	w1, h1 := b.Dx(), b.Dy()

@@ -2,11 +2,12 @@ package sqlite
 
 import (
 	"database/sql"
+	"log"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
 )
 
 var db *sql.DB
@@ -48,7 +49,7 @@ func ApplyMigrations(db *sql.DB) error {
 		return err
 	}
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://backend/pkg/db/migrations/sqlite",
+		"file://pkg/db/migrations/sqlite",
 		"sqlite3", driver)
 	if err != nil {
 		return err

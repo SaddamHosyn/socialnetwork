@@ -21,7 +21,7 @@ func GetAllCategories() ([]models.Category, error) {
 		cats = append(cats, c)
 	}
 	if err := rows.Err(); err != nil {
-		return cats, err // Return what you have, but note the error
+		return cats, err
 	}
 	return cats, nil
 }

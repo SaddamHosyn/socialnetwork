@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
+	"io"
 	"log"
 	"net/http"
 	"social-network/backend/pkg/db/queries"
@@ -12,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type contextKey string
@@ -27,19 +30,20 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(20 << 20)
 	if err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Bad request - use application/x-www-form-urlencoded")
+		utils.Fail(w, http.StatusBadRequest, "Bad request - use multipart/form-data")
 		return
 	}
 
-	nickname := strings.ToLower(strings.TrimSpace(r.FormValue("nickname")))
 	email := strings.ToLower(strings.TrimSpace(r.FormValue("email")))
 	password := strings.TrimSpace(r.FormValue("password"))
 	firstName := strings.TrimSpace(r.FormValue("first_name"))
 	lastName := strings.TrimSpace(r.FormValue("last_name"))
 	dateOfBirth := strings.TrimSpace(r.FormValue("date_of_birth"))
 	genderStr := r.FormValue("gender")
+	nickname := strings.ToLower(strings.TrimSpace(r.FormValue("nickname")))
+	aboutMe := strings.TrimSpace(r.FormValue("about_me"))
 
 	dob, err := time.Parse("2006-01-02", dateOfBirth)
 	if err != nil {
@@ -53,7 +57,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if validationErr := utils.ValidateRegister(nickname, email, password, firstName, lastName, dob, genderInt); validationErr != nil {
+	if validationErr := utils.ValidateRegister(email, password, firstName, lastName, nickname, aboutMe, dob, genderInt); validationErr != nil {
 		utils.Fail(w, http.StatusBadRequest, validationErr.Message)
 		return
 	}
@@ -64,7 +68,27 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.RegisterUser(nickname, email, string(hashedPassword), firstName, lastName, dob, genderInt)
+	var avatarPath string
+
+	avatarFile, handler, err := r.FormFile("avatar")
+	if err == nil {
+		defer avatarFile.Close()
+		var buf bytes.Buffer
+		io.Copy(&buf, avatarFile)
+		processed, ext, verr := utils.ValidateAvatar(bytes.NewReader(buf.Bytes()), handler.Header.Get("Content-Type"))
+		if verr != nil {
+			utils.Fail(w, http.StatusBadRequest, verr.Message)
+			return
+		}
+		savedPath, saveErr := utils.SaveAvatarFile(processed, ext)
+		if saveErr != nil {
+			utils.Fail(w, http.StatusInternalServerError, "Could not save avatar")
+			return
+		}
+		avatarPath = savedPath
+	}
+
+	err = db.RegisterUser(email, string(hashedPassword), firstName, lastName, nickname, aboutMe, avatarPath, dob, genderInt)
 	if err != nil {
 		log.Printf("REGISTER ERROR: %v", err)
 		if strings.Contains(err.Error(), "UNIQUE constraint") {
@@ -123,7 +147,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Expires:  expiresAt,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
 	})
