@@ -138,9 +138,6 @@ func ValidateAvatar(r io.Reader, mimeType string) ([]byte, string, *ValidationEr
 		return nil, "", &ValidationError{Message: "Invalid image data"}
 	}
 
-	// Crop to center square
-	img = CropCenterSquare(img)
-
 	// Resize to max 256x256 (for example)
 	maxSize := 256
 	if img.Bounds().Dx() > maxSize {
