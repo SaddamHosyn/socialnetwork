@@ -20,10 +20,8 @@ const UserProfile: React.FC = () => {
   if (loading) return <div>Loading…</div>;
   if (!profile) return <div>Profile not found.</div>;
 
-  const { user, posts } = profile;
+  const { user, posts, follower_count, following_count } = profile;
   const postList = Array.isArray(posts) ? posts : [];
-
-  console.log(user.avatar);
 
   return (
     <div>
@@ -73,6 +71,10 @@ const UserProfile: React.FC = () => {
         <b>Gender:</b> {user.gender}
         <br />
         <b>Email:</b> {user.email}
+        <br />
+        <b>Followers:</b> {follower_count ?? 0}
+        <br />
+        <b>Following:</b> {following_count ?? 0}
         {(user.about_me ?? "").trim() !== "" && (
           <div style={{ margin: "12px 0" }}>
             <b>About Me:</b>

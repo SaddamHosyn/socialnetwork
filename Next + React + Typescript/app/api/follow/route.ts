@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const backendResponse = await fetch("http://localhost:8080/api/users", {
-      method: "GET",
+    const body = await request.text();
+
+    const backendResponse = await fetch("http://localhost:8080/api/follow", {
+      method: "POST",
       headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
         Cookie: request.headers.get("cookie") || "",
       },
+      body: body,
     });
 
     const data = await backendResponse.json();
@@ -17,9 +21,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching users:", error);
+    console.error("Error following user:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch users" },
+      { success: false, error: "Failed to follow user" },
       { status: 500 }
     );
   }

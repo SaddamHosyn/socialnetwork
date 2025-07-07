@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	db "social-network/backend/pkg/db/queries"
+	"social-network/backend/pkg/db/sqlite"
+	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
 	"strconv"
 	"strings"
@@ -245,5 +247,29 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return
 	}
-	utils.Success(w, http.StatusOK, profile)
+
+	// Get follower and following counts
+	database := sqlite.GetDB()
+	followerCount, err := db.GetFollowerCount(database, userID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch follower count")
+		return
+	}
+
+	followingCount, err := db.GetFollowingCount(database, userID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch following count")
+		return
+	}
+
+	// Add follower counts to the profile
+	profileWithCounts := models.UserProfile{
+		User:           profile.User,
+		Posts:          profile.Posts,
+		Comments:       profile.Comments,
+		FollowerCount:  followerCount,
+		FollowingCount: followingCount,
+	}
+
+	utils.Success(w, http.StatusOK, profileWithCounts)
 }

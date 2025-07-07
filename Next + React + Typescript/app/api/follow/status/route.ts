@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const backendResponse = await fetch("http://localhost:8080/api/users", {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("user_id");
+    
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "User ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const backendResponse = await fetch(`http://localhost:8080/api/follow/status?user_id=${userId}`, {
       method: "GET",
       headers: {
         Cookie: request.headers.get("cookie") || "",
@@ -17,9 +27,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching users:", error);
+    console.error("Error fetching follow status:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch users" },
+      { success: false, error: "Failed to fetch follow status" },
       { status: 500 }
     );
   }

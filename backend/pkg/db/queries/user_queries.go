@@ -56,7 +56,7 @@ func GetChatUserList(currentUserID int, threshold time.Time) ([]models.PublicUse
 func GetUserBySessionToken(token string) (models.User, error) {
 	var user models.User
 	err := sqlite.GetDB().QueryRow(`
-        SELECT id, nickname, first_name, last_name, gender, email
+        SELECT users.id, nickname, first_name, last_name, gender, email
         FROM users
         INNER JOIN sessions ON sessions.user_id = users.id
         WHERE sessions.token = ?`, token,
@@ -181,4 +181,64 @@ func GetCommentsByUser(userID int, nick string) ([]models.Comment, error) {
 		comments = append(comments, c)
 	}
 	return comments, rows.Err()
+}
+
+// GetAllUsers gets all users except the current user for the user list
+func GetAllUsers(currentUserID int) ([]models.User, error) {
+	rows, err := sqlite.GetDB().Query(`
+		SELECT id, email, first_name, last_name, date_of_birth, gender, nickname, about_me, avatar, is_private, last_active_at
+		FROM users 
+		WHERE id != ?
+		ORDER BY nickname
+	`, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var user models.User
+		var nickname, aboutMe, avatar sql.NullString
+		var isPrivate sql.NullBool
+		var lastActiveAt sql.NullTime
+
+		err := rows.Scan(
+			&user.ID,
+			&user.Email,
+			&user.FirstName,
+			&user.LastName,
+			&user.DateOfBirth,
+			&user.Gender,
+			&nickname,
+			&aboutMe,
+			&avatar,
+			&isPrivate,
+			&lastActiveAt,
+		)
+		if err != nil {
+			continue
+		}
+
+		// Handle nullable fields
+		if nickname.Valid {
+			user.Nickname = nickname.String
+		}
+		if aboutMe.Valid {
+			user.AboutMe = aboutMe.String
+		}
+		if avatar.Valid {
+			user.Avatar = avatar.String
+		}
+		if isPrivate.Valid {
+			user.IsPrivate = isPrivate.Bool
+		}
+		if lastActiveAt.Valid {
+			user.CreatedAt = lastActiveAt.Time
+		}
+
+		users = append(users, user)
+	}
+
+	return users, rows.Err()
 }

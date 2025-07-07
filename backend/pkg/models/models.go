@@ -40,9 +40,11 @@ type PublicUser struct {
 }
 
 type UserProfile struct {
-	User     User      `json:"user"`
-	Posts    []Post    `json:"posts"`
-	Comments []Comment `json:"comments"`
+	User           User      `json:"user"`
+	Posts          []Post    `json:"posts"`
+	Comments       []Comment `json:"comments"`
+	FollowerCount  int       `json:"follower_count"`
+	FollowingCount int       `json:"following_count"`
 }
 
 type User struct {
@@ -55,6 +57,8 @@ type User struct {
 	Nickname    string    `json:"nickname"`
 	Avatar      string    `json:"avatar"`
 	AboutMe     string    `json:"about_me"`
+	IsPrivate   bool      `json:"is_private"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type UserFromDB struct {

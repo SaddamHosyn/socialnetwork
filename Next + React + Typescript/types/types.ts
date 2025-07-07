@@ -39,12 +39,16 @@ export type User = {
   avatar?: string;
   is_private?: boolean;
   created_at?: string;
+  follower_count?: number;
+  following_count?: number;
 };
 
 export type ProfileData = {
   user: User;
   posts: Post[];
   comments: Comment[];
+  follower_count: number;
+  following_count: number;
 };
 
 // Follower system types

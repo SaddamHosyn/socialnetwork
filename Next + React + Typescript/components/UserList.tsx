@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FollowButton } from "./FollowButton";
-import type { User } from "../types";
+import type { User } from "../types/types";
 
 interface UserListProps {
   users?: User[];
@@ -27,14 +27,14 @@ export const UserList: React.FC<UserListProps> = ({
 
   if (userList.length === 0) {
     return (
-      <div className="user-list">
+      <div id="user-list">
         <p className="no-users">No users found</p>
       </div>
     );
   }
 
   return (
-    <div className="user-list">
+    <div id="user-list">
       {userList.map((user) => (
         <div key={user.id} className="user-item" data-user-id={user.id}>
           <div className="user-info">
@@ -43,12 +43,12 @@ export const UserList: React.FC<UserListProps> = ({
               onClick={() => handleUserClick(user)}
               style={{ cursor: "pointer" }}
             >
-              {user.nickname}
+              {user.nickname || `${user.first_name} ${user.last_name}` || user.email}
             </h4>
             <p className="user-email">{user.email}</p>
             {user.is_private && <span className="private-badge">Private</span>}
             <small className="user-date">
-              Joined: {new Date(user.created_at).toLocaleDateString()}
+              Joined: {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
             </small>
           </div>
           <div className="user-actions">

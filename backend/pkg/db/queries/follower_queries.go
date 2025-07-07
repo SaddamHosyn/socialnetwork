@@ -182,3 +182,19 @@ func HasPendingFollowRequest(db *sql.DB, requesterID, requesteeID int) (bool, er
 	err := db.QueryRow(query, requesterID, requesteeID).Scan(&exists)
 	return exists, err
 }
+
+// GetFollowerCount returns the number of followers for a user
+func GetFollowerCount(db *sql.DB, userID int) (int, error) {
+	query := `SELECT COUNT(*) FROM followers WHERE followee_id = ?`
+	var count int
+	err := db.QueryRow(query, userID).Scan(&count)
+	return count, err
+}
+
+// GetFollowingCount returns the number of users that a user is following
+func GetFollowingCount(db *sql.DB, userID int) (int, error) {
+	query := `SELECT COUNT(*) FROM followers WHERE follower_id = ?`
+	var count int
+	err := db.QueryRow(query, userID).Scan(&count)
+	return count, err
+}

@@ -3,7 +3,8 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
+	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
 	"time"
@@ -94,12 +95,56 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get follower and following counts
+	database := sqlite.GetDB()
+	followerCount, err := db.GetFollowerCount(database, userID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch follower count")
+		return
+	}
+
+	followingCount, err := db.GetFollowingCount(database, userID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch following count")
+		return
+	}
+
 	// Build the final profile with the safe-for-JSON user struct
 	profile := models.UserProfile{
-		User:     userForJSON,
-		Posts:    posts,
-		Comments: comments,
+		User:           userForJSON,
+		Posts:          posts,
+		Comments:       comments,
+		FollowerCount:  followerCount,
+		FollowingCount: followingCount,
 	}
 
 	utils.Success(w, http.StatusOK, profile)
+}
+
+func FetchAllUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		utils.Fail(w, http.StatusUnauthorized, "Missing session token")
+		return
+	}
+
+	currentUser, err := db.GetUserBySessionToken(cookie.Value)
+	if err != nil {
+		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Get all users except the current user
+	users, err := db.GetAllUsers(currentUser.ID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Server error")
+		return
+	}
+
+	utils.Success(w, http.StatusOK, users)
 }
