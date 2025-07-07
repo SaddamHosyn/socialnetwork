@@ -1,4 +1,4 @@
-import { Post } from '../types/types';
+import { Post } from './types';
 
 
 export type Group = {
