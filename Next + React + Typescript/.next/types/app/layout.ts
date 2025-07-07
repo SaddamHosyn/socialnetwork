@@ -1,4 +1,4 @@
-// File: /Users/eliza.john/Downloads/social-network/Next + React + Typescript/app/layout.tsx
+// File: /Users/saddam.hussain/Desktop/millisocial/social-network/Next + React + Typescript/app/layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

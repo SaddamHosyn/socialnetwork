@@ -9,7 +9,7 @@ import PanelLeft from "../components/PanelLeft";
 import PanelRight from "../components/PanelRight";
 import PanelMiddle from "../components/PanelMiddle";
 import Groups from "../components/Groups";
-import GroupCreate from "../components/GroupCreate";
+import { GroupCreate } from "../components/GroupCreate";
 import type { Category } from "../types/types";
 
 type MainView = "forum" | "groups";
@@ -55,7 +55,7 @@ export default function Page() {
         } else {
           setIsLoggedIn(false);
         }
-      } catch (error) {
+      } catch {
         setIsLoggedIn(false);
       } finally {
         setAuthChecked(true); // Mark auth check as complete

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const cookie = req.headers.get("cookie");
   const body = await req.text();
 
-  const res = await fetch("http://localhost:8080/api/groups/posts/comments/create", {
+  const res = await fetch("http://localhost:8080/api/groups/posts/comments", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { FollowRequest, Follower, FollowStatus } from '../types/types';
+import type { } from '../types/types';
 
 interface ApiResponse<T> {
   success: boolean;

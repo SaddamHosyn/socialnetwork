@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
 import GroupList from "./GroupList";
-import GroupCreate from "./GroupCreate";
-import GroupDetails from "./GroupDetails";
+import { GroupCreate } from "./GroupCreate";
 import GroupInvitations from "./GroupInvitations";
 import GroupJoinRequests from "./GroupJoinRequests";
 import GroupPosts from "./GroupPost";
@@ -32,7 +31,7 @@ const Groups: React.FC = () => {
     setCurrentView("browse-all");
   };
 
-  const handleGroupCreated = (groupId: number) => {
+  const handleGroupCreated = () => {
     // Could fetch the created group details and navigate to it
     setCurrentView("my-groups");
   };

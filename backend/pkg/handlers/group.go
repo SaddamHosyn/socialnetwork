@@ -11,64 +11,64 @@ import (
 )
 
 // CreateGroupHandler creates a new group
-func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+func GroupsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		// Handle GET request - fetch all groups
+		q := r.URL.Query()
+		limit, _ := strconv.Atoi(q.Get("limit"))
+		if limit <= 0 || limit > 100 {
+			limit = 20
+		}
+		offset, _ := strconv.Atoi(q.Get("offset"))
+		if offset < 0 {
+			offset = 0
+		}
+
+		groups, err := db.GetAllGroups(limit, offset)
+		if err != nil {
+			utils.Fail(w, http.StatusInternalServerError, "Server error")
+			return
+		}
+
+		utils.Success(w, http.StatusOK, groups)
+
+	case http.MethodPost:
+		// Parse multipart form data for FormData compatibility
+		err := r.ParseMultipartForm(10 << 20) // 10MB max memory
+		if err != nil {
+			// Fallback to regular form parsing for URL-encoded data
+			err = r.ParseForm()
+			if err != nil {
+				utils.Fail(w, http.StatusBadRequest, "Bad request")
+				return
+			}
+		}
+
+		userID := r.Context().Value(userIDKey).(int)
+		title := strings.TrimSpace(r.FormValue("title"))
+		description := strings.TrimSpace(r.FormValue("description"))
+
+		if validationErr := utils.ValidateGroup(title, description); validationErr != nil {
+			utils.Fail(w, http.StatusBadRequest, validationErr.Message)
+			return
+		}
+
+		groupID, err := db.CreateGroup(userID, title, description)
+		if err != nil {
+			log.Printf("Create group error: %v", err)
+			utils.Fail(w, http.StatusInternalServerError, "Server error")
+			return
+		}
+
+		utils.Success(w, http.StatusCreated, map[string]any{
+			"message":  "Group created successfully",
+			"group_id": groupID,
+		})
+
+	default:
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
 	}
-
-	err := r.ParseForm()
-	if err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Bad request")
-		return
-	}
-
-	userID := r.Context().Value(userIDKey).(int)
-	title := strings.TrimSpace(r.FormValue("title"))
-	description := strings.TrimSpace(r.FormValue("description"))
-
-	if validationErr := utils.ValidateGroup(title, description); validationErr != nil {
-		utils.Fail(w, http.StatusBadRequest, validationErr.Message)
-		return
-	}
-
-	groupID, err := db.CreateGroup(userID, title, description)
-	if err != nil {
-		log.Printf("Create group error: %v", err)
-		utils.Fail(w, http.StatusInternalServerError, "Server error")
-		return
-	}
-
-	utils.Success(w, http.StatusCreated, map[string]any{
-		"message":  "Group created successfully",
-		"group_id": groupID,
-	})
-}
-
-// FetchAllGroups returns all groups for browsing
-func FetchAllGroups(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	q := r.URL.Query()
-	limit, _ := strconv.Atoi(q.Get("limit"))
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	offset, _ := strconv.Atoi(q.Get("offset"))
-	if offset < 0 {
-		offset = 0
-	}
-
-	groups, err := db.GetAllGroups(limit, offset)
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Server error")
-		return
-	}
-
-	utils.Success(w, http.StatusOK, groups)
 }
 
 // FetchUserGroups returns groups where the user is a member
