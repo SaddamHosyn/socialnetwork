@@ -1207,3 +1207,101 @@ a:hover,
   margin-top: 2px;
 }
 
+/* Add these styles to your global CSS file */
+
+.form-wrapper {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-wrapper h2,
+.form-wrapper h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.form-wrapper input,
+.form-wrapper textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.form-wrapper input:focus,
+.form-wrapper textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-wrapper input:disabled,
+.form-wrapper textarea:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.button-group button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.button-group button:first-child {
+  background-color: #007bff;
+  color: white;
+}
+
+.button-group button:first-child:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.button-group button:last-child {
+  background-color: #6c757d;
+  color: white;
+}
+
+.button-group button:last-child:hover:not(:disabled) {
+  background-color: #545b62;
+}
+
+.button-group button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.post-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.post-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.2s;
+}
+
+.form-error {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}

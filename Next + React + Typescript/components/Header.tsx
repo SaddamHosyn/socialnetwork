@@ -4,6 +4,7 @@ type Props = {
   onLogin: () => void;
   onRegister: () => void;
   onProfile: () => void;
+  onCreateGroup?: () => void;
 };
 
 const Header = ({
@@ -12,6 +13,7 @@ const Header = ({
   onLogin,
   onRegister,
   onProfile,
+  onCreateGroup,
 }: Props) => (
   <header>
     <div className="header-left">
@@ -25,6 +27,7 @@ const Header = ({
         </>
       ) : (
         <>
+          <button onClick={onCreateGroup}>Create Group</button>
           <button onClick={onProfile}>Profile</button>
           <button onClick={onLogout}>Logout</button>
         </>

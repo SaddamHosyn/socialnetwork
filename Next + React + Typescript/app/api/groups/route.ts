@@ -1,4 +1,3 @@
-
 import { type NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -19,4 +18,17 @@ export async function GET(req: NextRequest) {
 
   return res;
 }
+export async function POST(req: NextRequest) {
+  const cookie = req.headers.get("cookie");
+  const formData = await req.formData();
 
+  const res = await fetch("http://localhost:8080/api/groups", {
+    method: "POST",
+    headers: {
+      Cookie: cookie || "",
+    },
+    body: formData,
+  });
+
+  return res;
+}
