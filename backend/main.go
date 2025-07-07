@@ -48,6 +48,15 @@ func main() {
 	http.Handle("/api/notifications", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetNotificationsHandler)))
 	http.Handle("/api/notifications/read", handlers.AuthMiddleware(http.HandlerFunc(handlers.MarkNotificationReadHandler)))
 
+	// Follower system endpoints
+	http.Handle("/api/follow", handlers.AuthMiddleware(http.HandlerFunc(handlers.FollowUserHandler)))
+	http.Handle("/api/unfollow", handlers.AuthMiddleware(http.HandlerFunc(handlers.UnfollowUserHandler)))
+	http.Handle("/api/follow/request/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToFollowRequestHandler)))
+	http.Handle("/api/follow/requests", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowRequestsHandler)))
+	http.Handle("/api/follow/status", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowStatusHandler)))
+	http.Handle("/api/followers", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowersHandler)))
+	http.Handle("/api/following", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowingHandler)))
+
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)
 	http.HandleFunc("/api/chat/history", chat.HandleChatHistory)
