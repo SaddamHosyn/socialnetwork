@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -54,6 +55,18 @@ type User struct {
 	Nickname    string    `json:"nickname"`
 	Avatar      string    `json:"avatar"`
 	AboutMe     string    `json:"about_me"`
+}
+
+type UserFromDB struct {
+	ID          int
+	Email       string
+	FirstName   string
+	LastName    string
+	DateOfBirth time.Time
+	GenderID    int
+	Nickname    sql.NullString // Can be NULL
+	Avatar      sql.NullString // Can be NULL
+	AboutMe     sql.NullString // Can be NULL
 }
 
 type Message struct {
