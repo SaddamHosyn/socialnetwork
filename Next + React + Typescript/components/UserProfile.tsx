@@ -27,7 +27,12 @@ const UserProfile: React.FC = () => {
 
   return (
     <div>
-      <h2>{user.nickname}'s Profile</h2>
+      <h2>
+        {(user.nickname ?? "").trim() !== ""
+          ? user.nickname
+          : `${user.first_name} ${user.last_name}`}{" "}
+        Profile
+      </h2>
       {user.avatar && user.avatar.trim() !== "" ? (
         <img
           src={user.avatar}
@@ -68,9 +73,15 @@ const UserProfile: React.FC = () => {
         <b>Gender:</b> {user.gender}
         <br />
         <b>Email:</b> {user.email}
+        {(user.about_me ?? "").trim() !== "" && (
+          <div style={{ margin: "12px 0" }}>
+            <b>About Me:</b>
+            <br />
+            <span>{user.about_me}</span>
+          </div>
+        )}
       </div>
       <div style={{ marginBottom: 24 }}></div>
-
       <h3>User's Posts</h3>
       <div>
         {postList.length === 0 ? (

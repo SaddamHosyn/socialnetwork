@@ -67,17 +67,26 @@ func GetUserBySessionToken(token string) (models.User, error) {
 	return user, nil
 }
 
-func GetUserProfileInfo(userID int) (models.User, int, error) {
-	var user models.User
-	var genderID int
+func GetUserProfileInfo(userID int) (models.UserFromDB, error) {
+	var user models.UserFromDB
 	err := sqlite.GetDB().QueryRow(`
-        SELECT id, nickname, first_name, last_name, date_of_birth, gender, email
+        SELECT id, nickname, first_name, last_name, date_of_birth, gender, email, avatar, about_me
         FROM users WHERE id = ?`, userID,
-	).Scan(&user.ID, &user.Nickname, &user.FirstName, &user.LastName, &user.DateOfBirth, &genderID, &user.Email)
+	).Scan(
+		&user.ID,
+		&user.Nickname, // Scan into sql.NullString
+		&user.FirstName,
+		&user.LastName,
+		&user.DateOfBirth,
+		&user.GenderID,
+		&user.Email,
+		&user.Avatar,  // Scan into sql.NullString
+		&user.AboutMe, // Scan into sql.NullString
+	)
 	if err != nil {
-		return user, 0, err
+		return user, err
 	}
-	return user, genderID, nil
+	return user, nil
 }
 
 func GetUserProfile(userID int) (models.UserProfile, error) {

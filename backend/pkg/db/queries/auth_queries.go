@@ -6,10 +6,23 @@ import (
 )
 
 func RegisterUser(email, hashedPassword, firstName, lastName, nickname, aboutMe, avatarPath string, dob time.Time, genderInt int) error {
+	var nicknamePtr any = nickname
+	if nickname == "" {
+		nicknamePtr = nil // Use nil to insert a database NULL
+	}
+	var aboutMePtr any = aboutMe
+	if aboutMe == "" {
+		aboutMePtr = nil
+	}
+	var avatarPathPtr any = avatarPath
+	if avatarPath == "" {
+		avatarPathPtr = nil
+	}
+
 	_, err := sqlite.GetDB().Exec(`
 	    INSERT INTO users (email, password, date_of_birth, gender, first_name, last_name, nickname, about_me, avatar)
 	    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		email, hashedPassword, dob.Format("2006-01-02"), genderInt, firstName, lastName, nickname, aboutMe, avatarPath)
+		email, hashedPassword, dob.Format("2006-01-02"), genderInt, firstName, lastName, nicknamePtr, aboutMePtr, avatarPathPtr)
 	return err
 }
 

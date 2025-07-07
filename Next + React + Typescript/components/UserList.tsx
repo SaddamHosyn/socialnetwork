@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { FollowButton } from './FollowButton';
-import type { User } from '../types';
+import React, { useState, useEffect } from "react";
+import { FollowButton } from "./FollowButton";
+import type { User } from "../types";
 
 interface UserListProps {
   users?: User[];
@@ -11,13 +11,13 @@ interface UserListProps {
 export const UserList: React.FC<UserListProps> = ({
   users = [],
   currentUserId,
-  onUserClick
+  onUserClick,
 }) => {
   const [userList, setUserList] = useState<User[]>([]);
 
   useEffect(() => {
     // Filter out current user from the list
-    const filteredUsers = users.filter(user => user.id !== currentUserId);
+    const filteredUsers = users.filter((user) => user.id !== currentUserId);
     setUserList(filteredUsers);
   }, [users, currentUserId]);
 
@@ -38,10 +38,10 @@ export const UserList: React.FC<UserListProps> = ({
       {userList.map((user) => (
         <div key={user.id} className="user-item" data-user-id={user.id}>
           <div className="user-info">
-            <h4 
-              className="user-nickname" 
+            <h4
+              className="user-nickname"
               onClick={() => handleUserClick(user)}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: "pointer" }}
             >
               {user.nickname}
             </h4>

@@ -44,19 +44,20 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, genderID, err := db.GetUserProfileInfo(userID)
+	// Fetch user data using the corrected query function
+	userFromDB, err := db.GetUserProfileInfo(userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			utils.Fail(w, http.StatusNotFound, "User not found")
 		} else {
-			utils.Fail(w, http.StatusInternalServerError, "Server error")
+			utils.Fail(w, http.StatusInternalServerError, "Server error fetching profile")
 		}
 		return
 	}
 
 	// Map genderID to string
 	gender := "Unknown"
-	switch genderID {
+	switch userFromDB.GenderID {
 	case 1:
 		gender = "Male"
 	case 2:
@@ -65,40 +66,37 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 		gender = "Alien"
 	}
 
-	posts, err := db.GetPostsByUser(userID, user.Nickname)
+	// Convert the UserFromDB to a plain User struct for the JSON response.
+	// This is where we handle the NULL values.
+	userForJSON := models.User{
+		ID:          userFromDB.ID,
+		Email:       userFromDB.Email,
+		FirstName:   userFromDB.FirstName,
+		LastName:    userFromDB.LastName,
+		DateOfBirth: userFromDB.DateOfBirth,
+		Gender:      gender,
+		// If Nickname is valid (not NULL), use its string value. Otherwise, use an empty string.
+		Nickname: userFromDB.Nickname.String,
+		Avatar:   userFromDB.Avatar.String,
+		AboutMe:  userFromDB.AboutMe.String,
+	}
+
+	// The nickname passed to GetPostsByUser and GetCommentsByUser should also be the safe string.
+	posts, err := db.GetPostsByUser(userID, userForJSON.Nickname)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch posts")
 		return
 	}
 
-	comments, err := db.GetCommentsByUser(userID, user.Nickname)
+	comments, err := db.GetCommentsByUser(userID, userForJSON.Nickname)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch comments")
 		return
 	}
 
+	// Build the final profile with the safe-for-JSON user struct
 	profile := models.UserProfile{
-		User: struct {
-			ID          int       `json:"id"`
-			Email       string    `json:"email"`
-			FirstName   string    `json:"first_name"`
-			LastName    string    `json:"last_name"`
-			DateOfBirth time.Time `json:"date_of_birth"`
-			Gender      string    `json:"gender"`
-			Nickname    string    `json:"nickname"`
-			Avatar      string    `json:"avatar"`
-			AboutMe     string    `json:"about_me"`
-		}{
-			ID:          user.ID,
-			Email:       user.Email,
-			FirstName:   user.FirstName,
-			LastName:    user.LastName,
-			DateOfBirth: user.DateOfBirth,
-			Gender:      gender,
-			Nickname:    user.Nickname,
-			Avatar:      user.Avatar,
-			AboutMe:     user.AboutMe,
-		},
+		User:     userForJSON,
 		Posts:    posts,
 		Comments: comments,
 	}
