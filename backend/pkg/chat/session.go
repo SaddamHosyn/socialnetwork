@@ -5,7 +5,7 @@ import (
 	"social-network/backend/pkg/models"
 )
 
-func CurrentUser(path, val string) (models.User, error) {
+func CurrentUser(val string) (models.User, error) {
 	row := sqlite.GetDB().QueryRow(`
 		SELECT users.id, users.nickname, users.first_name, users.last_name, users.gender, users.email 
 		FROM sessions 
