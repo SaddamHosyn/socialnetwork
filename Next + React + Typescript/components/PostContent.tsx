@@ -40,7 +40,11 @@ const PostContent = ({ post, onCommentClick, onVote }: Props) => (
     </div>
     <div style={{ marginTop: 8 }}>
       {onVote ? (
-        <Vote votes={post.votes} onVote={onVote} />
+        <Vote
+          votes={post.votes}
+          onVote={onVote}
+          userVote={post.userVote ?? 0}
+        />
       ) : (
         <span style={{ marginRight: 8, fontWeight: 600 }}>
           {post.votes} votes

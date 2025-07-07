@@ -9,6 +9,7 @@ export type Post = {
   categories: string[];
   votes: number;
   comments_count?: number;
+  userVote?: 1 | -1 | 0;
 };
 
 export type Category = {

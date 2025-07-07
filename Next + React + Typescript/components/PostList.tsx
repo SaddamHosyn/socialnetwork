@@ -26,7 +26,14 @@ const PostList: React.FC<Props> = ({ categoryId, onPostSelect }) => {
 
   // --- POST VOTING LOGIC ---
   const handleVote = async (postId: number, vote: 1 | -1) => {
-    const res = await fetch("/api/post/vote", {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        if (p.userVote === vote) return p;
+        return p;
+      })
+    );
+    const res = await fetch("/api/vote", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -37,7 +44,15 @@ const PostList: React.FC<Props> = ({ categoryId, onPostSelect }) => {
     });
     if (res.ok) {
       setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, votes: p.votes + vote } : p))
+        prev.map((p) => {
+          if (p.id !== postId) return p;
+          let newVotes = p.votes;
+          if (p.userVote === 1 && vote === -1) newVotes -= 2;
+          else if (p.userVote === -1 && vote === 1) newVotes += 2;
+          else if (p.userVote === 0 || p.userVote === undefined)
+            newVotes += vote;
+          return { ...p, votes: newVotes, userVote: vote };
+        })
       );
     }
   };

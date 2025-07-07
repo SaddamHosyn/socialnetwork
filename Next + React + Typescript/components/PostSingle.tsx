@@ -27,7 +27,7 @@ const PostSingle: React.FC<Props> = ({ postId, onClose }) => {
   // Add vote handler for single post view
   const handlePostVote = async (vote: 1 | -1) => {
     if (!post) return;
-    const res = await fetch("/api/post/vote", {
+    const res = await fetch("/api/vote", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -47,7 +47,7 @@ const PostSingle: React.FC<Props> = ({ postId, onClose }) => {
   return (
     <div>
       <button onClick={onClose}>Back</button>
-      <PostContent post={post} onVote={handlePostVote} />
+      <PostContent post={post} onVote={(v) => handlePostVote(v)} />
       <h3>Comments</h3>
       <CommentList postId={post.id} />
       <CommentCreate postId={post.id} onCommentAdded={() => {}} />
