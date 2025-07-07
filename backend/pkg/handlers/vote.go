@@ -50,12 +50,26 @@ func VoteHandler(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(userIDKey).(int)
 
-	err = db.InsertVote(userID, postID, commentID, voteType)
+	// The InsertVote function handles all logic: insert, update, or delete.
+	newVoteStatus, err := db.InsertVote(userID, postID, commentID, voteType)
 	if err != nil {
 		log.Printf("Vote error: %v", err)
-		utils.Fail(w, http.StatusInternalServerError, "Server error")
+		utils.Fail(w, http.StatusInternalServerError, "Server error processing vote")
 		return
 	}
 
-	utils.Success(w, http.StatusOK, nil)
+	// After the vote is processed, get the new total sum.
+	newVoteTotal, err := db.GetVoteSum(postID, commentID)
+	if err != nil {
+		log.Printf("GetVoteSum error: %v", err)
+		utils.Fail(w, http.StatusInternalServerError, "Server error calculating new total")
+		return
+	}
+
+	// Return the new state to the frontend.
+	utils.Success(w, http.StatusOK, map[string]any{
+		"message":        "Vote processed",
+		"new_vote_total": newVoteTotal,
+		"user_vote":      newVoteStatus,
+	})
 }
