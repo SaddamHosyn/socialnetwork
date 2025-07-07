@@ -1,9 +1,1 @@
-{
-  "/api/register/route": "app/api/register/route.js",
-  "/api/login/route": "app/api/login/route.js",
-  "/api/profile/route": "app/api/profile/route.js",
-  "/api/me/route": "app/api/me/route.js",
-  "/api/categories/route": "app/api/categories/route.js",
-  "/api/posts/route": "app/api/posts/route.js",
-  "/page": "app/page.js"
-}
+{}
