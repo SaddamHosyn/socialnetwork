@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/utils"
 	"strconv"
 	"strings"
@@ -44,6 +44,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	genderStr := r.FormValue("gender")
 	nickname := strings.ToLower(strings.TrimSpace(r.FormValue("nickname")))
 	aboutMe := strings.TrimSpace(r.FormValue("about_me"))
+	privacyStr := strings.ToLower(strings.TrimSpace(r.FormValue("privacy")))
+
+	// Convert privacy string to boolean
+	isPrivate := privacyStr == "private"
 
 	dob, err := time.Parse("2006-01-02", dateOfBirth)
 	if err != nil {
@@ -88,7 +92,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		avatarPath = savedPath
 	}
 
-	err = db.RegisterUser(email, string(hashedPassword), firstName, lastName, nickname, aboutMe, avatarPath, dob, genderInt)
+	err = db.RegisterUser(email, string(hashedPassword), firstName, lastName, nickname, aboutMe, avatarPath, dob, genderInt, isPrivate)
 	if err != nil {
 		log.Printf("REGISTER ERROR: %v", err)
 		if strings.Contains(err.Error(), "UNIQUE constraint") {

@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func RegisterUser(email, hashedPassword, firstName, lastName, nickname, aboutMe, avatarPath string, dob time.Time, genderInt int) error {
+func RegisterUser(email, hashedPassword, firstName, lastName, nickname, aboutMe, avatarPath string, dob time.Time, genderInt int, isPrivate bool) error {
 	var nicknamePtr any = nickname
 	if nickname == "" {
 		nicknamePtr = nil // Use nil to insert a database NULL
@@ -20,9 +20,9 @@ func RegisterUser(email, hashedPassword, firstName, lastName, nickname, aboutMe,
 	}
 
 	_, err := sqlite.GetDB().Exec(`
-	    INSERT INTO users (email, password, date_of_birth, gender, first_name, last_name, nickname, about_me, avatar)
-	    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		email, hashedPassword, dob.Format("2006-01-02"), genderInt, firstName, lastName, nicknamePtr, aboutMePtr, avatarPathPtr)
+	    INSERT INTO users (email, password, date_of_birth, gender, first_name, last_name, nickname, about_me, avatar, is_private)
+	    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		email, hashedPassword, dob.Format("2006-01-02"), genderInt, firstName, lastName, nicknamePtr, aboutMePtr, avatarPathPtr, isPrivate)
 	return err
 }
 
