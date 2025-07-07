@@ -57,7 +57,7 @@ func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	token := cookie.Value
 
-	currentUser, err := CurrentUser("forum.db", token)
+	currentUser, err := CurrentUser(token)
 	if err != nil {
 		log.Println("User is not authorized, closeing websocket")
 		return
