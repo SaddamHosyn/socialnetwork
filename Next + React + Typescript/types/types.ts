@@ -9,6 +9,7 @@ export type Post = {
   categories: string[];
   votes: number;
   comments_count?: number;
+  userVote?: 1 | -1 | 0;
 };
 
 export type Category = {
@@ -29,10 +30,10 @@ export type Comment = {
 export type User = {
   id: number;
   email: string;
-  first_name?: string;
-  last_name?: string;
-  date_of_birth?: string;
-  gender?: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  gender: string;
   nickname?: string;
   about_me?: string;
   avatar?: string;
