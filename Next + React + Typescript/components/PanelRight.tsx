@@ -84,26 +84,13 @@ const PanelRight = () => {
         )}
       </div>
 
-      <div style={{ marginTop: "30px" }}>
-        <button 
-          onClick={() => setShowFollowerSystem(!showFollowerSystem)}
-          style={{
-            padding: "10px 15px",
-            backgroundColor: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            marginBottom: "15px"
-          }}
-        >
-          {showFollowerSystem ? "Hide" : "Show"} Follower System
-        </button>
+     
+
         
         {showFollowerSystem && currentUserId && (
           <FollowerSystem currentUserId={currentUserId} />
         )}
-      </div>
+      
     </aside>
   );
 };
