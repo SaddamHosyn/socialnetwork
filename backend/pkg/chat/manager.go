@@ -45,6 +45,7 @@ func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	defer conn.Close()
 
+	//checking git
 	// get the session token and find matching user from the db:
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
