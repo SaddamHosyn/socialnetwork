@@ -21,40 +21,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/categories/route.js"
     ],
-    "/api/posts/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/posts/route.js"
-    ],
     "/api/login/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/login/route.js"
     ],
-    "/api/groups/route": [
+    "/api/posts/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/groups/route.js"
-    ],
-    "/api/post/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/post/route.js"
-    ],
-    "/api/comment/fetch/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/comment/fetch/route.js"
+      "static/chunks/app/api/posts/route.js"
     ],
     "/api/profile/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/profile/route.js"
     ],
-    "/api/logout/route": [
+    "/api/vote/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/logout/route.js"
+      "static/chunks/app/api/vote/route.js"
     ]
   }
 }
