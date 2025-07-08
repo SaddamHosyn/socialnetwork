@@ -1,17 +1,10 @@
 // useGroups.ts
 import { useState, useCallback } from 'react';
-
-interface Group {
-  id: string;
-  name: string;
-  description?: string;
-  // Add other group properties as needed
-}
+import { Group } from '../types/groups';
 
 interface CreateGroupData {
   name: string;
   description?: string;
-  // Add other properties as needed
 }
 
 export const useGroups = () => {
@@ -30,26 +23,23 @@ export const useGroups = () => {
       if (groupData.description) {
         formData.append('description', groupData.description);
       }
-      // Add other fields as needed
 
       const response = await fetch('/api/groups', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
+        credentials: 'include',
         body: formData.toString(),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to create group: ${response.status} ${errorText}`);
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to create group: ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
-      
-      // Refresh groups list or add the new group to the state
-      // You might want to call fetchGroups() here or add the new group to the state
-      
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create group';
@@ -65,14 +55,23 @@ export const useGroups = () => {
     setError(null);
 
     try {
-      const response = await fetch(`/api/groups?limit=${limit}&offset=${offset}`);
+      const response = await fetch(`/api/groups?limit=${limit}&offset=${offset}`, {
+        credentials: 'include'
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch groups: ${response.status}`);
       }
 
       const result = await response.json();
-      setGroups(result.groups || result); // Adjust based on your API response structure
+      
+      // Handle the API response structure
+      if (result.success) {
+        setGroups(result.data || []);
+      } else {
+        // If it's an array directly, use it
+        setGroups(Array.isArray(result) ? result : []);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch groups';
       setError(errorMessage);
