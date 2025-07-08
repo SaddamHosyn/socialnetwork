@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"github.com/google/uuid"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -11,6 +10,8 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -40,11 +41,11 @@ func SaveUploadFile(fh *multipart.FileHeader) (string, *ValidationError) {
 	}
 
 	// ensure upload dir
-	if err := os.MkdirAll("./uploads/posts", 0755); err != nil {
+	if err := os.MkdirAll("./uploads", 0755); err != nil {
 		return "", &ValidationError{Message: "Could not prepare upload directory"}
 	}
 
-	filename := fmt.Sprintf("./uploads/posts%s%s", uuid.New().String(), ext)
+	filename := fmt.Sprintf("./uploads/%s%s", uuid.New().String(), ext)
 	if err := os.WriteFile(filename, processed, 0644); err != nil {
 		return "", &ValidationError{Message: "Could not save image"}
 	}
@@ -137,9 +138,6 @@ func ValidateAvatar(r io.Reader, mimeType string) ([]byte, string, *ValidationEr
 		return nil, "", &ValidationError{Message: "Invalid image data"}
 	}
 
-	// Crop to center square
-	img = CropCenterSquare(img)
-
 	// Resize to max 256x256 (for example)
 	maxSize := 256
 	if img.Bounds().Dx() > maxSize {
@@ -162,25 +160,6 @@ func NearestNeighborResize(src image.Image, w2, h2 int) *image.RGBA {
 		for x2 := 0; x2 < w2; x2++ {
 			x1 := b.Min.X + x2*w1/w2
 			dst.Set(x2, y2, src.At(x1, y1))
-		}
-	}
-	return dst
-}
-
-func CropCenterSquare(img image.Image) image.Image {
-	bounds := img.Bounds()
-	w, h := bounds.Dx(), bounds.Dy()
-	size := w
-	if h < w {
-		size = h
-	}
-	x0 := bounds.Min.X + (w-size)/2
-	y0 := bounds.Min.Y + (h-size)/2
-	rect := image.Rect(0, 0, size, size)
-	dst := image.NewRGBA(rect)
-	for y := 0; y < size; y++ {
-		for x := 0; x < size; x++ {
-			dst.Set(x, y, img.At(x0+x, y0+y))
 		}
 	}
 	return dst

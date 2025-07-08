@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export type Post = {
   id: number;
   group?: string;
@@ -11,20 +12,37 @@ export type Post = {
   comments_count?: number;
   userVote?: 1 | -1 | 0;
 };
+=======
+// types/types.ts
+>>>>>>> origin/milli
 
 export type Category = {
   id: number;
   name: string;
 };
 
+export type Post = {
+  id: number;
+  title: string;
+  content: string;
+  created_at: string;
+  nickname: string;
+  group?: string;
+  image_paths?: string[];
+  categories: string[];
+  votes: number;
+  comments_count?: number;
+  userVote?: number; // -1, 0, or 1
+};
+
 export type Comment = {
   id: number;
   post_id: number;
-  user_id: number;
-  nickname: string;
   content: string;
-  created_at: string;
+  author: string;
+  nickname: string; // Added this field
   votes: number;
+  created_at: string;
 };
 
 export type User = {
@@ -34,18 +52,24 @@ export type User = {
   last_name: string;
   date_of_birth: string;
   gender: string;
-  nickname?: string;
-  about_me?: string;
   avatar?: string;
+<<<<<<< HEAD
   is_private?: boolean;
   created_at?: string;
   follower_count?: number;
   following_count?: number;
+=======
+  nickname: string;
+  about_me?: string;
+  is_private?: boolean; // Added this field that UserList component expects
+  created_at: string; // Added this field that UserList component expects
+>>>>>>> origin/milli
 };
 
 export type ProfileData = {
   user: User;
   posts: Post[];
+<<<<<<< HEAD
   comments: Comment[];
   follower_count: number;
   following_count: number;
@@ -98,3 +122,16 @@ export type NotificationType =
   | 'group_invite'
   | 'join_request'
   | 'group_event';
+=======
+};
+
+export type Group = {
+  id: number;
+  name: string;
+  description: string;
+  privacy: 'public' | 'private';
+  members_count: number;
+  is_member: boolean;
+  created_at: string;
+};
+>>>>>>> origin/milli

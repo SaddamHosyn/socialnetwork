@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -22,4 +23,10 @@ export async function POST(req: NextRequest) {
       "content-type": res.headers.get("content-type") || "application/json",
     },
   });
+=======
+import { NextResponse } from 'next/server';
+
+export async function POST() {
+  return NextResponse.json({ message: 'Comment create endpoint - not implemented yet' }, { status: 501 });
+>>>>>>> origin/milli
 }

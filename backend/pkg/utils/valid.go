@@ -90,3 +90,32 @@ func ValidateComment(content string) *ValidationError {
 	}
 	return nil
 }
+
+func ValidateGroup(title, description string) *ValidationError {
+	if title == "" || description == "" {
+		return &ValidationError{Message: "Title and description are required"}
+	}
+	if len(title) < 3 || len(title) > 50 {
+		return &ValidationError{Message: "Title must be 3-50 characters"}
+	}
+	if len(description) < 10 || len(description) > 500 {
+		return &ValidationError{Message: "Description must be 10-500 characters"}
+	}
+	return nil
+}
+
+func ValidateEvent(title, description string, eventTime time.Time) *ValidationError {
+	if title == "" || description == "" {
+		return &ValidationError{Message: "Title and description are required"}
+	}
+	if len(title) < 3 || len(title) > 100 {
+		return &ValidationError{Message: "Title must be 3-100 characters"}
+	}
+	if len(description) < 10 || len(description) > 1000 {
+		return &ValidationError{Message: "Description must be 10-1000 characters"}
+	}
+	if eventTime.Before(time.Now()) {
+		return &ValidationError{Message: "Event time must be in the future"}
+	}
+	return nil
+}

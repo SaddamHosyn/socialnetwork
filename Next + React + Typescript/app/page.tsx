@@ -1,14 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
-import Modal from "../components/Modal";
-import UserLogin from "../components/UserLogin";
-import UserRegister from "../components/UserRegister";
-import UserProfile from "../components/UserProfile";
-import PanelLeft from "../components/PanelLeft";
-import PanelRight from "../components/PanelRight";
-import PanelMiddle from "../components/PanelMiddle";
+import HomePage from "../components/pages/HomePage";
+import PostsPage from "../components/pages/PostsPage";
+import ProfilePage from "../components/pages/ProfilePage";
+import LoginPage from "../components/pages/LoginPage";
+import RegisterPage from "../components/pages/RegisterPage";
+import GroupsPage from "../components/pages/GroupsPage";
 import type { Category } from "../types/types";
+
+type PageType = "home" | "posts" | "profile" | "login" | "register" | "groups";
 
 export default function Page() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -16,20 +17,19 @@ export default function Page() {
     null
   );
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false); // Track if initial auth check is done
-  const [showLogin, setShowLogin] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [currentPage, setCurrentPage] = useState<PageType>("home"); // Always start with home
 
-  // --- UPDATED LOGOUT FUNCTION ---
   const handleLogout = async () => {
     try {
       const res = await fetch("/api/logout", {
         method: "POST",
+        credentials: "include",
       });
 
       if (res.ok) {
         setIsLoggedIn(false);
+        setCurrentPage("home");
       } else {
         console.error("Logout failed:", await res.text());
       }
@@ -38,37 +38,104 @@ export default function Page() {
     }
   };
 
-  // --- USE EFFECT FOR AUTH CHECK & DATA FETCHING ---
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+    setCurrentPage("posts");
+  };
+
+  const handleRegisterSuccess = () => {
+    setCurrentPage("login");
+  };
+
+  const handleNavigate = (page: PageType) => {
+    // Prevent navigation to protected pages if not logged in
+    if (!isLoggedIn && ["posts", "profile", "groups"].includes(page)) {
+      setCurrentPage("login");
+      return;
+    }
+    setCurrentPage(page);
+  };
+
   useEffect(() => {
-    // Function to check the user's authentication status
     const checkAuthStatus = async () => {
       try {
-        const res = await fetch("/api/me");
+        const res = await fetch("/api/me", { credentials: "include" });
         if (res.ok) {
           setIsLoggedIn(true);
+          // Don't automatically redirect to posts - let user choose
         } else {
           setIsLoggedIn(false);
         }
       } catch (error) {
         setIsLoggedIn(false);
       } finally {
-        setAuthChecked(true); // Mark auth check as complete
+        setAuthChecked(true);
       }
     };
 
     checkAuthStatus();
 
-    // Fetch categories (can run in parallel with auth check)
-    fetch("/api/categories")
+    // Fetch categories
+    fetch("/api/categories", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setCategories(data.data);
-      });
+      })
+      .catch((error) => console.error("Error fetching categories:", error));
   }, []);
 
-  // Don't render the main content until the initial auth check is complete
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case "home":
+        return (
+          <HomePage
+            onLogin={() => setCurrentPage("login")}
+            onRegister={() => setCurrentPage("register")}
+          />
+        );
+      case "posts":
+        return (
+          <PostsPage
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            setSelectedCategoryId={setSelectedCategoryId}
+          />
+        );
+      case "profile":
+        return <ProfilePage />;
+      case "login":
+        return (
+          <LoginPage
+            onSuccess={handleLoginSuccess}
+            onCancel={() => setCurrentPage("home")}
+          />
+        );
+      case "register":
+        return (
+          <RegisterPage
+            onSuccess={handleRegisterSuccess}
+            onCancel={() => setCurrentPage("home")}
+          />
+        );
+      case "groups":
+        return <GroupsPage />;
+      default:
+        return (
+          <HomePage
+            onLogin={() => setCurrentPage("login")}
+            onRegister={() => setCurrentPage("register")}
+          />
+        );
+    }
+  };
+
   if (!authChecked) {
-    return <div>Loading...</div>; // Or a spinner component
+    return (
+      <div className="loading-page">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   return (
@@ -76,57 +143,10 @@ export default function Page() {
       <Header
         onLogout={handleLogout}
         isLoggedIn={isLoggedIn}
-        onLogin={() => setShowLogin(true)}
-        onRegister={() => setShowRegister(true)}
-        onProfile={() => setShowProfile(true)}
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
       />
-      <main>
-        <PanelLeft
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          onCategorySelect={setSelectedCategoryId}
-        />
-        <div style={{ flex: 1 }}>
-          <PanelMiddle
-            selectedCategoryId={selectedCategoryId}
-            categories={categories}
-          />
-        </div>
-        <PanelRight />
-      </main>
-      <Modal
-        open={showLogin}
-        onClose={() => setShowLogin(false)}
-        containerId="login-container"
-      >
-        <UserLogin
-          onSuccess={() => {
-            setIsLoggedIn(true);
-            setShowLogin(false);
-          }}
-          onCancel={() => setShowLogin(false)}
-        />
-      </Modal>
-      <Modal
-        open={showRegister}
-        onClose={() => setShowRegister(false)}
-        containerId="register-container"
-      >
-        <UserRegister
-          onSuccess={() => {
-            setShowRegister(false);
-            setShowLogin(true);
-          }}
-          onCancel={() => setShowRegister(false)}
-        />
-      </Modal>
-      <Modal
-        open={showProfile}
-        onClose={() => setShowProfile(false)}
-        containerId="profile-container"
-      >
-        <UserProfile />
-      </Modal>
+      <main className="main-content">{renderCurrentPage()}</main>
     </>
   );
 }

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
 	"strconv"
@@ -34,14 +34,18 @@ func CommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Context().Value(userIDKey).(int)
-	err = db.InsertComment(postID, userID, content)
+
+	commentID, err := db.InsertComment(postID, userID, content)
 	if err != nil {
 		log.Printf("Comment insert error: %v", err)
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return
 	}
 
-	utils.Success(w, http.StatusCreated, map[string]string{"message": "Comment posted"})
+	utils.Success(w, http.StatusCreated, map[string]any{
+		"message":    "Comment posted",
+		"comment_id": commentID,
+	})
 }
 
 func DeleteCommentHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +103,7 @@ func FetchComments(w http.ResponseWriter, r *http.Request) {
 		limit = 50
 	}
 	offset, _ := strconv.Atoi(q.Get("offset"))
-	if offset < 0 {
+	if err != nil {
 		offset = 0
 	}
 
