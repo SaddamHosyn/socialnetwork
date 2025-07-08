@@ -34,6 +34,7 @@ func (m *Manager) Run() {
 func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// start new web socket connection
+	// git new update comment
 	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
