@@ -242,3 +242,10 @@ func GetAllUsers(currentUserID int) ([]models.User, error) {
 
 	return users, rows.Err()
 }
+
+// UpdateUserPrivacy updates a user's privacy setting
+func UpdateUserPrivacy(userID int, isPrivate bool) error {
+	query := `UPDATE users SET is_private = ? WHERE id = ?`
+	_, err := sqlite.GetDB().Exec(query, isPrivate, userID)
+	return err
+}

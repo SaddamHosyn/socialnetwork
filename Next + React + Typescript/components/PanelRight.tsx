@@ -65,32 +65,92 @@ const PanelRight = () => {
   };
 
   return (
-    <aside id="right-panel" style={{ padding: "20px", borderLeft: "1px solid #ddd" }}>
-      <div style={{ marginBottom: "20px" }}>
-        <h2>Active Users</h2>
+    <aside 
+      id="right-panel" 
+      style={{ 
+        padding: "20px", 
+        borderLeft: "1px solid #ddd",
+        width: "300px",
+        minWidth: "280px",
+        maxWidth: "320px",
+        height: "100%",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
+      <div style={{ 
+        marginBottom: "20px",
+        flex: "1",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden"
+      }}>
+        <h2 style={{
+          margin: "0 0 1rem 0",
+          fontSize: "1.2rem",
+          fontWeight: "600",
+          color: "#333"
+        }}>
+          Active Users
+        </h2>
         {!currentUserId && (
-          <p style={{ color: "#666", fontStyle: "italic" }}>
+          <p style={{ 
+            color: "#666", 
+            fontStyle: "italic",
+            fontSize: "0.9rem",
+            lineHeight: "1.4"
+          }}>
             Please login to see active users and use the follower system.
           </p>
         )}
-        {currentUserId && loading && <p>Loading users...</p>}
-        {currentUserId && error && <p style={{ color: "red" }}>{error}</p>}
+        {currentUserId && loading && (
+          <p style={{
+            color: "#666",
+            fontSize: "0.9rem",
+            textAlign: "center",
+            padding: "2rem 0"
+          }}>
+            Loading users...
+          </p>
+        )}
+        {currentUserId && error && (
+          <p style={{ 
+            color: "#dc3545", 
+            fontSize: "0.9rem",
+            backgroundColor: "#f8d7da",
+            padding: "0.5rem",
+            borderRadius: "4px",
+            border: "1px solid #f5c6cb"
+          }}>
+            {error}
+          </p>
+        )}
         {currentUserId && !loading && !error && (
-          <UserList 
-            users={users} 
-            currentUserId={currentUserId || undefined}
-            onUserClick={handleUserClick}
-          />
+          <div style={{ 
+            flex: "1", 
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column"
+          }}>
+            <UserList 
+              users={users} 
+              currentUserId={currentUserId || undefined}
+              onUserClick={handleUserClick}
+            />
+          </div>
         )}
       </div>
 
-     
-
-        
-        {showFollowerSystem && currentUserId && (
+      {showFollowerSystem && currentUserId && (
+        <div style={{
+          borderTop: "1px solid #e9ecef",
+          paddingTop: "1rem",
+          marginTop: "1rem"
+        }}>
           <FollowerSystem currentUserId={currentUserId} />
-        )}
-      
+        </div>
+      )}
     </aside>
   );
 };

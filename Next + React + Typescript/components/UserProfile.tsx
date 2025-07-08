@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 
 import PostContent from "./PostContent";
+import PrivacySettings from "./PrivacySettings";
 import type { ProfileData } from "../types/types";
 
 const UserProfile: React.FC = () => {
@@ -16,6 +17,18 @@ const UserProfile: React.FC = () => {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handlePrivacyChange = (isPrivate: boolean) => {
+    if (profile) {
+      setProfile({
+        ...profile,
+        user: {
+          ...profile.user,
+          is_private: isPrivate
+        }
+      });
+    }
+  };
 
   if (loading) return <div>Loading…</div>;
   if (!profile) return <div>Profile not found.</div>;
@@ -83,6 +96,13 @@ const UserProfile: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Privacy Settings Section */}
+      <PrivacySettings 
+        currentPrivacy={user.is_private ?? false}
+        onPrivacyChange={handlePrivacyChange}
+      />
+      
       <div style={{ marginBottom: 24 }}></div>
       <h3>User's Posts</h3>
       <div>

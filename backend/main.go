@@ -57,6 +57,9 @@ func main() {
 	http.Handle("/api/followers", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowersHandler)))
 	http.Handle("/api/following", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowingHandler)))
 
+	// User settings endpoints
+	http.Handle("/api/user/privacy", handlers.AuthMiddleware(http.HandlerFunc(handlers.UpdatePrivacyHandler)))
+
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)
 	http.HandleFunc("/api/chat/history", chat.HandleChatHistory)
