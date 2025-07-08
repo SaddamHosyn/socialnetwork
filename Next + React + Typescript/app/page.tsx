@@ -1,18 +1,16 @@
+// app/page.tsx - Main page with navigation
 "use client";
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
-import Modal from "../components/Modal";
-import UserLogin from "../components/UserLogin";
-import UserRegister from "../components/UserRegister";
-import UserProfile from "../components/UserProfile";
-import PanelLeft from "../components/PanelLeft";
-import PanelRight from "../components/PanelRight";
-import PanelMiddle from "../components/PanelMiddle";
-import Groups from "../components/Groups";
-import { GroupCreate } from "../components/GroupCreate";
+import HomePage from "../components/pages/HomePage";
+import PostsPage from "../components/pages/PostsPage";
+import ProfilePage from "../components/pages/ProfilePage";
+import LoginPage from "../components/pages/LoginPage";
+import RegisterPage from "../components/pages/RegisterPage";
+import GroupsPage from "../components/pages/GroupsPage";
 import type { Category } from "../types/types";
 
-type MainView = "forum" | "groups";
+type PageType = "home" | "posts" | "profile" | "login" | "register" | "groups";
 
 export default function Page() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -21,13 +19,8 @@ export default function Page() {
   );
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [currentView, setCurrentView] = useState<MainView>("forum");
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [currentPage, setCurrentPage] = useState<PageType>("home");
 
-  // --- UPDATED LOGOUT FUNCTION ---
   const handleLogout = async () => {
     try {
       const res = await fetch("/api/logout", {
@@ -36,6 +29,7 @@ export default function Page() {
 
       if (res.ok) {
         setIsLoggedIn(false);
+        setCurrentPage("home"); // Redirect to home after logout
       } else {
         console.error("Logout failed:", await res.text());
       }
@@ -44,27 +38,38 @@ export default function Page() {
     }
   };
 
-  // --- USE EFFECT FOR AUTH CHECK & DATA FETCHING ---
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+    setCurrentPage("posts"); // Redirect to posts after login
+  };
+
+  const handleRegisterSuccess = () => {
+    setCurrentPage("login"); // Redirect to login after successful registration
+  };
+
   useEffect(() => {
-    // Function to check the user's authentication status
     const checkAuthStatus = async () => {
       try {
         const res = await fetch("/api/me");
         if (res.ok) {
           setIsLoggedIn(true);
+          // If user is already logged in, show posts page instead of home
+          if (currentPage === "home") {
+            setCurrentPage("posts");
+          }
         } else {
           setIsLoggedIn(false);
         }
-      } catch {
+      } catch (error) {
         setIsLoggedIn(false);
       } finally {
-        setAuthChecked(true); // Mark auth check as complete
+        setAuthChecked(true);
       }
     };
 
     checkAuthStatus();
 
-    // Fetch categories (can run in parallel with auth check)
+    // Fetch categories
     fetch("/api/categories")
       .then((res) => res.json())
       .then((data) => {
@@ -72,141 +77,65 @@ export default function Page() {
       });
   }, []);
 
-  // Don't render the main content until the initial auth check is complete
-  if (!authChecked) {
-    return <div>Loading...</div>; // Or a spinner component
-  }
-
-  const renderMainContent = () => {
-    if (currentView === "groups") {
-      return <Groups />;
-    }
-
-    // Default forum view
-    return (
-      <>
-        <PanelLeft
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          onCategorySelect={setSelectedCategoryId}
-        />
-        <div style={{ flex: 1 }}>
-          <PanelMiddle
-            selectedCategoryId={selectedCategoryId}
-            categories={categories}
+  // Render current page
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case "home":
+        return (
+          <HomePage
+            onLogin={() => setCurrentPage("login")}
+            onRegister={() => setCurrentPage("register")}
           />
-        </div>
-        <PanelRight />
-      </>
-    );
+        );
+      case "posts":
+        return (
+          <PostsPage
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            setSelectedCategoryId={setSelectedCategoryId}
+          />
+        );
+      case "profile":
+        return <ProfilePage />;
+      case "login":
+        return (
+          <LoginPage
+            onSuccess={handleLoginSuccess}
+            onCancel={() => setCurrentPage("home")}
+          />
+        );
+      case "register":
+        return (
+          <RegisterPage
+            onSuccess={handleRegisterSuccess}
+            onCancel={() => setCurrentPage("home")}
+          />
+        );
+      case "groups":
+        return <GroupsPage />;
+      default:
+        return (
+          <HomePage
+            onLogin={() => setCurrentPage("login")}
+            onRegister={() => setCurrentPage("register")}
+          />
+        );
+    }
   };
+
+  if (!authChecked) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <>
       <Header
         onLogout={handleLogout}
         isLoggedIn={isLoggedIn}
-        onLogin={() => setShowLogin(true)}
-        onRegister={() => setShowRegister(true)}
-        onProfile={() => setShowProfile(true)}
-        onCreateGroup={() => setShowCreateGroup(true)}
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
       />
-
-      {/* Navigation tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: "1rem",
-          padding: "1rem 2rem",
-          backgroundColor: "#f8f9fa",
-          borderBottom: "1px solid #dee2e6",
-        }}
-      >
-        <button
-          onClick={() => setCurrentView("forum")}
-          style={{
-            background: currentView === "forum" ? "#007bff" : "transparent",
-            color: currentView === "forum" ? "white" : "#495057",
-            border: "1px solid #007bff",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "0.9rem",
-            fontWeight: currentView === "forum" ? "bold" : "normal",
-          }}
-        >
-          Forum
-        </button>
-
-        <button
-          onClick={() => setCurrentView("groups")}
-          style={{
-            background: currentView === "groups" ? "#007bff" : "transparent",
-            color: currentView === "groups" ? "white" : "#495057",
-            border: "1px solid #007bff",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "0.9rem",
-            fontWeight: currentView === "groups" ? "bold" : "normal",
-          }}
-        >
-          Groups
-        </button>
-      </div>
-
-      <main
-        style={{
-          display: "flex",
-          minHeight: "calc(100vh - 120px)", // Adjust based on header + nav height
-        }}
-      >
-        {renderMainContent()}
-      </main>
-
-      <Modal
-        open={showLogin}
-        onClose={() => setShowLogin(false)}
-        containerId="login-container"
-      >
-        <UserLogin
-          onSuccess={() => {
-            setIsLoggedIn(true);
-            setShowLogin(false);
-          }}
-          onCancel={() => setShowLogin(false)}
-        />
-      </Modal>
-      <Modal
-        open={showRegister}
-        onClose={() => setShowRegister(false)}
-        containerId="register-container"
-      >
-        <UserRegister
-          onSuccess={() => {
-            setShowRegister(false);
-            setShowLogin(true);
-          }}
-          onCancel={() => setShowRegister(false)}
-        />
-      </Modal>
-      <Modal
-        open={showProfile}
-        onClose={() => setShowProfile(false)}
-        containerId="profile-container"
-      >
-        <UserProfile />
-      </Modal>
-      <Modal
-        open={showCreateGroup}
-        onClose={() => setShowCreateGroup(false)}
-        containerId="create-group-container"
-      >
-        <GroupCreate
-          onSuccess={() => setShowCreateGroup(false)}
-          onCancel={() => setShowCreateGroup(false)}
-        />
-      </Modal>
+      <main className="main-content">{renderCurrentPage()}</main>
     </>
   );
 }
