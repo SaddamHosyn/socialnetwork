@@ -1,38 +1,67 @@
+"use client";
+
+type PageType = "home" | "posts" | "profile" | "login" | "register" | "groups";
+
 type Props = {
   onLogout: () => void;
   isLoggedIn: boolean;
-  onLogin: () => void;
-  onRegister: () => void;
-  onProfile: () => void;
-  onCreateGroup?: () => void;
+  currentPage: PageType;
+  onNavigate: (page: PageType) => void;
 };
 
-const Header = ({
-  onLogout,
-  isLoggedIn,
-  onLogin,
-  onRegister,
-  onProfile,
-  onCreateGroup,
-}: Props) => (
-  <header>
+const Header = ({ onLogout, isLoggedIn, currentPage, onNavigate }: Props) => (
+  <header className="header">
     <div className="header-left">
-      <h1>Gritlab Gossiper</h1>
+      <h1 onClick={() => onNavigate("home")} className="logo">
+        Gritlab Gossiper
+      </h1>
     </div>
-    <div className="header-right">
-      {!isLoggedIn ? (
+    <nav className="header-nav">
+      {isLoggedIn ? (
         <>
-          <button onClick={onLogin}>Login</button>
-          <button onClick={onRegister}>Register</button>
+          <button
+            className={`nav-button ${currentPage === "posts" ? "active" : ""}`}
+            onClick={() => onNavigate("posts")}
+          >
+            Posts
+          </button>
+          <button
+            className={`nav-button ${currentPage === "groups" ? "active" : ""}`}
+            onClick={() => onNavigate("groups")}
+          >
+            Groups
+          </button>
+          <button
+            className={`nav-button ${
+              currentPage === "profile" ? "active" : ""
+            }`}
+            onClick={() => onNavigate("profile")}
+          >
+            Profile
+          </button>
+          <button className="nav-button logout" onClick={onLogout}>
+            Logout
+          </button>
         </>
       ) : (
         <>
-          <button onClick={onCreateGroup}>Create Group</button>
-          <button onClick={onProfile}>Profile</button>
-          <button onClick={onLogout}>Logout</button>
+          <button
+            className={`nav-button ${currentPage === "login" ? "active" : ""}`}
+            onClick={() => onNavigate("login")}
+          >
+            Login
+          </button>
+          <button
+            className={`nav-button ${
+              currentPage === "register" ? "active" : ""
+            }`}
+            onClick={() => onNavigate("register")}
+          >
+            Register
+          </button>
         </>
       )}
-    </div>
+    </nav>
   </header>
 );
 

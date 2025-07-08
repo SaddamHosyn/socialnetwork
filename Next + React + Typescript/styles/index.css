@@ -48,53 +48,100 @@ body {
 /* ======================== */
 /* 2. HEADER                */
 /* ======================== */
-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 70px;
-  background: var(--background-secondary);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border-color);
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 24px;
-  z-index: 1000;
-  box-shadow: var(--shadow-sm);
+  padding: 1rem 2rem;
+  background-color: #ffffff;
+  border-bottom: 2px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.header-left h1 {
-  font-family: 'Poppins', sans-serif;
-  font-size: 1.75rem;
-  font-weight: 700;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.header-right button {
-  margin-left: 12px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
-  padding: 8px 16px;
-  border-radius: 8px;
+.header-left .logo {
+  margin: 0;
+  color: #007bff;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: color 0.2s;
 }
 
-.header-right button:hover {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+.header-left .logo:hover {
+  color: #0056b3;
 }
+
+.header-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-button {
+  padding: 0.7rem 1.2rem;
+  border: 1px solid #007bff;
+  background-color: transparent;
+  color: #007bff;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.nav-button:hover {
+  background-color: #007bff;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.nav-button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.nav-button.logout {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+.nav-button.logout:hover {
+  background-color: #c82333;
+  border-color: #c82333;
+}
+
+.main-content {
+  min-height: calc(100vh - 80px);
+  background-color: #f8f9fa;
+}
+
+.loading-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e9ecef;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 
 /* ======================== */
 /* 3. LAYOUT STRUCTURE      */

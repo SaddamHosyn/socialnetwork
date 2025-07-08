@@ -1,4 +1,3 @@
-// app/page.tsx - Main page with navigation
 "use client";
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
@@ -19,17 +18,18 @@ export default function Page() {
   );
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
-  const [currentPage, setCurrentPage] = useState<PageType>("home");
+  const [currentPage, setCurrentPage] = useState<PageType>("home"); // Always start with home
 
   const handleLogout = async () => {
     try {
       const res = await fetch("/api/logout", {
         method: "POST",
+        credentials: "include",
       });
 
       if (res.ok) {
         setIsLoggedIn(false);
-        setCurrentPage("home"); // Redirect to home after logout
+        setCurrentPage("home");
       } else {
         console.error("Logout failed:", await res.text());
       }
@@ -40,23 +40,29 @@ export default function Page() {
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
-    setCurrentPage("posts"); // Redirect to posts after login
+    setCurrentPage("posts");
   };
 
   const handleRegisterSuccess = () => {
-    setCurrentPage("login"); // Redirect to login after successful registration
+    setCurrentPage("login");
+  };
+
+  const handleNavigate = (page: PageType) => {
+    // Prevent navigation to protected pages if not logged in
+    if (!isLoggedIn && ["posts", "profile", "groups"].includes(page)) {
+      setCurrentPage("login");
+      return;
+    }
+    setCurrentPage(page);
   };
 
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const res = await fetch("/api/me");
+        const res = await fetch("/api/me", { credentials: "include" });
         if (res.ok) {
           setIsLoggedIn(true);
-          // If user is already logged in, show posts page instead of home
-          if (currentPage === "home") {
-            setCurrentPage("posts");
-          }
+          // Don't automatically redirect to posts - let user choose
         } else {
           setIsLoggedIn(false);
         }
@@ -70,14 +76,14 @@ export default function Page() {
     checkAuthStatus();
 
     // Fetch categories
-    fetch("/api/categories")
+    fetch("/api/categories", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setCategories(data.data);
-      });
+      })
+      .catch((error) => console.error("Error fetching categories:", error));
   }, []);
 
-  // Render current page
   const renderCurrentPage = () => {
     switch (currentPage) {
       case "home":
@@ -124,7 +130,12 @@ export default function Page() {
   };
 
   if (!authChecked) {
-    return <div>Loading...</div>;
+    return (
+      <div className="loading-page">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   return (
@@ -133,7 +144,7 @@ export default function Page() {
         onLogout={handleLogout}
         isLoggedIn={isLoggedIn}
         currentPage={currentPage}
-        onNavigate={setCurrentPage}
+        onNavigate={handleNavigate}
       />
       <main className="main-content">{renderCurrentPage()}</main>
     </>
