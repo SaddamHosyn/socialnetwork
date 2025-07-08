@@ -51,6 +51,7 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
 
     if (res.ok) {
       onSubmit?.();
+      onCancel();
       setTitle("");
       setContent("");
       setSelectedCats([]);

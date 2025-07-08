@@ -43,10 +43,22 @@ const CommentList = ({ postId, pageSize = 50 }) => {
     );
     if (res.ok) {
       const data = await res.json();
-      if (data.success) {
-        setComments((prev) => [...prev, ...data.data]);
+      if (data.success && Array.isArray(data.data)) {
+        setComments((prev) => {
+          const all = [...prev, ...data.data];
+          const seen = new Set();
+          return all.filter((c) => {
+            if (seen.has(c.id)) return false;
+            seen.add(c.id);
+            return true;
+          });
+        });
+
         setHasMore(data.data.length === pageSize);
         setOffset((prev) => prev + data.data.length);
+      } else if (data.success) {
+        // No comments at all
+        setHasMore(false);
       }
     }
     setLoading(false);

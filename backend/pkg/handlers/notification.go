@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	db "social-network/backend/pkg/db/queries"
+	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/utils"
 )
 
@@ -40,4 +41,98 @@ func MarkNotificationReadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.Success(w, http.StatusOK, "Notification marked as read")
+}
+
+// RespondToFollowNotificationHandler handles follow request responses from notifications
+func RespondToFollowNotificationHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userID := r.Context().Value(userIDKey).(int)
+
+	// Parse notification ID and action
+	notifIDStr := r.FormValue("notification_id")
+	action := r.FormValue("action") // "accept" or "decline"
+
+	if notifIDStr == "" || action == "" {
+		utils.Fail(w, http.StatusBadRequest, "notification_id and action are required")
+		return
+	}
+
+	if action != "accept" && action != "decline" {
+		utils.Fail(w, http.StatusBadRequest, "action must be 'accept' or 'decline'")
+		return
+	}
+
+	notifID, err := strconv.Atoi(notifIDStr)
+	if err != nil {
+		utils.Fail(w, http.StatusBadRequest, "Invalid notification_id")
+		return
+	}
+
+	database := sqlite.GetDB()
+
+	// Get the notification to verify it belongs to the current user and get the follow request ID
+	var notifUserID, referenceID, senderID int
+	var notifType string
+	query := `SELECT user_id, type, reference_id, sender_id FROM notifications WHERE id = ?`
+	err = database.QueryRow(query, notifID).Scan(&notifUserID, &notifType, &referenceID, &senderID)
+	if err != nil {
+		utils.Fail(w, http.StatusNotFound, "Notification not found")
+		return
+	}
+
+	// Verify the current user owns this notification
+	if notifUserID != userID {
+		utils.Fail(w, http.StatusForbidden, "Not authorized to respond to this notification")
+		return
+	}
+
+	// Verify it's a follow request notification
+	if notifType != "follow_request" {
+		utils.Fail(w, http.StatusBadRequest, "Not a follow request notification")
+		return
+	}
+
+	// Update the follow request status
+	newStatus := "declined"
+	if action == "accept" {
+		newStatus = "accepted"
+	}
+
+	err = db.UpdateFollowRequestStatus(database, referenceID, newStatus)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to update follow request status")
+		return
+	}
+
+	// Update the notification action
+	err = db.UpdateNotificationAction(notifID, action)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to update notification")
+		return
+	}
+
+	// Mark notification as read
+	err = db.MarkNotificationAsRead(notifID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to mark notification as read")
+		return
+	}
+
+	// If accepted, create the follow relationship
+	if action == "accept" {
+		err = db.CreateFollowRelationship(database, senderID, userID)
+		if err != nil {
+			utils.Fail(w, http.StatusInternalServerError, "Failed to create follow relationship")
+			return
+		}
+	}
+
+	utils.Success(w, http.StatusOK, map[string]interface{}{
+		"message": "Follow request " + newStatus,
+		"action":  action,
+	})
 }

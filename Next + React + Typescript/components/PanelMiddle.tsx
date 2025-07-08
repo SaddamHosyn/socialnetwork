@@ -5,6 +5,7 @@ import PostCreate from "./PostCreate";
 import PostSingle from "./PostSingle";
 import PostList from "./PostList";
 import type { Category } from "../types/types";
+import { ref } from "process";
 
 type Props = {
   selectedCategoryId: number | null;
@@ -14,6 +15,7 @@ type Props = {
 const PanelMiddle = ({ selectedCategoryId, categories }: Props) => {
   const [showPostSingle, setShowPostSingle] = useState<null | number>(null);
   const [showPostCreate, setShowPostCreate] = useState(false);
+  const [refreshFeed, setRefreshFeed] = useState(0);
 
   return (
     <section id="middle-panel">
@@ -27,6 +29,10 @@ const PanelMiddle = ({ selectedCategoryId, categories }: Props) => {
       >
         <PostCreate
           categories={categories}
+          onSubmit={() => {
+            setRefreshFeed((k) => k + 1);
+            setShowPostCreate(false);
+          }}
           onCancel={() => setShowPostCreate(false)}
         />
       </Modal>
@@ -44,6 +50,7 @@ const PanelMiddle = ({ selectedCategoryId, categories }: Props) => {
       </Modal>
       <div id="post-feed">
         <PostList
+          key={refreshFeed}
           categoryId={selectedCategoryId}
           onPostSelect={setShowPostSingle}
         />

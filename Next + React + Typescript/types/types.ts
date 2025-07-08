@@ -9,6 +9,7 @@ export type Post = {
   categories: string[];
   votes: number;
   comments_count?: number;
+  userVote?: 1 | -1 | 0;
 };
 
 export type Category = {
@@ -36,12 +37,44 @@ export type User = {
   nickname?: string;
   about_me?: string;
   avatar?: string;
+  is_private?: boolean;
+  created_at?: string;
+  follower_count?: number;
+  following_count?: number;
 };
 
 export type ProfileData = {
   user: User;
   posts: Post[];
   comments: Comment[];
+  follower_count: number;
+  following_count: number;
+};
+
+// Follower system types
+export type FollowRequest = {
+  id: number;
+  requester_id: number;
+  requestee_id?: number;
+  requested_id?: number;
+  requester_nickname: string;
+  status: 'pending' | 'accepted' | 'declined';
+  created_at: string;
+};
+
+export type Follower = {
+  id: number;
+  follower_id?: number;
+  followee_id?: number;
+  nickname: string;
+  followed_at: string;
+};
+
+export type FollowStatus = {
+  is_following: boolean;
+  follow_status: 'following' | 'pending' | 'not_following';
+  is_private: boolean;
+  has_pending_request: boolean;
 };
 
 

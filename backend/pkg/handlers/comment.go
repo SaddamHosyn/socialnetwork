@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"social-network/backend/pkg/db/queries"
+	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
 	"strconv"
 	"strings"
@@ -106,6 +107,10 @@ func FetchComments(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return
+	}
+
+	if comments == nil {
+		comments = []models.Comment{}
 	}
 
 	utils.Success(w, http.StatusOK, comments)

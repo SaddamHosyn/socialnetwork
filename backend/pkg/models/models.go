@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -39,9 +40,11 @@ type PublicUser struct {
 }
 
 type UserProfile struct {
-	User     User      `json:"user"`
-	Posts    []Post    `json:"posts"`
-	Comments []Comment `json:"comments"`
+	User           User      `json:"user"`
+	Posts          []Post    `json:"posts"`
+	Comments       []Comment `json:"comments"`
+	FollowerCount  int       `json:"follower_count"`
+	FollowingCount int       `json:"following_count"`
 }
 
 type User struct {
@@ -54,6 +57,20 @@ type User struct {
 	Nickname    string    `json:"nickname"`
 	Avatar      string    `json:"avatar"`
 	AboutMe     string    `json:"about_me"`
+	IsPrivate   bool      `json:"is_private"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type UserFromDB struct {
+	ID          int
+	Email       string
+	FirstName   string
+	LastName    string
+	DateOfBirth time.Time
+	GenderID    int
+	Nickname    sql.NullString // Can be NULL
+	Avatar      sql.NullString // Can be NULL
+	AboutMe     sql.NullString // Can be NULL
 }
 
 type Message struct {
@@ -78,4 +95,20 @@ type Notification struct {
 	ActionTaken    string    `json:"action_taken"`
 	SenderID       int       `json:"sender_id"`
 	SenderName     string    `json:"sender_name"`
+}
+
+type FollowRequest struct {
+	ID                int       `json:"id"`
+	RequesterID       int       `json:"requester_id"`
+	RequesteeID       int       `json:"requestee_id"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	RequesterNickname string    `json:"requester_nickname"`
+}
+
+type Follower struct {
+	FollowerID int       `json:"follower_id"`
+	FolloweeID int       `json:"followee_id"`
+	FollowedAt time.Time `json:"followed_at"`
+	Nickname   string    `json:"nickname"`
 }

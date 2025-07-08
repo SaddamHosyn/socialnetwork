@@ -7,7 +7,9 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
+	"social-network/backend/pkg/db/sqlite"
+	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
 	"strconv"
 	"strings"
@@ -44,6 +46,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	genderStr := r.FormValue("gender")
 	nickname := strings.ToLower(strings.TrimSpace(r.FormValue("nickname")))
 	aboutMe := strings.TrimSpace(r.FormValue("about_me"))
+	privacyStr := strings.ToLower(strings.TrimSpace(r.FormValue("privacy")))
+
+	// Convert privacy string to boolean
+	isPrivate := privacyStr == "private"
 
 	dob, err := time.Parse("2006-01-02", dateOfBirth)
 	if err != nil {
@@ -88,7 +94,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		avatarPath = savedPath
 	}
 
-	err = db.RegisterUser(email, string(hashedPassword), firstName, lastName, nickname, aboutMe, avatarPath, dob, genderInt)
+	err = db.RegisterUser(email, string(hashedPassword), firstName, lastName, nickname, aboutMe, avatarPath, dob, genderInt, isPrivate)
 	if err != nil {
 		log.Printf("REGISTER ERROR: %v", err)
 		if strings.Contains(err.Error(), "UNIQUE constraint") {
@@ -241,5 +247,29 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return
 	}
-	utils.Success(w, http.StatusOK, profile)
+
+	// Get follower and following counts
+	database := sqlite.GetDB()
+	followerCount, err := db.GetFollowerCount(database, userID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch follower count")
+		return
+	}
+
+	followingCount, err := db.GetFollowingCount(database, userID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch following count")
+		return
+	}
+
+	// Add follower counts to the profile
+	profileWithCounts := models.UserProfile{
+		User:           profile.User,
+		Posts:          profile.Posts,
+		Comments:       profile.Comments,
+		FollowerCount:  followerCount,
+		FollowingCount: followingCount,
+	}
+
+	utils.Success(w, http.StatusOK, profileWithCounts)
 }

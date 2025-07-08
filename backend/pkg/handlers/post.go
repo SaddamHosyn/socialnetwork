@@ -184,7 +184,12 @@ func FetchOnePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := db.GetPostByID(postID)
+	userID := 0
+	if val := r.Context().Value(userIDKey); val != nil {
+		userID, _ = val.(int)
+	}
+
+	post, err := db.GetPostByID(postID, userID)
 	if err != nil {
 		if err.Error() == "not found" {
 			utils.Fail(w, http.StatusNotFound, "Post not found")

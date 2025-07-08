@@ -70,9 +70,17 @@ LEFT JOIN (
 ) uv ON uv.post_id = p.id
 LEFT JOIN post_categories pc ON pc.post_id = p.id
 LEFT JOIN categories c ON c.id = pc.category_id
-WHERE ? = 0 OR EXISTS (
+WHERE (? = 0 OR EXISTS (
   SELECT 1 FROM post_categories pc2 
   WHERE pc2.post_id = p.id AND pc2.category_id = ?
+))
+AND (
+  u.is_private = 0
+  OR u.id = ?
+  OR EXISTS (
+    SELECT 1 FROM followers
+    WHERE follower_id = ? AND followee_id = u.id
+  )
 )
 GROUP BY p.id
 ORDER BY p.created_at DESC
@@ -80,12 +88,14 @@ LIMIT ? OFFSET ?;`
 
 	rows, err := sqlite.GetDB().Query(
 		sqlQuery,
-		currentUserID,
-		categoryID,
-		categoryID,
-		limit,
-		offset,
+		currentUserID, // user_id for user_vote subquery
+		categoryID,    // for category filter (? = 0 OR EXISTS ...)
+		categoryID,    // for category filter
+		currentUserID, // for u.id = ? (privacy)
+		currentUserID, // for follower check (privacy)
+		limit, offset,
 	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -119,22 +129,36 @@ LIMIT ? OFFSET ?;`
 	return posts, nil
 }
 
-func GetPostByID(postID int) (models.Post, error) {
+func GetPostByID(postID, userID int) (models.Post, error) {
 	var post models.Post
 	var catNames sql.NullString
 	err := sqlite.GetDB().QueryRow(
 		`SELECT p.id, p.user_id, u.nickname, p.title, p.content, p.created_at,
-           IFNULL(GROUP_CONCAT(DISTINCT c.name), '') AS cats
-         FROM posts p
-         JOIN users u ON p.user_id = u.id
-         LEFT JOIN post_categories pc ON pc.post_id = p.id
-         LEFT JOIN categories c ON c.id = pc.category_id
-         WHERE p.id = ?
-         GROUP BY p.id`,
-		postID,
+             IFNULL(GROUP_CONCAT(DISTINCT c.name), '') AS cats,
+             IFNULL((
+               SELECT vote_type FROM votes WHERE post_id = p.id AND user_id = ?
+             ), 0) AS user_vote
+       FROM posts p
+       JOIN users u ON p.user_id = u.id
+       LEFT JOIN post_categories pc ON pc.post_id = p.id
+       LEFT JOIN categories c ON c.id = pc.category_id
+       WHERE p.id = ?
+         AND (
+           u.is_private = 0
+           OR u.id = ?
+           OR EXISTS (
+             SELECT 1 FROM followers
+             WHERE follower_id = ? AND followee_id = u.id
+           )
+         )
+       GROUP BY p.id`,
+		userID, // for user_vote subquery
+		postID, // for WHERE p.id = ?
+		userID, // for u.id = ?
+		userID, // for followers check
 	).Scan(
 		&post.ID, &post.UserID, &post.Nickname, &post.Title,
-		&post.Content, &post.CreatedAt, &catNames,
+		&post.Content, &post.CreatedAt, &catNames, &post.UserVote,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -146,7 +170,6 @@ func GetPostByID(postID int) (models.Post, error) {
 		post.Categories = strings.Split(catNames.String, ",")
 	}
 
-	// fetch extra images
 	rows, err := sqlite.GetDB().Query(`SELECT image_path FROM post_images WHERE post_id = ? ORDER BY position`, postID)
 	if err != nil {
 		return post, err
