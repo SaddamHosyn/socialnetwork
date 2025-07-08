@@ -2,36 +2,35 @@ package chat
 
 import (
 	"encoding/json"
-	"github.com/gorilla/websocket"
 	"log"
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/models"
 	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
-type ClientList map[*Client]bool
-
 type Client struct {
-	UserID     int
-	UserName   string
-	Connection *websocket.Conn
-	Manager    *Manager
-	Send       chan []byte
+	UserID      int
+	UserName    string
+	Connection  *websocket.Conn
+	Manager     *Manager
+	SendChannel chan []byte
 }
 
 type Manager struct {
-	Clients   ClientList
-	Broadcast chan []byte
+	ClientsCheck map[*Client]bool
+	Broadcast    chan []byte
 	sync.RWMutex
 }
 
 func NewClient(id int, name string, conn *websocket.Conn, manager *Manager) *Client {
 	return &Client{
-		UserID:     id,
-		UserName:   name,
-		Connection: conn,
-		Manager:    manager,
-		Send:       make(chan []byte),
+		UserID:      id,
+		UserName:    name,
+		Connection:  conn,
+		Manager:     manager,
+		SendChannel: make(chan []byte),
 	}
 }
 
@@ -100,7 +99,7 @@ func (c *Client) WriteMessages() {
 	}()
 
 	for {
-		message, ok := <-c.Send
+		message, ok := <-c.SendChannel
 
 		if !ok {
 			// Manager has closed this connection channel, so communicate that to frontend
