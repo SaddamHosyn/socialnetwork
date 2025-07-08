@@ -4,7 +4,7 @@ import type { Category } from "../types/types";
 
 type Props = {
   categories: Category[];
-  onSubmit?: () => void;
+  onSubmit?: (newPost?: any) => void;
   onCancel: () => void;
 };
 
@@ -50,7 +50,12 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
     });
 
     if (res.ok) {
-      onSubmit?.();
+      const result = await res.json();
+      if (result.success && result.data.post) {
+        onSubmit?.(result.data.post);
+      } else {
+        onSubmit?.();
+      }
       onCancel();
       setTitle("");
       setContent("");

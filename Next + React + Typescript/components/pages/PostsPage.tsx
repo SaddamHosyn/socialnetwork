@@ -87,11 +87,16 @@ const PostsPage = ({
     setSelectedPostId(null);
   };
 
-  const handlePostCreated = () => {
-    // Refresh posts
-    const currentCat = selectedCategoryId;
-    setSelectedCategoryId(null);
-    setTimeout(() => setSelectedCategoryId(currentCat), 0);
+  const handlePostCreated = (newPost?: Post) => {
+    if (newPost) {
+      // Add the new post to the beginning of the posts list
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
+    } else {
+      // Fallback: refresh posts if we don't have the new post data
+      const currentCat = selectedCategoryId;
+      setSelectedCategoryId(null);
+      setTimeout(() => setSelectedCategoryId(currentCat), 0);
+    }
     setViewMode("list");
   };
 

@@ -163,3 +163,60 @@ func GetPostByID(postID int) (models.Post, error) {
 	}
 	return post, nil
 }
+
+func GetPostByIDWithVotes(postID int, userID int) (models.Post, error) {
+	var post models.Post
+	var catNames sql.NullString
+	var imagePathsStr sql.NullString
+
+	err := sqlite.GetDB().QueryRow(`
+		SELECT 
+		  p.id, p.user_id, u.nickname, p.title, p.content, p.created_at,
+		  COALESCE(v.total_votes, 0) AS votes,
+		  COALESCE(uv.user_vote, 0) AS user_vote,
+		  GROUP_CONCAT(DISTINCT c.name) AS cats,
+		  GROUP_CONCAT(pi.image_path) AS image_paths
+		FROM posts p
+		LEFT JOIN post_images pi ON pi.post_id = p.id
+		JOIN users u ON u.id = p.user_id
+		LEFT JOIN (
+		  SELECT post_id, SUM(vote_type) AS total_votes 
+		  FROM votes 
+		  WHERE post_id IS NOT NULL 
+		  GROUP BY post_id
+		) v ON v.post_id = p.id
+		LEFT JOIN (
+		  SELECT post_id, vote_type AS user_vote 
+		  FROM votes 
+		  WHERE user_id = ? AND post_id IS NOT NULL
+		) uv ON uv.post_id = p.id
+		LEFT JOIN post_categories pc ON pc.post_id = p.id
+		LEFT JOIN categories c ON c.id = pc.category_id
+		WHERE p.id = ?
+		GROUP BY p.id`,
+		userID, postID,
+	).Scan(
+		&post.ID, &post.UserID, &post.Nickname, &post.Title,
+		&post.Content, &post.CreatedAt, &post.Votes, &post.UserVote,
+		&catNames, &imagePathsStr,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return post, errors.New("not found")
+		}
+		return post, err
+	}
+
+	if catNames.Valid && catNames.String != "" {
+		post.Categories = strings.Split(catNames.String, ",")
+	}
+
+	if imagePathsStr.Valid && imagePathsStr.String != "" {
+		post.ImagePaths = strings.Split(imagePathsStr.String, ",")
+	} else {
+		post.ImagePaths = []string{}
+	}
+
+	return post, nil
+}

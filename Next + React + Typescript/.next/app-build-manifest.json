@@ -11,15 +11,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+    "/api/categories/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/categories/route.js"
+    ],
     "/api/me/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/me/route.js"
     ],
-    "/api/categories/route": [
+    "/api/logout/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/categories/route.js"
+      "static/chunks/app/api/logout/route.js"
     ],
     "/api/login/route": [
       "static/chunks/webpack.js",
@@ -31,20 +36,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/posts/route.js"
     ],
-    "/api/profile/route": [
+    "/api/post/create/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/profile/route.js"
+      "static/chunks/app/api/post/create/route.js"
     ],
     "/api/vote/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/vote/route.js"
     ],
-    "/api/post/create/route": [
+    "/api/profile/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/post/create/route.js"
+      "static/chunks/app/api/profile/route.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }
