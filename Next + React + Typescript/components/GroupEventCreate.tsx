@@ -12,6 +12,7 @@ const GroupEventCreate: React.FC<Props> = ({
   onSuccess,
   onCancel,
 }) => {
+  console.log("GroupEventCreate component rendered with groupId:", groupId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [eventDate, setEventDate] = useState("");

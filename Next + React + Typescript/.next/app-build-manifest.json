@@ -56,10 +56,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/groups/events/route.js"
     ],
+    "/api/groups/events/respond/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/groups/events/respond/route.js"
+    ],
     "/api/groups/posts/create/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/groups/posts/create/route.js"
+    ],
+    "/api/profile/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/profile/route.js"
+    ],
+    "/api/post/create/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/post/create/route.js"
     ]
   }
 }

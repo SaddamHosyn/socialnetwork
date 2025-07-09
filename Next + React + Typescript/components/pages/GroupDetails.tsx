@@ -13,7 +13,7 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
   const [events, setEvents] = useState<GroupEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"posts" | "events" | "members">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "events" | "members" | "create-event">("posts");
 
   useEffect(() => {
     fetchGroupDetails();
@@ -94,6 +94,42 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
     }
   };
 
+  const handleRSVP = async (eventId: number, response: 'going' | 'not_going') => {
+    try {
+      setLoading(true);
+      const formData = new URLSearchParams();
+      formData.append('event_id', eventId.toString());
+      formData.append('response', response);
+
+      const apiResponse = await fetch('/api/groups/events/respond', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (apiResponse.ok) {
+        // Refresh events to get updated counts and user response
+        await fetchGroupEvents();
+        
+        // Show success message
+        const actionText = response === 'going' ? 'marked as going' : 'marked as not going';
+        console.log(`Successfully ${actionText} for event`);
+      } else {
+        const errorData = await apiResponse.text();
+        console.error('RSVP failed:', apiResponse.status, errorData);
+        throw new Error(`Failed to update RSVP: ${apiResponse.status}`);
+      }
+    } catch (error) {
+      console.error("Error updating RSVP:", error);
+      alert("Failed to update RSVP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) return <div className="loading-spinner">Loading group details...</div>;
   if (error) return <div className="error-message">{error}</div>;
   if (!group) return <div className="error-message">Group not found</div>;
@@ -159,23 +195,75 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
           <div className="events-section">
             {group.is_member && (
               <div className="create-event-button">
-                <button className="primary-button">+ Create Event</button>
+                <button 
+                  className="primary-button"
+                  onClick={() => {
+                    console.log("Create Event button clicked!");
+                    setActiveTab("create-event");
+                  }}
+                >
+                  + Create Event
+                </button>
               </div>
             )}
             <div className="events-list">
               {events.length > 0 ? (
                 events.map(event => (
                   <div key={event.id} className="event-card">
-                    <h3>{event.title}</h3>
-                    <p>{event.description}</p>
-                    <div className="event-meta">
-                      <span>📅 {new Date(event.event_date).toLocaleDateString()}</span>
-                      <span>👤 {event.creator_nickname}</span>
+                    <div className="event-header">
+                      <h3>{event.title}</h3>
+                      <div className="event-meta">
+                        <span>📅 {new Date(event.event_date).toLocaleDateString()} at {new Date(event.event_date).toLocaleTimeString()}</span>
+                        <span>👤 Created by {event.creator_nickname}</span>
+                      </div>
                     </div>
-                    <div className="event-responses">
-                      <span>✅ Going: {event.going_count}</span>
-                      <span>❌ Not Going: {event.not_going_count}</span>
+                    
+                    <div className="event-description">
+                      <p>{event.description}</p>
                     </div>
+
+                    {/* RSVP Section */}
+                    {group.is_member && (
+                      <div className="event-rsvp-section">
+                        <div className="rsvp-buttons">
+                          <button
+                            className={`rsvp-button going ${event.user_response === 'going' ? 'selected' : ''}`}
+                            onClick={() => handleRSVP(event.id, 'going')}
+                            disabled={loading}
+                          >
+                            ✅ Going ({event.going_count})
+                          </button>
+                          <button
+                            className={`rsvp-button not-going ${event.user_response === 'not_going' ? 'selected' : ''}`}
+                            onClick={() => handleRSVP(event.id, 'not_going')}
+                            disabled={loading}
+                          >
+                            ❌ Not Going ({event.not_going_count})
+                          </button>
+                        </div>
+                        
+                        {/* Response Status */}
+                        <div className="current-response">
+                          {event.user_response ? (
+                            <span className={`response-status ${event.user_response}`}>
+                              You are {event.user_response === 'going' ? 'going' : 'not going'} to this event
+                            </span>
+                          ) : (
+                            <span className="response-status no-response">
+                              You haven't responded yet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Event Stats for non-members */}
+                    {!group.is_member && (
+                      <div className="event-stats">
+                        <span>✅ Going: {event.going_count}</span>
+                        <span>❌ Not Going: {event.not_going_count}</span>
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
@@ -184,6 +272,20 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'create-event' && (
+          <div className="create-event-section">
+            <h2>Create New Event</h2>
+            <EventCreator 
+              groupId={groupId} 
+              onEventCreated={() => {
+                setActiveTab("events");
+                fetchGroupEvents(); // Refresh events list
+              }}
+              onCancel={() => setActiveTab("events")}
+            />
           </div>
         )}
       </div>
@@ -224,6 +326,137 @@ const PostCreator = ({ onCreatePost }: PostCreatorProps) => {
         <div className="form-actions">
           <button type="submit" disabled={isSubmitting || !content.trim()}>
             {isSubmitting ? "Posting..." : "Post"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+interface EventCreatorProps {
+  groupId: number;
+  onEventCreated: () => void;
+  onCancel: () => void;
+}
+
+const EventCreator = ({ groupId, onEventCreated, onCancel }: EventCreatorProps) => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !description.trim() || !eventDate) return;
+
+    setIsSubmitting(true);
+    try {
+      // Convert datetime-local format to RFC3339 format
+      const eventDateRFC3339 = new Date(eventDate).toISOString();
+      
+      const formData = new URLSearchParams();
+      formData.append('group_id', groupId.toString());
+      formData.append('title', title.trim());
+      formData.append('description', description.trim());
+      formData.append('event_date', eventDateRFC3339);
+
+      console.log('Creating event with data:', {
+        group_id: groupId.toString(),
+        title: title.trim(),
+        description: description.trim(),
+        event_date: eventDateRFC3339,
+        original_event_date: eventDate
+      });
+
+      const response = await fetch('/api/groups/events/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (response.ok) {
+        onEventCreated();
+        setTitle("");
+        setDescription("");
+        setEventDate("");
+      } else {
+        // Get the error details from the server
+        const errorData = await response.text();
+        console.error('Server response:', response.status, errorData);
+        throw new Error(`Failed to create event: ${response.status} - ${errorData}`);
+      }
+    } catch (error) {
+      console.error("Error creating event:", error);
+      alert("Failed to create event");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Get current date in YYYY-MM-DDTHH:MM format for min attribute
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  return (
+    <div className="event-creator">
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="event-title">Event Title:</label>
+          <input
+            id="event-title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter event title..."
+            maxLength={100}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="event-description">Event Description:</label>
+          <textarea
+            id="event-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe your event..."
+            rows={4}
+            maxLength={500}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="event-date">Event Date & Time:</label>
+          <input
+            id="event-date"
+            type="datetime-local"
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
+            min={getCurrentDateTime()}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        <div className="form-actions">
+          <button type="submit" disabled={isSubmitting || !title.trim() || !description.trim() || !eventDate}>
+            {isSubmitting ? "Creating..." : "Create Event"}
+          </button>
+          <button type="button" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
           </button>
         </div>
       </form>
