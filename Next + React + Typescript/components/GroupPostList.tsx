@@ -12,6 +12,7 @@ const GroupPostList: React.FC<Props> = ({ posts, onPostUpdate }) => {
   const [expandedPost, setExpandedPost] = useState<number | null>(null);
 
   const toggleComments = (postId: number) => {
+    console.log("Toggle comments clicked for post:", postId);
     setExpandedPost(expandedPost === postId ? null : postId);
   };
 
@@ -37,79 +38,96 @@ const GroupPostList: React.FC<Props> = ({ posts, onPostUpdate }) => {
 
   return (
     <div style={{ display: "grid", gap: "1.5rem" }}>
-      {posts.map((post) => (
-        <div key={post.id} className="post-card">
-          <div style={{ marginBottom: "1rem" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: "0.5rem",
-              }}
-            >
-              <div style={{ fontSize: "0.9rem", color: "#666" }}>
-                <strong>{post.nickname}</strong>
-              </div>
-              <div style={{ fontSize: "0.8rem", color: "#888" }}>
-                {formatDate(post.created_at)}
-              </div>
-            </div>
+      {posts.map((post) => {
+        // Temporary debug: log post data
+        console.log("Post data:", post);
 
-            <div
-              style={{
-                fontSize: "1rem",
-                lineHeight: "1.6",
-                color: "#333",
-                marginBottom: "1rem",
-              }}
-            >
-              {post.content}
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "1rem",
-                alignItems: "center",
-                paddingTop: "0.5rem",
-                borderTop: "1px solid #eee",
-              }}
-            >
-              <button
-                onClick={() => toggleComments(post.id)}
+        return (
+          <div key={post.id} className="post-card">
+            <div style={{ marginBottom: "1rem" }}>
+              <div
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "#007bff",
-                  cursor: "pointer",
-                  fontSize: "0.9rem",
-                  padding: "4px 8px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: "0.5rem",
                 }}
               >
-                {expandedPost === post.id ? "Hide" : "Show"} Comments (
-                {post.comments_count || 0})
-              </button>
+                <div>
+                  <div style={{ fontSize: "0.9rem", color: "#666" }}>
+                    <strong>{post.nickname}</strong>
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "#888" }}>
+                    {formatDate(post.created_at)}
+                  </div>
+                </div>
+              </div>
 
-              <div style={{ fontSize: "0.9rem", color: "#666" }}>
-                👍 {post.votes || 0}
+              <h3
+                style={{
+                  margin: "0 0 0.5rem 0",
+                  fontSize: "1.2rem",
+                  color: "#333",
+                }}
+              >
+                {post.title}
+              </h3>
+
+              <div
+                style={{
+                  fontSize: "1rem",
+                  lineHeight: "1.6",
+                  color: "#333",
+                  marginBottom: "1rem",
+                }}
+              >
+                {post.content}
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "1rem",
+                  alignItems: "center",
+                  paddingTop: "0.5rem",
+                  borderTop: "1px solid #eee",
+                }}
+              >
+                <button
+                  onClick={() => toggleComments(post.id)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#007bff",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    padding: "4px 8px",
+                  }}
+                >
+                  {expandedPost === post.id ? "Hide" : "Show"} Comments (
+                  {post.comments_count || 0})
+                </button>
+
+                <div style={{ fontSize: "0.9rem", color: "#666" }}>
+                  👍 {post.votes || 0}
+                </div>
               </div>
             </div>
-          </div>
 
-          {expandedPost === post.id && (
-            <div
-              style={{
-                marginTop: "1rem",
-                paddingTop: "1rem",
-                borderTop: "1px solid #eee",
-              }}
-            >
-              <GroupComments postId={post.id} />
-            </div>
-          )}
-        </div>
-      ))}
+            {expandedPost === post.id && (
+              <div
+                style={{
+                  marginTop: "1rem",
+                  paddingTop: "1rem",
+                  borderTop: "1px solid #eee",
+                }}
+              >
+                <GroupComments postId={post.id} />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

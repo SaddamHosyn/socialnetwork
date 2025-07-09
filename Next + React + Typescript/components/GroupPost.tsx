@@ -18,13 +18,19 @@ const GroupPosts: React.FC<Props> = ({ groupId }) => {
   const loadPosts = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/groups/posts?group_id=${groupId}`);
+      const response = await fetch(`/api/groups/posts?group_id=${groupId}`, {
+        credentials: "include",
+      });
       const data = await response.json();
       if (data.success) {
-        setPosts(data.data);
+        setPosts(data.data || []);
+      } else {
+        console.error("Failed to load posts:", data.error);
+        setPosts([]);
       }
     } catch (error) {
       console.error("Error loading posts:", error);
+      setPosts([]);
     } finally {
       setLoading(false);
     }

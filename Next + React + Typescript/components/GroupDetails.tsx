@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useGroups } from "../hooks/useGroups";
-import type { Group } from "../types/groups";
+import type { Group, GroupPost } from "../types/groups";
 import GroupEventList from "./GroupEventList";
 import GroupEventCreate from "./GroupEventCreate";
+import GroupPostList from "./GroupPostList";
+import GroupPostCreate from "./GroupPostCreate";
 
 type Props = {
   groupId: number;
@@ -12,22 +14,55 @@ type Props = {
 
 const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
   const [group, setGroup] = useState<Group | null>(null);
+  const [posts, setPosts] = useState<GroupPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "events" | "create-event"
+    "overview" | "posts" | "events" | "create-post" | "create-event"
   >("overview");
-  const { getGroupDetails, leaveGroup } = useGroups();
+  const { leaveGroup } = useGroups();
+
+  const fetchGroupDetails = async () => {
+    try {
+      const response = await fetch(`/api/groups/${groupId}`, {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGroup(data);
+      }
+    } catch (error) {
+      console.error("Error fetching group details:", error);
+    }
+  };
+
+  const fetchGroupPosts = async () => {
+    try {
+      const response = await fetch(`/api/groups/posts?group_id=${groupId}`, {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setPosts(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching group posts:", error);
+    }
+  };
 
   useEffect(() => {
     const loadGroup = async () => {
       setLoading(true);
-      const groupData = await getGroupDetails(groupId);
-      setGroup(groupData);
+      await fetchGroupDetails();
+      await fetchGroupPosts();
       setLoading(false);
     };
 
     loadGroup();
-  }, [groupId, getGroupDetails]);
+  }, [groupId]);
 
   const handleLeaveGroup = async () => {
     if (!group || group.is_creator) return;
@@ -47,10 +82,14 @@ const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
     setActiveTab("events");
   };
 
+  const handlePostCreated = () => {
+    setActiveTab("posts");
+    fetchGroupPosts(); // Refresh posts after creating a new one
+  };
+
   if (loading) return <div>Loading group details...</div>;
 
   if (!group) return <div>Group not found.</div>;
-
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
@@ -140,8 +179,20 @@ const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
           </div>
         );
 
+      case "posts":
+        return <GroupPostList posts={posts} onPostUpdate={fetchGroupPosts} />;
+
       case "events":
         return <GroupEventList groupId={groupId} />;
+
+      case "create-post":
+        return (
+          <GroupPostCreate
+            groupId={groupId}
+            onSuccess={handlePostCreated}
+            onCancel={() => setActiveTab("posts")}
+          />
+        );
 
       case "create-event":
         return (
@@ -215,6 +266,42 @@ const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
 
         {group.is_member && (
           <>
+            <button
+              onClick={() => setActiveTab("posts")}
+              style={{
+                background: "none",
+                border: "none",
+                padding: "8px 16px",
+                cursor: "pointer",
+                borderBottom:
+                  activeTab === "posts"
+                    ? "2px solid #007bff"
+                    : "2px solid transparent",
+                color: activeTab === "posts" ? "#007bff" : "#666",
+                fontWeight: activeTab === "posts" ? "bold" : "normal",
+              }}
+            >
+              Posts
+            </button>
+
+            <button
+              onClick={() => setActiveTab("create-post")}
+              style={{
+                background: "none",
+                border: "none",
+                padding: "8px 16px",
+                cursor: "pointer",
+                borderBottom:
+                  activeTab === "create-post"
+                    ? "2px solid #007bff"
+                    : "2px solid transparent",
+                color: activeTab === "create-post" ? "#007bff" : "#666",
+                fontWeight: activeTab === "create-post" ? "bold" : "normal",
+              }}
+            >
+              Create Post
+            </button>
+
             <button
               onClick={() => setActiveTab("events")}
               style={{

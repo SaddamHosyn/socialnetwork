@@ -101,7 +101,7 @@ func FetchComments(w http.ResponseWriter, r *http.Request) {
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
-	offset, _ := strconv.Atoi(q.Get("offset"))
+	offset, err := strconv.Atoi(q.Get("offset"))
 	if err != nil {
 		offset = 0
 	}

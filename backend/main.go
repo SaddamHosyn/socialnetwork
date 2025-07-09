@@ -76,6 +76,8 @@ func main() {
 	// Group posts routes
 	http.Handle("/api/groups/posts", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupPosts)))
 	http.Handle("/api/groups/posts/create", handlers.AuthMiddleware(http.HandlerFunc(handlers.CreateGroupPostHandler)))
+	http.Handle("/api/groups/posts/comments", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupCommentsHandler)))
+	http.Handle("/api/groups/posts/comments/create", handlers.AuthMiddleware(http.HandlerFunc(handlers.CreateGroupCommentHandler)))
 
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)

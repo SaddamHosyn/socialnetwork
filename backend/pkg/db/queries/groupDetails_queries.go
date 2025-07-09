@@ -25,10 +25,12 @@ func GetGroupPosts(groupID, limit, offset int) ([]models.GroupPost, error) {
 	query := `
 		SELECT gp.id, gp.group_id, gp.user_id, u.nickname, gp.title, gp.content, 
 			   gp.created_at, COALESCE(gp.votes, 0) as votes,
-			   GROUP_CONCAT(pi.image_path) as image_paths
+			   GROUP_CONCAT(pi.image_path) as image_paths,
+			   COUNT(DISTINCT gc.id) as comments_count
 		FROM group_posts gp
 		JOIN users u ON gp.user_id = u.id
 		LEFT JOIN post_images pi ON gp.id = pi.post_id
+		LEFT JOIN group_comments gc ON gp.id = gc.post_id
 		WHERE gp.group_id = ?
 		GROUP BY gp.id
 		ORDER BY gp.created_at DESC
@@ -47,7 +49,8 @@ func GetGroupPosts(groupID, limit, offset int) ([]models.GroupPost, error) {
 		var imagePathsStr sql.NullString
 
 		err := rows.Scan(&post.ID, &post.GroupID, &post.UserID, &post.Nickname,
-			&post.Title, &post.Content, &post.CreatedAt, &post.Votes, &imagePathsStr)
+			&post.Title, &post.Content, &post.CreatedAt, &post.Votes,
+			&imagePathsStr, &post.CommentsCount)
 		if err != nil {
 			return nil, err
 		}
@@ -233,6 +236,49 @@ func GetEventDetails(eventID, userID int) (*models.GroupEvent, error) {
 	}
 
 	return &event, nil
+}
+
+// InsertGroupComment creates a new comment on a group post
+func InsertGroupComment(userID, postID int, content string, image string) (int, error) {
+	var commentID int
+	err := sqlite.GetDB().QueryRow(`
+		INSERT INTO group_comments (post_id, user_id, content, image, created_at)
+		VALUES (?, ?, ?, ?, ?)
+		RETURNING id
+	`, postID, userID, content, image, time.Now()).Scan(&commentID)
+	return commentID, err
+}
+
+// GetGroupComments returns comments for a group post
+func GetGroupComments(postID, limit, offset int) ([]models.GroupComment, error) {
+	query := `
+		SELECT gc.id, gc.post_id, gc.user_id, u.nickname, gc.content, gc.created_at, 
+			   COALESCE(gc.votes, 0) as votes, COALESCE(gc.image, '') as image
+		FROM group_comments gc
+		JOIN users u ON gc.user_id = u.id
+		WHERE gc.post_id = ?
+		ORDER BY gc.created_at ASC
+		LIMIT ? OFFSET ?
+	`
+
+	rows, err := sqlite.GetDB().Query(query, postID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var comments []models.GroupComment
+	for rows.Next() {
+		var comment models.GroupComment
+		err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Nickname,
+			&comment.Content, &comment.CreatedAt, &comment.Votes, &comment.Image)
+		if err != nil {
+			return nil, err
+		}
+		comments = append(comments, comment)
+	}
+
+	return comments, nil
 }
 
 // Additional helper functions

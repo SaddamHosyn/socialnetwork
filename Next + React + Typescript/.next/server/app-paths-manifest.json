@@ -1,12 +1,11 @@
 {
+  "/api/login/route": "app/api/login/route.js",
   "/api/categories/route": "app/api/categories/route.js",
-  "/api/me/route": "app/api/me/route.js",
+  "/api/posts/route": "app/api/posts/route.js",
   "/api/groups/route": "app/api/groups/route.js",
-  "/api/groups/request/route": "app/api/groups/request/route.js",
   "/api/groups/details/route": "app/api/groups/details/route.js",
-  "/api/groups/events/route": "app/api/groups/events/route.js",
   "/api/groups/posts/route": "app/api/groups/posts/route.js",
   "/api/groups/posts/create/route": "app/api/groups/posts/create/route.js",
-  "/api/profile/route": "app/api/profile/route.js",
+  "/api/groups/events/route": "app/api/groups/events/route.js",
   "/page": "app/page.js"
 }

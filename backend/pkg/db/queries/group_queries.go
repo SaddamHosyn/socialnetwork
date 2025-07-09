@@ -186,13 +186,16 @@ func getGroupMembers(groupID int) ([]models.GroupMember, error) {
 	return members, nil
 }
 
-// IsGroupMember checks if a user is a member of a group
+// IsGroupMember checks if a user is a member of a group or the creator
 func IsGroupMember(userID, groupID int) (bool, error) {
 	var count int
 	err := sqlite.GetDB().QueryRow(`
-		SELECT COUNT(*) FROM group_members 
-		WHERE user_id = ? AND group_id = ?
-	`, userID, groupID).Scan(&count)
+		SELECT COUNT(*) FROM (
+			SELECT 1 FROM group_members WHERE user_id = ? AND group_id = ?
+			UNION
+			SELECT 1 FROM groups WHERE creator_id = ? AND id = ?
+		)
+	`, userID, groupID, userID, groupID).Scan(&count)
 	return count > 0, err
 }
 

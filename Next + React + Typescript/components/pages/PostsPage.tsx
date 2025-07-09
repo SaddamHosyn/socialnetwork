@@ -6,24 +6,38 @@ import PostList from "../PostList";
 import CategoryList from "../CategoryList";
 import type { Category, Post } from "../../types/types";
 
-type Props = {
-  categories: Category[];
-  selectedCategoryId: number | null;
-  setSelectedCategoryId: (id: number | null) => void;
-};
+type Props = {};
 
-const PostsPage = ({
-  categories,
-  selectedCategoryId,
-  setSelectedCategoryId,
-}: Props) => {
+const PostsPage = ({}: Props) => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
+    null
+  );
   const [viewMode, setViewMode] = useState<"list" | "create" | "single">(
     "list"
   );
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
 
+  // Fetch categories
+  useEffect(() => {
+    fetch("/api/categories", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setCategories(data.data || []);
+        } else {
+          setCategories([]);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching categories:", error);
+        setCategories([]);
+      });
+  }, []);
+
+  // Fetch posts
   useEffect(() => {
     setLoading(true);
     let url = "/api/posts";
