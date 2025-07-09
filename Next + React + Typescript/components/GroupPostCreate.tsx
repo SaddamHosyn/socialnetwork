@@ -10,16 +10,8 @@ type Props = {
 const GroupPostCreate: React.FC<Props> = ({ groupId, onSuccess, onCancel }) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const fileArray = Array.from(e.target.files).slice(0, 5); // Max 5 images
-      setImages(fileArray);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,11 +26,6 @@ const GroupPostCreate: React.FC<Props> = ({ groupId, onSuccess, onCancel }) => {
       formData.append("title", title.trim());
       formData.append("content", content.trim());
 
-      // Add images to FormData
-      images.forEach((image) => {
-        formData.append("images", image);
-      });
-
       const response = await fetch("/api/groups/posts/create", {
         method: "POST",
         credentials: "include",
@@ -51,11 +38,10 @@ const GroupPostCreate: React.FC<Props> = ({ groupId, onSuccess, onCancel }) => {
         onSuccess();
         setTitle("");
         setContent("");
-        setImages([]);
       } else {
         setError(data.error || "Failed to create post");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred while creating the post");
     } finally {
       setLoading(false);

@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   
   // Handle both form data and file uploads
   let body;
-  let headers: Record<string, string> = {
+  const headers: Record<string, string> = {
     Cookie: cookie || "",
   };
 

@@ -6,9 +6,7 @@ import PostList from "../PostList";
 import CategoryList from "../CategoryList";
 import type { Category, Post } from "../../types/types";
 
-type Props = {};
-
-const PostsPage = ({}: Props) => {
+const PostsPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);

@@ -9,7 +9,7 @@ type Props = {
   onVote?: (postId: number, vote: 1 | -1) => void;
 };
 
-const PostSingle = ({ post: propPost, postId, onClose, onVote }: Props) => {
+const PostSingle = ({ post: propPost, postId, onVote }: Props) => {
   const [post, setPost] = useState<Post | null>(propPost || null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(!propPost);

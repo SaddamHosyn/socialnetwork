@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useGroups } from "../../hooks/useGroups";
 import { Group } from "../../types/groups";
-import GroupDetails from "./GroupDetails";
+import GroupDetails from "../GroupDetails";
 
 const GroupsPage = () => {
   const [viewMode, setViewMode] = useState<"list" | "create" | "details">("list");

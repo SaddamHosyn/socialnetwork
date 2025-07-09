@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Group, GroupPost, GroupEvent } from "../../types/groups";
+import { useState, useEffect, useCallback } from "react";
+import { Group, GroupPost, GroupEvent } from "../types/groups";
 
 interface GroupDetailsProps {
   groupId: number;
@@ -15,13 +15,7 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"posts" | "events" | "members" | "create-event">("posts");
 
-  useEffect(() => {
-    fetchGroupDetails();
-    fetchGroupPosts();
-    fetchGroupEvents();
-  }, [groupId]);
-
-  const fetchGroupDetails = async () => {
+  const fetchGroupDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/groups/details?id=${groupId}`, {
         credentials: 'include'
@@ -30,12 +24,12 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
         const result = await response.json();
         setGroup(result.data || result);
       }
-    } catch (err) {
+    } catch {
       setError("Failed to load group details");
     }
-  };
+  }, [groupId]);
 
-  const fetchGroupPosts = async () => {
+  const fetchGroupPosts = useCallback(async () => {
     try {
       const response = await fetch(`/api/groups/posts?group_id=${groupId}`, {
         credentials: 'include'
@@ -47,9 +41,9 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
     } catch (err) {
       console.error("Failed to load group posts:", err);
     }
-  };
+  }, [groupId]);
 
-  const fetchGroupEvents = async () => {
+  const fetchGroupEvents = useCallback(async () => {
     try {
       const response = await fetch(`/api/groups/events?group_id=${groupId}`, {
         credentials: 'include'
@@ -63,7 +57,13 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [groupId]);
+
+  useEffect(() => {
+    fetchGroupDetails();
+    fetchGroupPosts();
+    fetchGroupEvents();
+  }, [fetchGroupDetails, fetchGroupPosts, fetchGroupEvents]);
 
   const createPost = async (content: string) => {
     try {
