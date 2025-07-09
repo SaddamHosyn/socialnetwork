@@ -1,6 +1,7 @@
 package db
 
 import (
+
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
 )
@@ -84,55 +85,55 @@ func CreateFollowRequestNotification(requesteeID, requesterID int, requesterName
 	return CreateNotification(requesteeID, "follow_request", followRequestID, content, true, requesterID, requesterName)
 }
 
-// Add these functions to notification_queries.go
+
 
 // CreateGroupInvitationNotification creates a notification for group invitations
 func CreateGroupInvitationNotification(inviteeID, inviterID int, inviterName, groupName string, invitationID int) error {
-	content := inviterName + " invited you to join the group '" + groupName + "'"
-	return CreateNotification(inviteeID, "group_invitation", invitationID, content, true, inviterID, inviterName)
+    content := inviterName + " invited you to join the group '" + groupName + "'"
+    return CreateNotification(inviteeID, "group_invitation", invitationID, content, true, inviterID, inviterName)
 }
 
 // CreateJoinRequestNotification creates a notification for group join requests
 func CreateJoinRequestNotification(creatorID, requesterID int, requesterName, groupName string, requestID int) error {
-	content := requesterName + " requested to join your group '" + groupName + "'"
-	return CreateNotification(creatorID, "group_join_request", requestID, content, true, requesterID, requesterName)
+    content := requesterName + " requested to join your group '" + groupName + "'"
+    return CreateNotification(creatorID, "group_join_request", requestID, content, true, requesterID, requesterName)
 }
 
 // CreateGroupEventNotification creates a notification for new group events
 func CreateGroupEventNotification(userID, creatorID int, creatorName, eventTitle, groupName string, eventID int) error {
-	content := creatorName + " created a new event '" + eventTitle + "' in group '" + groupName + "'"
-	return CreateNotification(userID, "group_event", eventID, content, false, creatorID, creatorName)
+    content := creatorName + " created a new event '" + eventTitle + "' in group '" + groupName + "'"
+    return CreateNotification(userID, "group_event", eventID, content, false, creatorID, creatorName)
 }
 
 // GetGroupNameByID retrieves group name by ID
 func GetGroupNameByID(groupID int) (string, error) {
-	var groupName string
-	err := sqlite.GetDB().QueryRow(`SELECT name FROM groups WHERE id = ?`, groupID).Scan(&groupName)
-	return groupName, err
+    var groupName string
+    err := sqlite.GetDB().QueryRow(`SELECT name FROM groups WHERE id = ?`, groupID).Scan(&groupName)
+    return groupName, err
 }
 
 // GetGroupMembersForNotification retrieves all group members for event notifications
 func GetGroupMembersForNotification(groupID int) ([]int, error) {
-	rows, err := sqlite.GetDB().Query(`SELECT user_id FROM group_members WHERE group_id = ?`, groupID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+    rows, err := sqlite.GetDB().Query(`SELECT user_id FROM group_members WHERE group_id = ?`, groupID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
 
-	var memberIDs []int
-	for rows.Next() {
-		var userID int
-		if err := rows.Scan(&userID); err != nil {
-			return nil, err
-		}
-		memberIDs = append(memberIDs, userID)
-	}
-	return memberIDs, nil
+    var memberIDs []int
+    for rows.Next() {
+        var userID int
+        if err := rows.Scan(&userID); err != nil {
+            return nil, err
+        }
+        memberIDs = append(memberIDs, userID)
+    }
+    return memberIDs, nil
 }
 
 // GetUserNameByID retrieves username by user ID
 func GetUserNameByID(userID int) (string, error) {
-	var username string
-	err := sqlite.GetDB().QueryRow(`SELECT nickname FROM users WHERE id = ?`, userID).Scan(&username)
-	return username, err
+    var username string
+    err := sqlite.GetDB().QueryRow(`SELECT nickname FROM users WHERE id = ?`, userID).Scan(&username)
+    return username, err
 }

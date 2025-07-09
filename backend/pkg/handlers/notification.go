@@ -135,176 +135,178 @@ func RespondToFollowNotificationHandler(w http.ResponseWriter, r *http.Request) 
 		"message": "Follow request " + newStatus,
 		"action":  action,
 	})
-}
+} 
 
-// Add these functions to notification.go
+
+
+
 
 // RespondToGroupInvitationHandler handles group invitation responses from notifications
 func RespondToGroupInvitationHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
+    if r.Method != http.MethodPost {
+        utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
+        return
+    }
 
-	userID := r.Context().Value(userIDKey).(int)
+    userID := r.Context().Value(userIDKey).(int)
 
-	// Parse notification ID and action
-	notifIDStr := r.FormValue("notification_id")
-	action := r.FormValue("action") // "accept" or "decline"
+    // Parse notification ID and action
+    notifIDStr := r.FormValue("notification_id")
+    action := r.FormValue("action") // "accept" or "decline"
 
-	if notifIDStr == "" || action == "" {
-		utils.Fail(w, http.StatusBadRequest, "notification_id and action are required")
-		return
-	}
+    if notifIDStr == "" || action == "" {
+        utils.Fail(w, http.StatusBadRequest, "notification_id and action are required")
+        return
+    }
 
-	if action != "accept" && action != "decline" {
-		utils.Fail(w, http.StatusBadRequest, "action must be 'accept' or 'decline'")
-		return
-	}
+    if action != "accept" && action != "decline" {
+        utils.Fail(w, http.StatusBadRequest, "action must be 'accept' or 'decline'")
+        return
+    }
 
-	notifID, err := strconv.Atoi(notifIDStr)
-	if err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Invalid notification_id")
-		return
-	}
+    notifID, err := strconv.Atoi(notifIDStr)
+    if err != nil {
+        utils.Fail(w, http.StatusBadRequest, "Invalid notification_id")
+        return
+    }
 
-	database := sqlite.GetDB()
+    database := sqlite.GetDB()
 
-	// Get the notification to verify it belongs to the current user
-	var notifUserID, referenceID, senderID int
-	var notifType string
-	query := `SELECT user_id, type, reference_id, sender_id FROM notifications WHERE id = ?`
-	err = database.QueryRow(query, notifID).Scan(&notifUserID, &notifType, &referenceID, &senderID)
-	if err != nil {
-		utils.Fail(w, http.StatusNotFound, "Notification not found")
-		return
-	}
+    // Get the notification to verify it belongs to the current user
+    var notifUserID, referenceID, senderID int
+    var notifType string
+    query := `SELECT user_id, type, reference_id, sender_id FROM notifications WHERE id = ?`
+    err = database.QueryRow(query, notifID).Scan(&notifUserID, &notifType, &referenceID, &senderID)
+    if err != nil {
+        utils.Fail(w, http.StatusNotFound, "Notification not found")
+        return
+    }
 
-	// Verify the current user owns this notification
-	if notifUserID != userID {
-		utils.Fail(w, http.StatusForbidden, "Not authorized to respond to this notification")
-		return
-	}
+    // Verify the current user owns this notification
+    if notifUserID != userID {
+        utils.Fail(w, http.StatusForbidden, "Not authorized to respond to this notification")
+        return
+    }
 
-	// Verify it's a group invitation notification
-	if notifType != "group_invitation" {
-		utils.Fail(w, http.StatusBadRequest, "Not a group invitation notification")
-		return
-	}
+    // Verify it's a group invitation notification
+    if notifType != "group_invitation" {
+        utils.Fail(w, http.StatusBadRequest, "Not a group invitation notification")
+        return
+    }
 
-	// Handle the group invitation
-	err = db.HandleGroupInvitation(referenceID, userID, action == "accept")
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Failed to handle group invitation")
-		return
-	}
+    // Handle the group invitation
+    err = db.HandleGroupInvitation(referenceID, userID, action == "accept")
+    if err != nil {
+        utils.Fail(w, http.StatusInternalServerError, "Failed to handle group invitation")
+        return
+    }
 
-	// Update the notification action
-	err = db.UpdateNotificationAction(notifID, action)
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Failed to update notification")
-		return
-	}
+    // Update the notification action
+    err = db.UpdateNotificationAction(notifID, action)
+    if err != nil {
+        utils.Fail(w, http.StatusInternalServerError, "Failed to update notification")
+        return
+    }
 
-	// Mark notification as read
-	err = db.MarkNotificationAsRead(notifID)
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Failed to mark notification as read")
-		return
-	}
+    // Mark notification as read
+    err = db.MarkNotificationAsRead(notifID)
+    if err != nil {
+        utils.Fail(w, http.StatusInternalServerError, "Failed to mark notification as read")
+        return
+    }
 
-	message := "Group invitation declined"
-	if action == "accept" {
-		message = "Group invitation accepted successfully"
-	}
+    message := "Group invitation declined"
+    if action == "accept" {
+        message = "Group invitation accepted successfully"
+    }
 
-	utils.Success(w, http.StatusOK, map[string]interface{}{
-		"message": message,
-		"action":  action,
-	})
+    utils.Success(w, http.StatusOK, map[string]interface{}{
+        "message": message,
+        "action":  action,
+    })
 }
 
-// RespondToJoinRequestHandler handles join request responses from notifications
+// RespondToJoinRequestHandler handles join request responses from notifications  
 func RespondToJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
+    if r.Method != http.MethodPost {
+        utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
+        return
+    }
 
-	userID := r.Context().Value(userIDKey).(int)
+    userID := r.Context().Value(userIDKey).(int)
 
-	// Parse notification ID and action
-	notifIDStr := r.FormValue("notification_id")
-	action := r.FormValue("action") // "accept" or "decline"
+    // Parse notification ID and action
+    notifIDStr := r.FormValue("notification_id")
+    action := r.FormValue("action") // "accept" or "decline"
 
-	if notifIDStr == "" || action == "" {
-		utils.Fail(w, http.StatusBadRequest, "notification_id and action are required")
-		return
-	}
+    if notifIDStr == "" || action == "" {
+        utils.Fail(w, http.StatusBadRequest, "notification_id and action are required")
+        return
+    }
 
-	if action != "accept" && action != "decline" {
-		utils.Fail(w, http.StatusBadRequest, "action must be 'accept' or 'decline'")
-		return
-	}
+    if action != "accept" && action != "decline" {
+        utils.Fail(w, http.StatusBadRequest, "action must be 'accept' or 'decline'")
+        return
+    }
 
-	notifID, err := strconv.Atoi(notifIDStr)
-	if err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Invalid notification_id")
-		return
-	}
+    notifID, err := strconv.Atoi(notifIDStr)
+    if err != nil {
+        utils.Fail(w, http.StatusBadRequest, "Invalid notification_id")
+        return
+    }
 
-	database := sqlite.GetDB()
+    database := sqlite.GetDB()
 
-	// Get the notification to verify it belongs to the current user
-	var notifUserID, referenceID, senderID int
-	var notifType string
-	query := `SELECT user_id, type, reference_id, sender_id FROM notifications WHERE id = ?`
-	err = database.QueryRow(query, notifID).Scan(&notifUserID, &notifType, &referenceID, &senderID)
-	if err != nil {
-		utils.Fail(w, http.StatusNotFound, "Notification not found")
-		return
-	}
+    // Get the notification to verify it belongs to the current user
+    var notifUserID, referenceID, senderID int
+    var notifType string
+    query := `SELECT user_id, type, reference_id, sender_id FROM notifications WHERE id = ?`
+    err = database.QueryRow(query, notifID).Scan(&notifUserID, &notifType, &referenceID, &senderID)
+    if err != nil {
+        utils.Fail(w, http.StatusNotFound, "Notification not found")
+        return
+    }
 
-	// Verify the current user owns this notification
-	if notifUserID != userID {
-		utils.Fail(w, http.StatusForbidden, "Not authorized to respond to this notification")
-		return
-	}
+    // Verify the current user owns this notification
+    if notifUserID != userID {
+        utils.Fail(w, http.StatusForbidden, "Not authorized to respond to this notification")
+        return
+    }
 
-	// Verify it's a join request notification
-	if notifType != "group_join_request" {
-		utils.Fail(w, http.StatusBadRequest, "Not a join request notification")
-		return
-	}
+    // Verify it's a join request notification
+    if notifType != "group_join_request" {
+        utils.Fail(w, http.StatusBadRequest, "Not a join request notification")
+        return
+    }
 
-	// Handle the join request
-	err = db.HandleJoinRequest(referenceID, action == "accept")
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Failed to handle join request")
-		return
-	}
+    // Handle the join request
+    err = db.HandleJoinRequest(referenceID, action == "accept")
+    if err != nil {
+        utils.Fail(w, http.StatusInternalServerError, "Failed to handle join request")
+        return
+    }
 
-	// Update the notification action
-	err = db.UpdateNotificationAction(notifID, action)
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Failed to update notification")
-		return
-	}
+    // Update the notification action
+    err = db.UpdateNotificationAction(notifID, action)
+    if err != nil {
+        utils.Fail(w, http.StatusInternalServerError, "Failed to update notification")
+        return
+    }
 
-	// Mark notification as read
-	err = db.MarkNotificationAsRead(notifID)
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Failed to mark notification as read")
-		return
-	}
+    // Mark notification as read
+    err = db.MarkNotificationAsRead(notifID)
+    if err != nil {
+        utils.Fail(w, http.StatusInternalServerError, "Failed to mark notification as read")
+        return
+    }
 
-	message := "Join request declined"
-	if action == "accept" {
-		message = "Join request accepted successfully"
-	}
+    message := "Join request declined"
+    if action == "accept" {
+        message = "Join request accepted successfully"
+    }
 
-	utils.Success(w, http.StatusOK, map[string]interface{}{
-		"message": message,
-		"action":  action,
-	})
+    utils.Success(w, http.StatusOK, map[string]interface{}{
+        "message": message,
+        "action":  action,
+    })
 }

@@ -218,69 +218,87 @@ func IsGroupCreatorByGroupID(userID, groupID int) (bool, error) {
 }
 
 // CreateGroupInvitation creates a new group invitation
-func CreateGroupInvitation(groupID, inviterID, inviteeID int) error {
-	// Check if user is already a member
-	isMember, err := IsGroupMember(inviteeID, groupID)
-	if err != nil {
-		return err
-	}
-	if isMember {
-		return fmt.Errorf("user is already member")
-	}
-
-	// Check if invitation already exists
-	var count int
-	err = sqlite.GetDB().QueryRow(`
-		SELECT COUNT(*) FROM group_invitations 
-		WHERE group_id = ? AND invitee_id = ? AND status = 'pending'
-	`, groupID, inviteeID).Scan(&count)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf("user already invited")
-	}
-
-	// Create invitation
-	_, err = sqlite.GetDB().Exec(`
-		INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status, created_at)
-		VALUES (?, ?, ?, 'pending', ?)
-	`, groupID, inviterID, inviteeID, time.Now())
-
-	return err
+// Update this function in your database queries file
+func CreateGroupInvitation(groupID, inviterID, inviteeID int) (int, error) {
+    database := sqlite.GetDB()
+    
+    // Check if user is already a member
+    var exists bool
+    err := database.QueryRow(`
+        SELECT EXISTS(SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)
+    `, groupID, inviteeID).Scan(&exists)
+    if err != nil {
+        return 0, err
+    }
+    if exists {
+        return 0, fmt.Errorf("user is already member")
+    }
+    
+    // Check if invitation already exists and is pending
+    err = database.QueryRow(`
+        SELECT EXISTS(SELECT 1 FROM group_invitations WHERE group_id = ? AND invitee_id = ? AND status = 'pending')
+    `, groupID, inviteeID).Scan(&exists)
+    if err != nil {
+        return 0, err
+    }
+    if exists {
+        return 0, fmt.Errorf("user already invited")
+    }
+    
+    // Create the invitation
+    result, err := database.Exec(`
+        INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status)
+        VALUES (?, ?, ?, 'pending')
+    `, groupID, inviterID, inviteeID)
+    
+    if err != nil {
+        return 0, err
+    }
+    
+    id, err := result.LastInsertId()
+    return int(id), err
 }
 
 // CreateJoinRequest creates a new join request
-func CreateJoinRequest(groupID, userID int) error {
-	// Check if user is already a member
-	isMember, err := IsGroupMember(userID, groupID)
-	if err != nil {
-		return err
-	}
-	if isMember {
-		return fmt.Errorf("user is already member")
-	}
-
-	// Check if request already exists
-	var count int
-	err = sqlite.GetDB().QueryRow(`
-		SELECT COUNT(*) FROM group_join_requests 
-		WHERE group_id = ? AND requester_id = ? AND status = 'pending'
-	`, groupID, userID).Scan(&count)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf("join request already requested")
-	}
-
-	// Create join request
-	_, err = sqlite.GetDB().Exec(`
-		INSERT INTO group_join_requests (group_id, requester_id, status, created_at)
-		VALUES (?, ?, 'pending', ?)
-	`, groupID, userID, time.Now())
-
-	return err
+// Update this function in your database queries file
+func CreateJoinRequest(groupID, userID int) (int, error) {
+    database := sqlite.GetDB()
+    
+    // Check if user is already a member
+    var exists bool
+    err := database.QueryRow(`
+        SELECT EXISTS(SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)
+    `, groupID, userID).Scan(&exists)
+    if err != nil {
+        return 0, err
+    }
+    if exists {
+        return 0, fmt.Errorf("user is already member")
+    }
+    
+    // Check if join request already exists and is pending
+    err = database.QueryRow(`
+        SELECT EXISTS(SELECT 1 FROM group_invitations WHERE group_id = ? AND invitee_id = ? AND inviter_id = ? AND status = 'pending')
+    `, groupID, userID, userID).Scan(&exists)
+    if err != nil {
+        return 0, err
+    }
+    if exists {
+        return 0, fmt.Errorf("join request already requested")
+    }
+    
+    // Create the join request (using same table as invitations, but inviter_id = invitee_id for join requests)
+    result, err := database.Exec(`
+        INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status)
+        VALUES (?, ?, ?, 'pending')
+    `, groupID, userID, userID)
+    
+    if err != nil {
+        return 0, err
+    }
+    
+    id, err := result.LastInsertId()
+    return int(id), err
 }
 
 // HandleGroupInvitation accepts or declines a group invitation

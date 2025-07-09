@@ -2,13 +2,20 @@ package utils
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
 func WriteJSON(w http.ResponseWriter, statusCode int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(payload)
+
+	// Handle the error from JSON encoding
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		// Log the error but don't try to write another response
+		log.Printf("Error encoding JSON: %v", err)
+		return
+	}
 }
 
 func Success(w http.ResponseWriter, statusCode int, data any) {

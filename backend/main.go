@@ -67,6 +67,7 @@ func main() {
 	// Group notification endpoints
 	http.Handle("/api/notifications/group/invitation/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToGroupInvitationHandler)))
 	http.Handle("/api/notifications/group/join/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToJoinRequestHandler)))
+	http.Handle("/api/group/invite", handlers.AuthMiddleware(http.HandlerFunc(handlers.InviteToGroupHandler)))
 
 	// Notification endpoints
 	http.Handle("/api/notifications", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetNotificationsHandler)))
