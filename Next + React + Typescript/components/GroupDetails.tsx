@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useGroups } from "../hooks/useGroups";
-import type { Group, GroupPost } from "../types/groups";
+import type { Group } from "../types/groups";
 import GroupEventList from "./GroupEventList";
 import GroupEventCreate from "./GroupEventCreate";
 import GroupPostList from "./GroupPostList";
@@ -14,7 +14,6 @@ type Props = {
 
 const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
   const [group, setGroup] = useState<Group | null>(null);
-  const [posts, setPosts] = useState<GroupPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "overview" | "posts" | "events" | "create-post" | "create-event"
@@ -36,28 +35,10 @@ const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
     }
   };
 
-  const fetchGroupPosts = async () => {
-    try {
-      const response = await fetch(`/api/groups/posts?group_id=${groupId}`, {
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setPosts(data.data || []);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching group posts:", error);
-    }
-  };
-
   useEffect(() => {
     const loadGroup = async () => {
       setLoading(true);
       await fetchGroupDetails();
-      await fetchGroupPosts();
       setLoading(false);
     };
 
@@ -84,7 +65,7 @@ const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
 
   const handlePostCreated = () => {
     setActiveTab("posts");
-    fetchGroupPosts(); // Refresh posts after creating a new one
+    // Posts will be reloaded automatically by GroupPostList component
   };
 
   if (loading) return <div>Loading group details...</div>;
@@ -180,7 +161,9 @@ const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
         );
 
       case "posts":
-        return <GroupPostList posts={posts} onPostUpdate={fetchGroupPosts} />;
+        return (
+          <GroupPostList groupId={groupId} isGroupMember={group.is_member} />
+        );
 
       case "events":
         return <GroupEventList groupId={groupId} />;
@@ -267,7 +250,10 @@ const GroupDetails: React.FC<Props> = ({ groupId, onBack }) => {
         {group.is_member && (
           <>
             <button
-              onClick={() => setActiveTab("posts")}
+              onClick={() => {
+                console.log("Posts tab clicked!");
+                setActiveTab("posts");
+              }}
               style={{
                 background: "none",
                 border: "none",

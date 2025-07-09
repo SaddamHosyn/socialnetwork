@@ -53,4 +53,15 @@ export interface GroupPost {
   created_at: string;
   comments_count: number;
   votes: number;
+  image_paths?: string[];
+}
+
+export interface GroupComment {
+  id: number;
+  post_id: number;
+  user_id: number;
+  nickname: string;
+  content: string;
+  image: string;
+  created_at: string;
 }
