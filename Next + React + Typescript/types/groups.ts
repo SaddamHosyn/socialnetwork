@@ -43,13 +43,3 @@ export interface GroupEvent {
   created_at: string;
 }
 
-export interface GroupPost {
-  id: number;
-  group_id: number;
-  content: string;
-  author_id: number;
-  nickname: string;
-  created_at: string;
-  comments_count: number;
-  votes: number;
-}
