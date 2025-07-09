@@ -7,6 +7,7 @@ export interface Group {
   member_count: number;
   is_member: boolean;
   is_creator: boolean;
+  has_pending_request: boolean;
   created_at: string;
 }
 

@@ -80,11 +80,93 @@ export const useGroups = () => {
     }
   }, []);
 
+  const requestJoinGroup = useCallback(async (groupId: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('group_id', groupId.toString());
+
+      const response = await fetch('/api/groups/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to request join: ${response.status}`;
+        
+        // Handle specific error cases
+        if (response.status === 409) {
+          if (errorMessage.includes('already requested')) {
+            throw new Error('You have already requested to join this group');
+          } else if (errorMessage.includes('already member')) {
+            throw new Error('You are already a member of this group');
+          } else {
+            throw new Error('Cannot send join request - conflict detected');
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to request join';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const leaveGroup = useCallback(async (groupId: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('group_id', groupId.toString());
+
+      const response = await fetch('/api/groups/leave', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to leave group: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to leave group';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     groups,
     loading,
     error,
     createGroup,
     fetchGroups,
+    requestJoinGroup,
+    leaveGroup,
   };
 };

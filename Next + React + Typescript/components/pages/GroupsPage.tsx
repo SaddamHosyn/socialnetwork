@@ -2,10 +2,12 @@
 import { useState, useEffect } from "react";
 import { useGroups } from "../../hooks/useGroups";
 import { Group } from "../../types/groups";
+import GroupDetails from "./GroupDetails";
 
 const GroupsPage = () => {
-  const [viewMode, setViewMode] = useState<"list" | "create">("list");
-  const { groups, loading, error, createGroup, fetchGroups } = useGroups();
+  const [viewMode, setViewMode] = useState<"list" | "create" | "details">("list");
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const { groups, loading, error, createGroup, fetchGroups, requestJoinGroup, leaveGroup } = useGroups();
   
   // Form state
   const [formData, setFormData] = useState({
@@ -90,6 +92,51 @@ const GroupsPage = () => {
     setViewMode("list");
   };
 
+  const handleViewGroup = (groupId: number) => {
+    setSelectedGroupId(groupId);
+    setViewMode("details");
+  };
+
+  const handleBackToList = () => {
+    setSelectedGroupId(null);
+    setViewMode("list");
+    fetchGroups(); // Refresh groups when returning to list
+  };
+
+  const handleJoinLeave = async (group: Group) => {
+    if (group.is_member) {
+      // Leave group
+      try {
+        await leaveGroup(group.id);
+        alert("Left group successfully");
+        fetchGroups(); // Refresh groups list
+      } catch (error) {
+        console.error("Error leaving group:", error);
+        alert("Failed to leave group");
+      }
+    } else {
+      // Request to join group
+      try {
+        await requestJoinGroup(group.id);
+        alert("Join request sent successfully");
+        fetchGroups(); // Refresh groups list
+      } catch (error) {
+        console.error("Error requesting to join group:", error);
+        if (error instanceof Error) {
+          if (error.message.includes('already requested')) {
+            alert("You have already requested to join this group. Please wait for the group creator to accept your request.");
+          } else if (error.message.includes('already member')) {
+            alert("You are already a member of this group.");
+          } else {
+            alert(`Error: ${error.message}`);
+          }
+        } else {
+          alert("Failed to send join request");
+        }
+      }
+    }
+  };
+
   return (
     <div className="groups-page">
       <div className="page-header">
@@ -108,13 +155,27 @@ const GroupsPage = () => {
               {groups.length > 0 ? (
                 groups.map((group: Group) => (
                   <div key={group.id} className="group-card">
-                    <h3>{group.title}</h3>
+                    <h3 
+                      onClick={() => handleViewGroup(group.id)}
+                      style={{ cursor: 'pointer' }}
+                      title="Click to view group details"
+                    >
+                      {group.title}
+                    </h3>
                     <p>{group.description || "No description available"}</p>
                     <div className="group-meta">
                       <span>{group.member_count || 0} members</span>
                       <span>Created by: {group.creator_nickname}</span>
-                      <button className="join-button">
-                        {group.is_member ? "Leave" : "Join"}
+                      <button 
+                        className="join-button"
+                        onClick={() => handleJoinLeave(group)}
+                        disabled={group.is_creator || group.has_pending_request}
+                        data-status={group.is_creator ? "creator" : group.has_pending_request ? "pending" : ""}
+                      >
+                        {group.is_creator ? "Creator" : 
+                         group.is_member ? "Leave" : 
+                         group.has_pending_request ? "Request Pending" : 
+                         "Request to Join"}
                       </button>
                     </div>
                   </div>
@@ -192,6 +253,13 @@ const GroupsPage = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {viewMode === "details" && selectedGroupId && (
+        <GroupDetails 
+          groupId={selectedGroupId} 
+          onBack={handleBackToList}
+        />
       )}
     </div>
   );

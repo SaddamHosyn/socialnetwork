@@ -57,6 +57,7 @@ func main() {
 
 	// Group membership routes
 	http.Handle("/api/groups/invite", handlers.AuthMiddleware(http.HandlerFunc(handlers.InviteToGroupHandler)))
+	http.Handle("/api/groups/request", handlers.AuthMiddleware(http.HandlerFunc(handlers.RequestJoinGroupHandler)))
 	http.Handle("/api/groups/join-request", handlers.AuthMiddleware(http.HandlerFunc(handlers.RequestJoinGroupHandler)))
 	http.Handle("/api/groups/handle-invitation", handlers.AuthMiddleware(http.HandlerFunc(handlers.HandleInvitationHandler)))
 	http.Handle("/api/groups/handle-join-request", handlers.AuthMiddleware(http.HandlerFunc(handlers.HandleJoinRequestHandler)))
@@ -67,7 +68,14 @@ func main() {
 	http.Handle("/api/groups/join-requests", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupJoinRequests)))
 
 	// Group events routes
+	http.Handle("/api/groups/events", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupEvents)))
 	http.Handle("/api/groups/events/create", handlers.AuthMiddleware(http.HandlerFunc(handlers.CreateGroupEventHandler)))
+	http.Handle("/api/groups/events/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToEventHandler)))
+	http.Handle("/api/groups/events/details", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchEventDetails)))
+
+	// Group posts routes
+	http.Handle("/api/groups/posts", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupPosts)))
+	http.Handle("/api/groups/posts/create", handlers.AuthMiddleware(http.HandlerFunc(handlers.CreateGroupPostHandler)))
 
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)

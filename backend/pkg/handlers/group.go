@@ -25,7 +25,9 @@ func GroupsHandler(w http.ResponseWriter, r *http.Request) {
 			offset = 0
 		}
 
-		groups, err := db.GetAllGroups(limit, offset)
+		userID := r.Context().Value(userIDKey).(int)
+
+		groups, err := db.GetAllGroupsWithUserStatus(userID, limit, offset)
 		if err != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Server error")
 			return

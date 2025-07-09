@@ -1,4 +1,4 @@
-// File: /Users/chan.myint/Desktop/social-network/Next + React + Typescript/app/api/me/route.ts
+// File: /Users/aung.min/Desktop/Teams/social-network/Next + React + Typescript/app/api/me/route.ts
 import * as entry from '../../../../../app/api/me/route.js'
 import type { NextRequest } from 'next/server.js'
 

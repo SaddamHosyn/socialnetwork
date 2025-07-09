@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FollowButton } from './FollowButton';
-import type { User } from '../types';
+import type { User } from '../types/types';
 
 interface UserListProps {
   users?: User[];

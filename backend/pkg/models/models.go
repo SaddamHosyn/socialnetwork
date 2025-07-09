@@ -67,15 +67,16 @@ type Message struct {
 }
 
 type Group struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	CreatorID   int       `json:"creator_id"`
-	CreatorName string    `json:"creator_name"`
-	CreatedAt   time.Time `json:"created_at"`
-	MemberCount int       `json:"member_count"`
-	IsMember    bool      `json:"is_member"`
-	IsCreator   bool      `json:"is_creator"`
+	ID                int       `json:"id"`
+	Title             string    `json:"title"`
+	Description       string    `json:"description"`
+	CreatorID         int       `json:"creator_id"`
+	CreatorName       string    `json:"creator_name"`
+	CreatedAt         time.Time `json:"created_at"`
+	MemberCount       int       `json:"member_count"`
+	IsMember          bool      `json:"is_member"`
+	IsCreator         bool      `json:"is_creator"`
+	HasPendingRequest bool      `json:"has_pending_request"`
 }
 
 // GroupDetails represents detailed information about a group

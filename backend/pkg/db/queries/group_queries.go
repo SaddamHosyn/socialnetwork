@@ -455,3 +455,44 @@ func GetGroupJoinRequests(userID int) ([]models.GroupJoinRequest, error) {
 
 	return requests, nil
 }
+
+// GetAllGroupsWithUserStatus returns all groups with pagination and user membership status
+func GetAllGroupsWithUserStatus(userID int, limit, offset int) ([]models.Group, error) {
+	query := `
+		SELECT g.id, g.name, g.description, g.creator_id, u.nickname, g.created_at,
+			   COUNT(gm.user_id) as member_count,
+			   CASE WHEN gm2.user_id IS NOT NULL THEN 1 ELSE 0 END as is_member,
+			   CASE WHEN g.creator_id = ? THEN 1 ELSE 0 END as is_creator,
+			   CASE WHEN gjr.id IS NOT NULL THEN 1 ELSE 0 END as has_pending_request
+		FROM groups g
+		LEFT JOIN users u ON g.creator_id = u.id
+		LEFT JOIN group_members gm ON g.id = gm.group_id
+		LEFT JOIN group_members gm2 ON g.id = gm2.group_id AND gm2.user_id = ?
+		LEFT JOIN group_join_requests gjr ON g.id = gjr.group_id AND gjr.requester_id = ? AND gjr.status = 'pending'
+		GROUP BY g.id
+		ORDER BY g.created_at DESC
+		LIMIT ? OFFSET ?
+	`
+
+	rows, err := sqlite.GetDB().Query(query, userID, userID, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var groups []models.Group
+	for rows.Next() {
+		var group models.Group
+		var hasPendingRequest int
+		err := rows.Scan(&group.ID, &group.Title, &group.Description,
+			&group.CreatorID, &group.CreatorName, &group.CreatedAt, &group.MemberCount,
+			&group.IsMember, &group.IsCreator, &hasPendingRequest)
+		if err != nil {
+			return nil, err
+		}
+		group.HasPendingRequest = hasPendingRequest == 1
+		groups = append(groups, group)
+	}
+
+	return groups, nil
+}
