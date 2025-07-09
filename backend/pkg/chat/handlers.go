@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
 	"strconv"
 )
 
@@ -19,7 +19,7 @@ func HandleChatRequest(w http.ResponseWriter, r *http.Request) {
 	token := cookie.Value
 
 	//get the current user
-	user1, err := CurrentUser("forum.db", token)
+	user1, err := CurrentUser(token)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		log.Println("Error getting current user:", err)
@@ -83,7 +83,7 @@ func HandleChatHistory(w http.ResponseWriter, r *http.Request) {
 	token := cookie.Value
 
 	//get the current user
-	user1, err := CurrentUser("forum.db", token)
+	user1, err := CurrentUser(token)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		log.Println("Error getting current user:", err)

@@ -3,40 +3,38 @@ package chat
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"social-network/backend/pkg/models"
+
+	"github.com/gorilla/websocket"
 )
 
 func (m *Manager) Run() {
 
-	var msg models.Message
-	//fmt.Println("Running websocket manager...")
+	var msgEach models.Message
+
 	for {
 		message := <-m.Broadcast
 
-		if err := json.Unmarshal(message, &msg); err != nil {
+		if err := json.Unmarshal(message, &msgEach); err != nil {
 			fmt.Println("Error decoding message:", err)
 			continue
 		}
 
-		for wsclient := range m.Clients {
-			if msg.Type == "update" {
-				//Sending update message to all clients
-				wsclient.Send <- message
-			} else {
-				if wsclient.UserID == msg.ReceiverID || wsclient.UserID == msg.SenderID {
-					wsclient.Send <- message
-				}
+		for eachClient := range m.ClientsCheck {
+			if msgEach.Type == "update" || eachClient.UserID == msgEach.ReceiverID || eachClient.UserID == msgEach.SenderID {
+				eachClient.SendChannel <- message
 			}
 		}
+
 	}
 }
 
 func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// start new web socket connection
+	// git new update comment
 	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
@@ -57,12 +55,11 @@ func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	token := cookie.Value
 
-	currentUser, err := CurrentUser("forum.db", token)
+	currentUser, err := CurrentUser(token)
 	if err != nil {
-		log.Println("User is not authorized, closeing websocket")
+		log.Println("User is not authorized, closing websocket")
 		return
 	}
-	//fmt.Println("currentUser.ID: ", currentUser.ID)
 
 	// create a new client and add it to the manager
 	client := NewClient(currentUser.ID, currentUser.Nickname, conn, m)
@@ -84,24 +81,24 @@ func (m *Manager) AddClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.Clients[client] = true
+	m.ClientsCheck[client] = true
 	//fmt.Println(client)
 
 }
 
 // Upgrade HTTP connection to WebSocket
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  4096,
+	WriteBufferSize: 4096,
 }
 
 func (m *Manager) RemoveClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 
-	if _, ok := m.Clients[client]; ok { // check if exists and delete
+	if _, ok := m.ClientsCheck[client]; ok { // check if exists and delete
 		client.Connection.Close()
-		delete(m.Clients, client)
+		delete(m.ClientsCheck, client)
 	}
 	// Add a message with type "update" to the broadcast channel to notify all clients and update userlist
 	updateMessage := models.Message{
@@ -113,7 +110,7 @@ func (m *Manager) RemoveClient(client *Client) {
 
 func NewManager() *Manager {
 	return &Manager{
-		Clients:   make(ClientList),
-		Broadcast: make(chan []byte),
+		ClientsCheck: make(map[*Client]bool),
+		Broadcast:    make(chan []byte),
 	}
 }
