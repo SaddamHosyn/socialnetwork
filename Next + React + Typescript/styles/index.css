@@ -187,23 +187,82 @@ body {
   z-index: 1;
 }
 
-<<<<<<< HEAD
-
-
-
-
-
-
-
-
-
 /* ───────────────────────────────────────────────────────────────────────── */
-/* Notifications Stylng                             */
+/* Notifications Styling                             */
 /* ───────────────────────────────────────────────────────────────────────── */
 
+/* Notification Bell Navigation Integration */
+.header-nav .notification-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+  background: transparent;
+  border: 2px solid transparent;
+  color: var(--gray-color);
+  font-weight: 600;
+  font-size: 0.95rem;
+  overflow: visible;
+}
 
+.header-nav .notification-bell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: var(--transition);
+}
 
+.header-nav .notification-bell:hover::before {
+  left: 100%;
+}
 
+.header-nav .notification-bell:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-light);
+  background: rgba(99, 102, 241, 0.05);
+  transform: translateY(-2px);
+}
+
+.header-nav .notification-bell .bell-icon {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.header-nav .notification-bell .notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--danger-color);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.4rem;
+  border-radius: 50px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulse 2s infinite;
+}
+
+/* Keep the original notification-bell styles for other contexts */
 
 /* Notification Bell */
 .notification-bell {
@@ -236,7 +295,7 @@ body {
 .notification-dropdown {
   position: absolute;
   top: 100%;
-  right: 0;
+  right: -150px;
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -245,6 +304,13 @@ body {
   max-height: 400px;
   overflow-y: auto;
   z-index: 1000;
+  margin-top: 0.5rem;
+}
+
+/* Ensure notification bell is positioned for dropdown */
+.notification-bell {
+  position: relative;
+  display: inline-block;
 }
 
 .notification-header {
@@ -311,7 +377,6 @@ body {
   color: white;
 }
 
-=======
 .cta-buttons {
   display: flex;
   gap: 1rem;
@@ -1178,10 +1243,6 @@ body {
   max-width: 600px;
   margin: 0 auto;
 }
-<<<<<<< HEAD
-*/
->>>>>>> origin/milli
-=======
 
 .form-group {
   margin-bottom: 1.5rem;
@@ -1717,4 +1778,3 @@ body {
 /* ================================
    END EVENT RSVP STYLES
    ================================ */
->>>>>>> origin/milli

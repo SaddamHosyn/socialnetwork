@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFollower } from '../hooks/useFollower';
 import type { Follower } from '../types/types';
 
@@ -21,13 +21,7 @@ export const FollowersList: React.FC<FollowersListProps> = ({
   const [loading, setLoading] = useState(false);
   const { getFollowers, getFollowing } = useFollower();
 
-  useEffect(() => {
-    if (isOpen && userId) {
-      loadUsers();
-    }
-  }, [isOpen, userId, type]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     let fetchedUsers: Follower[] = [];
     
@@ -39,7 +33,13 @@ export const FollowersList: React.FC<FollowersListProps> = ({
     
     setUsers(fetchedUsers);
     setLoading(false);
-  };
+  }, [type, userId, getFollowers, getFollowing]);
+
+  useEffect(() => {
+    if (isOpen && userId) {
+      loadUsers();
+    }
+  }, [isOpen, userId, loadUsers]);
 
   if (!isOpen) return null;
 
@@ -65,7 +65,7 @@ export const FollowersList: React.FC<FollowersListProps> = ({
                       <div className="user-nickname">{user.nickname}</div>
                       <div className="user-date">
                         {type === 'followers' ? 'Followed' : 'Following'} since{' '}
-                        {new Date(user.followed_at).toLocaleDateString()}
+                        {new Date(user.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>

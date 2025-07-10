@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFollower } from '../hooks/useFollower';
 import { useToast } from '../hooks/useToast';
 import type { FollowRequest } from '../types/types';
@@ -19,18 +19,18 @@ export const FollowRequestsList: React.FC<FollowRequestsListProps> = ({
   const { getFollowRequests, respondToFollowRequest } = useFollower();
   const { addToast } = useToast();
 
-  useEffect(() => {
-    if (isOpen) {
-      loadRequests();
-    }
-  }, [isOpen]);
-
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     setLoading(true);
     const fetchedRequests = await getFollowRequests();
     setRequests(fetchedRequests);
     setLoading(false);
-  };
+  }, [getFollowRequests]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadRequests();
+    }
+  }, [isOpen, loadRequests]);
 
   const handleRequestResponse = async (requestId: number, action: 'accept' | 'decline') => {
     const result = await respondToFollowRequest(requestId, action);

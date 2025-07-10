@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { FollowButton } from './FollowButton';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FollowStats } from './FollowStats';
 import { FollowRequestsList } from './FollowRequestsList';
 import { FollowersList } from './FollowersList';
 import { UserList } from './UserList';
 import { useFollower } from '../hooks/useFollower';
 import { useToast } from '../hooks/useToast';
-import type { FollowRequest, User } from '../types/types';
+import type { FollowRequest, PublicUser } from '../types/types';
 import './FollowerSystem.css';
 
 interface FollowerSystemProps {
@@ -15,7 +14,7 @@ interface FollowerSystemProps {
 
 export const FollowerSystem: React.FC<FollowerSystemProps> = ({ currentUserId }) => {
   const [followRequests, setFollowRequests] = useState<FollowRequest[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<PublicUser[]>([]);
   const [showRequests, setShowRequests] = useState(false);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
@@ -24,11 +23,7 @@ export const FollowerSystem: React.FC<FollowerSystemProps> = ({ currentUserId })
   const { getFollowRequests, getPublicUsers } = useFollower();
   const { addToast } = useToast();
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // Load follow requests
       const requests = await getFollowRequests();
@@ -38,22 +33,22 @@ export const FollowerSystem: React.FC<FollowerSystemProps> = ({ currentUserId })
       const usersData = await getPublicUsers();
       if (usersData?.users) {
         // Filter out current user
-        const filteredUsers = usersData.users.filter((user: User) => user.id !== currentUserId);
+        const filteredUsers = usersData.users.filter((user: PublicUser) => user.id !== currentUserId);
         setUsers(filteredUsers);
       }
     } catch (error) {
       console.error('Error loading follower system data:', error);
       addToast('Failed to load data', 'error');
     }
-  };
+  }, [currentUserId, getFollowRequests, getPublicUsers, addToast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleRequestResponded = () => {
     // Reload requests after responding
     loadData();
-  };
-
-  const handleFollowChange = () => {
-    // Could refresh data if needed
   };
 
   const handleShowFollowers = () => {

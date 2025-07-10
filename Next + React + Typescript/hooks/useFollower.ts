@@ -1,9 +1,5 @@
 import { useState, useCallback } from 'react';
-<<<<<<< HEAD
-import type { FollowRequest, Follower, FollowStatus } from '../types/types';
-=======
-import type { } from '../types/types';
->>>>>>> origin/milli
+import type { Follower, FollowStatus, FollowRequest, PublicUser } from '../types/types';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -192,9 +188,9 @@ export const useFollower = () => {
   );
 
   const getPublicUsers = useCallback(async (): Promise<{
-    users: any[];
+    users: PublicUser[];
   } | null> => {
-    const result = await makeRequest<any[]>("/api/users");
+    const result = await makeRequest<PublicUser[]>("/api/users");
 
     if (result.success && result.data) {
       // Wrap the users array in an object to match expected format

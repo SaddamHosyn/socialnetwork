@@ -48,22 +48,12 @@ const PostList = ({
   }, [categoryId, propPosts]);
 
   const handleVote = async (postId: number, vote: 1 | -1) => {
-<<<<<<< HEAD
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id !== postId) return p;
-        if (p.userVote === vote) return p;
-        return p;
-      })
-    );
-=======
     if (onVote) {
       onVote(postId, vote);
       return;
     }
 
     // Default vote handling if no onVote prop
->>>>>>> origin/milli
     const res = await fetch("/api/vote", {
       method: "POST",
       credentials: "include",
@@ -75,19 +65,6 @@ const PostList = ({
     });
 
     if (res.ok) {
-<<<<<<< HEAD
-      setPosts((prev) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p;
-          let newVotes = p.votes;
-          if (p.userVote === 1 && vote === -1) newVotes -= 2;
-          else if (p.userVote === -1 && vote === 1) newVotes += 2;
-          else if (p.userVote === 0 || p.userVote === undefined)
-            newVotes += vote;
-          return { ...p, votes: newVotes, userVote: vote };
-        })
-      );
-=======
       const result = await res.json();
       if (result.success) {
         setPosts((prevPosts) =>
@@ -102,7 +79,6 @@ const PostList = ({
           )
         );
       }
->>>>>>> origin/milli
     }
   };
 

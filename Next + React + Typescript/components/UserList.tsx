@@ -1,17 +1,11 @@
-<<<<<<< HEAD
-import React, { useState, useEffect } from "react";
-import { FollowButton } from "./FollowButton";
-import type { User } from "../types/types";
-=======
 import React, { useState, useEffect } from 'react';
 import { FollowButton } from './FollowButton';
-import type { User } from '../types/types';
->>>>>>> origin/milli
+import type { PublicUser } from '../types/types';
 
 interface UserListProps {
-  users?: User[];
+  users?: PublicUser[];
   currentUserId?: number;
-  onUserClick?: (user: User) => void;
+  onUserClick?: (user: PublicUser) => void;
 }
 
 export const UserList: React.FC<UserListProps> = ({
@@ -19,7 +13,7 @@ export const UserList: React.FC<UserListProps> = ({
   currentUserId,
   onUserClick,
 }) => {
-  const [userList, setUserList] = useState<User[]>([]);
+  const [userList, setUserList] = useState<PublicUser[]>([]);
 
   useEffect(() => {
     // Filter out current user from the list
@@ -27,7 +21,7 @@ export const UserList: React.FC<UserListProps> = ({
     setUserList(filteredUsers);
   }, [users, currentUserId]);
 
-  const handleUserClick = (user: User) => {
+  const handleUserClick = (user: PublicUser) => {
     onUserClick?.(user);
   };
 

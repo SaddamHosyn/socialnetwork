@@ -33,11 +33,6 @@ const PostSingle = ({ post: propPost, postId, onVote }: Props) => {
     }
   }, [propPost, postId]);
 
-<<<<<<< HEAD
-  // Add vote handler for single post view
-  const handlePostVote = async (vote: 1 | -1) => {
-    if (!post) return;
-=======
   useEffect(() => {
     if (finalPostId) {
       fetch(`/api/post/${finalPostId}/comments`, { credentials: "include" })
@@ -60,7 +55,6 @@ const PostSingle = ({ post: propPost, postId, onVote }: Props) => {
     }
 
     // Default vote handling
->>>>>>> origin/milli
     const res = await fetch("/api/vote", {
       method: "POST",
       credentials: "include",
@@ -117,14 +111,6 @@ const PostSingle = ({ post: propPost, postId, onVote }: Props) => {
   }
 
   return (
-<<<<<<< HEAD
-    <div>
-      <button onClick={onClose}>Back</button>
-      <PostContent post={post} onVote={(v) => handlePostVote(v)} />
-      <h3>Comments</h3>
-      <CommentList postId={post.id} />
-      <CommentCreate postId={post.id} onCommentAdded={() => {}} />
-=======
     <div className="post-single">
       <PostContent post={post} onVote={handleVote} />
 
@@ -158,7 +144,6 @@ const PostSingle = ({ post: propPost, postId, onVote }: Props) => {
           ))}
         </div>
       </div>
->>>>>>> origin/milli
     </div>
   );
 };

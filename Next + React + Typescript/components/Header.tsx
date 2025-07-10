@@ -1,14 +1,9 @@
-<<<<<<< HEAD
 'use client';
-import React, { useState, useEffect } from 'react';
-import NotificationBell from './NotificationBell';
-import NotificationDropdown from './NotificationDropdown';
+import React, { useState, useEffect, useCallback } from 'react';
+import NotificationBell from './Notificationbell';
 import { Notification } from '../types/types';
-=======
-"use client";
 
 type PageType = "home" | "posts" | "profile" | "login" | "register" | "groups";
->>>>>>> origin/milli
 
 type Props = {
   onLogout: () => void;
@@ -17,35 +12,23 @@ type Props = {
   onNavigate: (page: PageType) => void;
 };
 
-<<<<<<< HEAD
-const Header = ({
+const Header: React.FC<Props> = ({
   onLogout,
   isLoggedIn,
-  onLogin,
-  onRegister,
-  onProfile,
+  currentPage,
+  onNavigate,
 }: Props) => {
   // Notification state management
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Fetch notifications on component mount and periodically
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchNotifications();
-      const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
-      return () => clearInterval(interval);
-    } else {
-      // Clear notifications when not logged in
-      setNotifications([]);
-    }
-  }, [isLoggedIn]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!isLoggedIn) return;
     
     try {
-      const response = await fetch('/api/notifications');
+      const response = await fetch('/api/notifications', {
+        credentials: 'include'
+      });
       
       if (response.status === 401) {
         console.log('User not authenticated - clearing notifications');
@@ -62,12 +45,25 @@ const Header = ({
       console.error('Error fetching notifications:', error);
       setNotifications([]); // Set to empty array on error
     }
-  };
+  }, [isLoggedIn]);
+
+  // Fetch notifications on component mount and periodically
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
+      return () => clearInterval(interval);
+    } else {
+      // Clear notifications when not logged in
+      setNotifications([]);
+    }
+  }, [isLoggedIn, fetchNotifications]);
 
   const handleMarkAsRead = async (id: number) => {
     try {
       const response = await fetch(`/api/notifications/${id}/read`, {
-        method: 'PUT'
+        method: 'PUT',
+        credentials: 'include'
       });
       if (response.ok) {
         setNotifications(prev =>
@@ -86,6 +82,7 @@ const Header = ({
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ action })
       });
       if (response.ok) {
@@ -98,100 +95,81 @@ const Header = ({
     }
   };
 
+  const handleNotificationBellClick = () => {
+    setShowNotifications(!showNotifications);
+  };
+
   return (
-    <header>
+    <header className="header">
       <div className="header-left">
-        <h1>Gritlab Gossiper</h1>
+        <h1 onClick={() => onNavigate("home")} className="logo">
+          Gritlab Gossiper
+        </h1>
       </div>
-      <div className="header-right">
-        {isLoggedIn && (
+      
+      <nav className="header-nav">
+        {isLoggedIn ? (
           <>
+            <button
+              className={`nav-button ${currentPage === "posts" ? "active" : ""}`}
+              onClick={() => onNavigate("posts")}
+            >
+              Posts
+            </button>
+            <button
+              className={`nav-button ${currentPage === "groups" ? "active" : ""}`}
+              onClick={() => onNavigate("groups")}
+            >
+              Groups
+            </button>
+            <button
+              className={`nav-button ${
+                currentPage === "profile" ? "active" : ""
+              }`}
+              onClick={() => onNavigate("profile")}
+            >
+              Profile
+            </button>
+            
+            {/* Notification Bell integrated into navigation */}
             <NotificationBell
               notifications={notifications}
-              onMarkAsRead={handleMarkAsRead}
-              onMarkAllAsRead={() => {}}
-            />
-            <NotificationDropdown
-              notifications={notifications}
+              onClick={handleNotificationBellClick}
               isOpen={showNotifications}
               onClose={() => setShowNotifications(false)}
               onMarkAsRead={handleMarkAsRead}
               onActionTaken={handleActionTaken}
             />
-          </>
-        )}
-        
-        {!isLoggedIn ? (
-          <>
-            <button onClick={onLogin}>Login</button>
-            <button onClick={onRegister}>Register</button>
+            
+            <button className="nav-button logout" onClick={onLogout}>
+              Logout
+            </button>
           </>
         ) : (
           <>
-            <button onClick={onProfile}>Profile</button>
-            <button onClick={onLogout}>Logout</button>
+            <button
+              className={`nav-button ${currentPage === "login" ? "active" : ""}`}
+              onClick={() => onNavigate("login")}
+            >
+              Login
+            </button>
+            <button
+              className={`nav-button ${
+                currentPage === "register" ? "active" : ""
+              }`}
+              onClick={() => onNavigate("register")}
+            >
+              Register
+            </button>
           </>
         )}
+      </nav>
+
+      <div className="header-right">
+        {/* Dropdown is now rendered inside NotificationBell component */}
       </div>
     </header>
   );
 };
-=======
-const Header = ({ onLogout, isLoggedIn, currentPage, onNavigate }: Props) => (
-  <header className="header">
-    <div className="header-left">
-      <h1 onClick={() => onNavigate("home")} className="logo">
-        Gritlab Gossiper
-      </h1>
-    </div>
-    <nav className="header-nav">
-      {isLoggedIn ? (
-        <>
-          <button
-            className={`nav-button ${currentPage === "posts" ? "active" : ""}`}
-            onClick={() => onNavigate("posts")}
-          >
-            Posts
-          </button>
-          <button
-            className={`nav-button ${currentPage === "groups" ? "active" : ""}`}
-            onClick={() => onNavigate("groups")}
-          >
-            Groups
-          </button>
-          <button
-            className={`nav-button ${
-              currentPage === "profile" ? "active" : ""
-            }`}
-            onClick={() => onNavigate("profile")}
-          >
-            Profile
-          </button>
-          <button className="nav-button logout" onClick={onLogout}>
-            Logout
-          </button>
-        </>
-      ) : (
-        <>
-          <button
-            className={`nav-button ${currentPage === "login" ? "active" : ""}`}
-            onClick={() => onNavigate("login")}
-          >
-            Login
-          </button>
-          <button
-            className={`nav-button ${
-              currentPage === "register" ? "active" : ""
-            }`}
-            onClick={() => onNavigate("register")}
-          >
-            Register
-          </button>
-        </>
-      )}
-    </nav>
-  </header>
-);
->>>>>>> origin/milli
 
 export default Header;
