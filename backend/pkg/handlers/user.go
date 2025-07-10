@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"net/http"
 	db "social-network/backend/pkg/db/queries"
-	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
 	"time"
@@ -95,15 +94,14 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get follower and following counts
-	database := sqlite.GetDB()
-	followerCount, err := db.GetFollowerCount(database, userID)
+	// Get follower and following counts - FIXED: removed database parameter
+	followerCount, err := db.GetFollowerCount(userID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch follower count")
 		return
 	}
 
-	followingCount, err := db.GetFollowingCount(database, userID)
+	followingCount, err := db.GetFollowingCount(userID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch following count")
 		return

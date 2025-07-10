@@ -6,24 +6,36 @@ import PostList from "../PostList";
 import CategoryList from "../CategoryList";
 import type { Category, Post } from "../../types/types";
 
-type Props = {
-  categories: Category[];
-  selectedCategoryId: number | null;
-  setSelectedCategoryId: (id: number | null) => void;
-};
-
-const PostsPage = ({
-  categories,
-  selectedCategoryId,
-  setSelectedCategoryId,
-}: Props) => {
+const PostsPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
+    null
+  );
   const [viewMode, setViewMode] = useState<"list" | "create" | "single">(
     "list"
   );
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
 
+  // Fetch categories
+  useEffect(() => {
+    fetch("/api/categories", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setCategories(data.data || []);
+        } else {
+          setCategories([]);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching categories:", error);
+        setCategories([]);
+      });
+  }, []);
+
+  // Fetch posts
   useEffect(() => {
     setLoading(true);
     let url = "/api/posts";
@@ -87,11 +99,16 @@ const PostsPage = ({
     setSelectedPostId(null);
   };
 
-  const handlePostCreated = () => {
-    // Refresh posts
-    const currentCat = selectedCategoryId;
-    setSelectedCategoryId(null);
-    setTimeout(() => setSelectedCategoryId(currentCat), 0);
+  const handlePostCreated = (newPost?: Post) => {
+    if (newPost) {
+      // Add the new post to the beginning of the posts list
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
+    } else {
+      // Fallback: refresh posts if we don't have the new post data
+      const currentCat = selectedCategoryId;
+      setSelectedCategoryId(null);
+      setTimeout(() => setSelectedCategoryId(currentCat), 0);
+    }
     setViewMode("list");
   };
 

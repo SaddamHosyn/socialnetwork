@@ -7,15 +7,11 @@ import ProfilePage from "../components/pages/ProfilePage";
 import LoginPage from "../components/pages/LoginPage";
 import RegisterPage from "../components/pages/RegisterPage";
 import GroupsPage from "../components/pages/GroupsPage";
-import type { Category } from "../types/types";
+
 
 type PageType = "home" | "posts" | "profile" | "login" | "register" | "groups";
 
 export default function Page() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
-    null
-  );
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageType>("home"); // Always start with home
@@ -66,7 +62,7 @@ export default function Page() {
         } else {
           setIsLoggedIn(false);
         }
-      } catch (error) {
+      } catch  {
         setIsLoggedIn(false);
       } finally {
         setAuthChecked(true);
@@ -74,14 +70,6 @@ export default function Page() {
     };
 
     checkAuthStatus();
-
-    // Fetch categories
-    fetch("/api/categories", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setCategories(data.data);
-      })
-      .catch((error) => console.error("Error fetching categories:", error));
   }, []);
 
   const renderCurrentPage = () => {
@@ -94,13 +82,7 @@ export default function Page() {
           />
         );
       case "posts":
-        return (
-          <PostsPage
-            categories={categories}
-            selectedCategoryId={selectedCategoryId}
-            setSelectedCategoryId={setSelectedCategoryId}
-          />
-        );
+        return <PostsPage />;
       case "profile":
         return <ProfilePage />;
       case "login":

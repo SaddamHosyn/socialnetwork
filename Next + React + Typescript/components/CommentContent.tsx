@@ -6,7 +6,7 @@ type Props = {
   onVote: (vote: 1 | -1) => void;
 };
 
-const CommentContent = ({ comment, onVote }) => (
+const CommentContent = ({ comment, onVote }: Props) => (
   <div style={{ borderBottom: "1px solid #e0e0e0", padding: "8px 0" }}>
     <div style={{ fontSize: 13, color: "#555" }}>
       <b>{comment.nickname}</b> ·{" "}

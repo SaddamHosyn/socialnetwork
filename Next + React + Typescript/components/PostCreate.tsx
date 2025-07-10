@@ -1,10 +1,10 @@
 "use client";
 import { useState, useRef } from "react";
-import type { Category } from "../types/types";
+import type { Category, Post } from "../types/types";
 
 type Props = {
   categories: Category[];
-  onSubmit?: () => void;
+  onSubmit?: (newPost?: Post) => void;
   onCancel: () => void;
 };
 
@@ -50,7 +50,12 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
     });
 
     if (res.ok) {
-      onSubmit?.();
+      const result = await res.json();
+      if (result.success && result.data.post) {
+        onSubmit?.(result.data.post);
+      } else {
+        onSubmit?.();
+      }
       onCancel();
       setTitle("");
       setContent("");

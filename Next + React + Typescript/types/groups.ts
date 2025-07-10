@@ -7,6 +7,7 @@ export interface Group {
   member_count: number;
   is_member: boolean;
   is_creator: boolean;
+  has_pending_request: boolean;
   created_at: string;
 }
 
@@ -45,10 +46,22 @@ export interface GroupEvent {
 export interface GroupPost {
   id: number;
   group_id: number;
+  title: string;
   content: string;
   author_id: number;
   nickname: string;
   created_at: string;
   comments_count: number;
   votes: number;
+  image_paths?: string[];
+}
+
+export interface GroupComment {
+  id: number;
+  post_id: number;
+  user_id: number;
+  nickname: string;
+  content: string;
+  image: string;
+  created_at: string;
 }

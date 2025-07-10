@@ -84,15 +84,16 @@ type Message struct {
 }
 
 type Group struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	CreatorID   int       `json:"creator_id"`
-	CreatorName string    `json:"creator_name"`
-	CreatedAt   time.Time `json:"created_at"`
-	MemberCount int       `json:"member_count"`
-	IsMember    bool      `json:"is_member"`
-	IsCreator   bool      `json:"is_creator"`
+	ID                int       `json:"id"`
+	Title             string    `json:"title"`
+	Description       string    `json:"description"`
+	CreatorID         int       `json:"creator_id"`
+	CreatorName       string    `json:"creator_name"`
+	CreatedAt         time.Time `json:"created_at"`
+	MemberCount       int       `json:"member_count"`
+	IsMember          bool      `json:"is_member"`
+	IsCreator         bool      `json:"is_creator"`
+	HasPendingRequest bool      `json:"has_pending_request"`
 }
 
 // GroupDetails represents detailed information about a group
@@ -111,16 +112,17 @@ type GroupMember struct {
 }
 
 type GroupPost struct {
-	ID         int       `json:"id"`
-	GroupID    int       `json:"group_id"`
-	UserID     int       `json:"user_id"`
-	Nickname   string    `json:"nickname"`
-	Title      string    `json:"title"`
-	Content    string    `json:"content"`
-	ImagePaths []string  `json:"image_paths"`
-	CreatedAt  time.Time `json:"created_at"`
-	Votes      int       `json:"votes"`
-	UserVote   int       `json:"user_vote"`
+	ID            int       `json:"id"`
+	GroupID       int       `json:"group_id"`
+	UserID        int       `json:"user_id"`
+	Nickname      string    `json:"nickname"`
+	Title         string    `json:"title"`
+	Content       string    `json:"content"`
+	ImagePaths    []string  `json:"image_paths"`
+	CreatedAt     time.Time `json:"created_at"`
+	Votes         int       `json:"votes"`
+	UserVote      int       `json:"user_vote"`
+	CommentsCount int       `json:"comments_count"`
 }
 
 type GroupComment struct {
@@ -131,6 +133,7 @@ type GroupComment struct {
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	Votes     int       `json:"votes"`
+	Image     string    `json:"image"`
 }
 
 type GroupEvent struct {

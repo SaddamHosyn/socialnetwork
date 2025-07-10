@@ -1,45 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useGroups } from "../hooks/useGroups";
+import { useState } from "react";
 import GroupPostCreate from "./GroupPostCreate";
 import GroupPostList from "./GroupPostList";
-import type { GroupPost } from "../types/groups";
 
 type Props = {
   groupId: number;
 };
 
 const GroupPosts: React.FC<Props> = ({ groupId }) => {
-  const [posts, setPosts] = useState<GroupPost[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreatePost, setShowCreatePost] = useState(false);
-
-  // Note: You'll need to add these methods to your useGroups hook
-  const loadPosts = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/groups/posts?group_id=${groupId}`);
-      const data = await response.json();
-      if (data.success) {
-        setPosts(data.data);
-      }
-    } catch (error) {
-      console.error("Error loading posts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPosts();
-  }, [groupId]);
 
   const handlePostCreated = () => {
     setShowCreatePost(false);
-    loadPosts(); // Refresh posts
   };
-
-  if (loading) return <div>Loading posts...</div>;
 
   return (
     <div>
@@ -78,7 +51,7 @@ const GroupPosts: React.FC<Props> = ({ groupId }) => {
         </div>
       )}
 
-      <GroupPostList posts={posts} onPostUpdate={loadPosts} />
+      <GroupPostList groupId={groupId} isGroupMember={true} />
     </div>
   );
 };

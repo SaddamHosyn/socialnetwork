@@ -26,7 +26,9 @@ func GroupsHandler(w http.ResponseWriter, r *http.Request) {
 			offset = 0
 		}
 
-		groups, err := db.GetAllGroups(limit, offset)
+		userID := r.Context().Value(userIDKey).(int)
+
+		groups, err := db.GetAllGroupsWithUserStatus(userID, limit, offset)
 		if err != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Server error")
 			return
@@ -258,7 +260,29 @@ func RequestJoinGroupHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // HandleInvitationHandler accepts or declines a group invitation
+
+
+// Enhanced HandleInvitationHandler with follower notifications
 func HandleInvitationHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -284,6 +308,17 @@ func HandleInvitationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get group ID before handling invitation for follower notifications
+	var groupID int
+	err = sqlite.GetDB().QueryRow(`
+		SELECT group_id FROM group_invitations 
+		WHERE id = ? AND invitee_id = ?
+	`, invitationID, userID).Scan(&groupID)
+	if err != nil {
+		utils.Fail(w, http.StatusNotFound, "Invitation not found")
+		return
+	}
+
 	err = db.HandleGroupInvitation(invitationID, userID, action == "accept")
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -293,6 +328,22 @@ func HandleInvitationHandler(w http.ResponseWriter, r *http.Request) {
 			utils.Fail(w, http.StatusInternalServerError, "Server error")
 		}
 		return
+	}
+
+	// NEW: Notify followers if user accepted group invitation
+	if action == "accept" {
+		go func() {
+			groupName, err := db.GetGroupNameByID(groupID)
+			if err != nil {
+				return
+			}
+			
+			// Notify user's followers that they joined a group
+			err = db.NotifyFollowersOfGroupActivity(userID, groupID, groupName, "joined")
+			if err != nil {
+				log.Printf("Error notifying followers of group join: %v", err)
+			}
+		}()
 	}
 
 	message := "Invitation declined"
@@ -305,7 +356,7 @@ func HandleInvitationHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// HandleJoinRequestHandler accepts or declines a join request (group creator only)
+// Enhanced HandleJoinRequestHandler with follower notifications
 func HandleJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -342,6 +393,20 @@ func HandleJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get group and requester info before handling for follower notifications
+	var groupID, requesterID int
+	var groupName string
+	err = sqlite.GetDB().QueryRow(`
+		SELECT gi.group_id, gi.invitee_id, g.name
+		FROM group_invitations gi
+		JOIN groups g ON gi.group_id = g.id
+		WHERE gi.id = ? AND gi.inviter_id = gi.invitee_id
+	`, requestID).Scan(&groupID, &requesterID, &groupName)
+	if err != nil {
+		utils.Fail(w, http.StatusNotFound, "Join request not found")
+		return
+	}
+
 	err = db.HandleJoinRequest(requestID, action == "accept")
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -353,6 +418,17 @@ func HandleJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// NEW: Notify requester's followers if join request was accepted
+	if action == "accept" {
+		go func() {
+			// Notify requester's followers that they joined a group
+			err = db.NotifyFollowersOfGroupActivity(requesterID, groupID, groupName, "joined")
+			if err != nil {
+				log.Printf("Error notifying followers of group join: %v", err)
+			}
+		}()
+	}
+
 	message := "Join request declined"
 	if action == "accept" {
 		message = "Join request accepted successfully"
@@ -362,6 +438,29 @@ func HandleJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
 		"message": message,
 	})
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // LeaveGroupHandler allows a user to leave a group
 func LeaveGroupHandler(w http.ResponseWriter, r *http.Request) {

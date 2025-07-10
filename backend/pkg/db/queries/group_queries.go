@@ -9,6 +9,7 @@ import (
 )
 
 // CreateGroup creates a new group and adds the creator as owner
+// CreateGroup creates a new group and adds the creator as owner
 func CreateGroup(userID int, title, description string) (int, error) {
 	tx, err := sqlite.GetDB().Begin()
 	if err != nil {
@@ -36,7 +37,21 @@ func CreateGroup(userID int, title, description string) (int, error) {
 		return 0, err
 	}
 
-	return groupID, tx.Commit()
+	// Commit the transaction first
+	if err = tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	// Notify followers about group creation (in goroutine to avoid blocking)
+	go func() {
+		err = NotifyFollowersOfGroupActivity(userID, groupID, title, "created")
+		if err != nil {
+			// Log error but don't fail the group creation
+			return
+		}
+	}()
+
+	return groupID, nil
 }
 
 // GetAllGroups returns all groups with pagination
@@ -186,13 +201,16 @@ func getGroupMembers(groupID int) ([]models.GroupMember, error) {
 	return members, nil
 }
 
-// IsGroupMember checks if a user is a member of a group
+// IsGroupMember checks if a user is a member of a group or the creator
 func IsGroupMember(userID, groupID int) (bool, error) {
 	var count int
 	err := sqlite.GetDB().QueryRow(`
-		SELECT COUNT(*) FROM group_members 
-		WHERE user_id = ? AND group_id = ?
-	`, userID, groupID).Scan(&count)
+		SELECT COUNT(*) FROM (
+			SELECT 1 FROM group_members WHERE user_id = ? AND group_id = ?
+			UNION
+			SELECT 1 FROM groups WHERE creator_id = ? AND id = ?
+		)
+	`, userID, groupID, userID, groupID).Scan(&count)
 	return count > 0, err
 }
 
@@ -200,9 +218,9 @@ func IsGroupMember(userID, groupID int) (bool, error) {
 func IsGroupCreator(requestID, userID int) (bool, error) {
 	var count int
 	err := sqlite.GetDB().QueryRow(`
-		SELECT COUNT(*) FROM group_join_requests gjr
-		JOIN groups g ON gjr.group_id = g.id
-		WHERE gjr.id = ? AND g.creator_id = ?
+		SELECT COUNT(*) FROM group_invitations gi
+		JOIN groups g ON gi.group_id = g.id
+		WHERE gi.id = ? AND g.creator_id = ?
 	`, requestID, userID).Scan(&count)
 	return count > 0, err
 }
@@ -217,89 +235,158 @@ func IsGroupCreatorByGroupID(userID, groupID int) (bool, error) {
 	return count > 0, err
 }
 
-// CreateGroupInvitation creates a new group invitation
-// Update this function in your database queries file
+// CreateGroupInvitation creates a new group invitation and sends notification
 func CreateGroupInvitation(groupID, inviterID, inviteeID int) (int, error) {
-    database := sqlite.GetDB()
-    
-    // Check if user is already a member
-    var exists bool
-    err := database.QueryRow(`
-        SELECT EXISTS(SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)
-    `, groupID, inviteeID).Scan(&exists)
-    if err != nil {
-        return 0, err
-    }
-    if exists {
-        return 0, fmt.Errorf("user is already member")
-    }
-    
-    // Check if invitation already exists and is pending
-    err = database.QueryRow(`
-        SELECT EXISTS(SELECT 1 FROM group_invitations WHERE group_id = ? AND invitee_id = ? AND status = 'pending')
-    `, groupID, inviteeID).Scan(&exists)
-    if err != nil {
-        return 0, err
-    }
-    if exists {
-        return 0, fmt.Errorf("user already invited")
-    }
-    
-    // Create the invitation
-    result, err := database.Exec(`
-        INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status)
-        VALUES (?, ?, ?, 'pending')
-    `, groupID, inviterID, inviteeID)
-    
-    if err != nil {
-        return 0, err
-    }
-    
-    id, err := result.LastInsertId()
-    return int(id), err
+	database := sqlite.GetDB()
+
+	// Start transaction
+	tx, err := database.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	// Check if user is already a member
+	var exists bool
+	err = tx.QueryRow(`
+		SELECT EXISTS(SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)
+	`, groupID, inviteeID).Scan(&exists)
+	if err != nil {
+		return 0, err
+	}
+	if exists {
+		return 0, fmt.Errorf("user is already member")
+	}
+
+	// Check if invitation already exists and is pending
+	err = tx.QueryRow(`
+		SELECT EXISTS(SELECT 1 FROM group_invitations WHERE group_id = ? AND invitee_id = ? AND status = 'pending')
+	`, groupID, inviteeID).Scan(&exists)
+	if err != nil {
+		return 0, err
+	}
+	if exists {
+		return 0, fmt.Errorf("user already invited")
+	}
+
+	// Create the invitation
+	var invitationID int
+	err = tx.QueryRow(`
+		INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status, created_at)
+		VALUES (?, ?, ?, 'pending', ?)
+		RETURNING id
+	`, groupID, inviterID, inviteeID, time.Now()).Scan(&invitationID)
+	if err != nil {
+		return 0, err
+	}
+
+	// Get group and inviter details for notification
+	var groupName, inviterName string
+	err = tx.QueryRow(`
+		SELECT g.name, u.nickname 
+		FROM groups g, users u 
+		WHERE g.id = ? AND u.id = ?
+	`, groupID, inviterID).Scan(&groupName, &inviterName)
+	if err != nil {
+		return 0, err
+	}
+
+	// Create notification
+	content := inviterName + " invited you to join the group '" + groupName + "'"
+	_, err = tx.Exec(`
+		INSERT INTO notifications (user_id, type, reference_id, content, requires_action, sender_id, sender_name, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, inviteeID, "group_invitation", invitationID, content, true, inviterID, inviterName, time.Now())
+	if err != nil {
+		return 0, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return 0, err
+	}
+
+	return invitationID, nil
 }
 
-// CreateJoinRequest creates a new join request
-// Update this function in your database queries file
+// CreateJoinRequest creates a new join request and sends notification
 func CreateJoinRequest(groupID, userID int) (int, error) {
-    database := sqlite.GetDB()
-    
-    // Check if user is already a member
-    var exists bool
-    err := database.QueryRow(`
-        SELECT EXISTS(SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)
-    `, groupID, userID).Scan(&exists)
-    if err != nil {
-        return 0, err
-    }
-    if exists {
-        return 0, fmt.Errorf("user is already member")
-    }
-    
-    // Check if join request already exists and is pending
-    err = database.QueryRow(`
-        SELECT EXISTS(SELECT 1 FROM group_invitations WHERE group_id = ? AND invitee_id = ? AND inviter_id = ? AND status = 'pending')
-    `, groupID, userID, userID).Scan(&exists)
-    if err != nil {
-        return 0, err
-    }
-    if exists {
-        return 0, fmt.Errorf("join request already requested")
-    }
-    
-    // Create the join request (using same table as invitations, but inviter_id = invitee_id for join requests)
-    result, err := database.Exec(`
-        INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status)
-        VALUES (?, ?, ?, 'pending')
-    `, groupID, userID, userID)
-    
-    if err != nil {
-        return 0, err
-    }
-    
-    id, err := result.LastInsertId()
-    return int(id), err
+	database := sqlite.GetDB()
+
+	// Start transaction
+	tx, err := database.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	// Check if user is already a member
+	var exists bool
+	err = tx.QueryRow(`
+		SELECT EXISTS(SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)
+	`, groupID, userID).Scan(&exists)
+	if err != nil {
+		return 0, err
+	}
+	if exists {
+		return 0, fmt.Errorf("user is already member")
+	}
+
+	// Check if join request already exists and is pending
+	err = tx.QueryRow(`
+		SELECT EXISTS(SELECT 1 FROM group_invitations WHERE group_id = ? AND invitee_id = ? AND inviter_id = ? AND status = 'pending')
+	`, groupID, userID, userID).Scan(&exists)
+	if err != nil {
+		return 0, err
+	}
+	if exists {
+		return 0, fmt.Errorf("join request already exists")
+	}
+
+	// Create the join request (using same table as invitations, but inviter_id = invitee_id for join requests)
+	var requestID int
+	err = tx.QueryRow(`
+		INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status, created_at)
+		VALUES (?, ?, ?, 'pending', ?)
+		RETURNING id
+	`, groupID, userID, userID, time.Now()).Scan(&requestID)
+	if err != nil {
+		return 0, err
+	}
+
+	// Get group and requester details for notification
+	var groupName, requesterName string
+	var creatorID int
+	err = tx.QueryRow(`
+		SELECT g.name, g.creator_id, u.nickname 
+		FROM groups g, users u 
+		WHERE g.id = ? AND u.id = ?
+	`, groupID, userID).Scan(&groupName, &creatorID, &requesterName)
+	if err != nil {
+		return 0, err
+	}
+
+	// Create notification for group creator
+	content := requesterName + " requested to join your group '" + groupName + "'"
+	_, err = tx.Exec(`
+		INSERT INTO notifications (user_id, type, reference_id, content, requires_action, sender_id, sender_name, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, creatorID, "group_join_request", requestID, content, true, userID, requesterName, time.Now())
+	if err != nil {
+		return 0, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return 0, err
+	}
+
+	return requestID, nil
 }
+
+// HandleGroupInvitation accepts or declines a group invitation
+
+
 
 // HandleGroupInvitation accepts or declines a group invitation
 func HandleGroupInvitation(invitationID, userID int, accept bool) error {
@@ -342,9 +429,56 @@ func HandleGroupInvitation(invitationID, userID int, accept bool) error {
 		return err
 	}
 
-	return tx.Commit()
+	// Update notification as action taken
+	_, err = tx.Exec(`
+		UPDATE notifications 
+		SET action_taken = ?, is_read = 1
+		WHERE reference_id = ? AND type = 'group_invitation'
+	`, status, invitationID)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	// If user accepted, notify existing members and followers
+	if accept {
+		go func() {
+			// Get group details
+			groupName, _ := GetGroupNameByID(groupID)
+			userName, _ := GetUserNameByID(userID)
+			
+			// Notify existing group members
+			memberIDs, err := GetGroupMembersForNotification(groupID)
+			if err == nil {
+				for _, memberID := range memberIDs {
+					if memberID != userID { // Don't notify the new member
+						CreateGroupMembershipNotification(memberID, userID, userName, groupName, groupID)
+					}
+				}
+			}
+			
+			// Notify user's followers
+			NotifyFollowersOfGroupActivity(userID, groupID, groupName, "joined")
+		}()
+	}
+
+	return nil
 }
 
+
+
+
+
+
+
+
+
+
+// HandleJoinRequest accepts or declines a join request
 // HandleJoinRequest accepts or declines a join request
 func HandleJoinRequest(requestID int, accept bool) error {
 	tx, err := sqlite.GetDB().Begin()
@@ -356,8 +490,8 @@ func HandleJoinRequest(requestID int, accept bool) error {
 	// Get request details
 	var groupID, requesterID int
 	err = tx.QueryRow(`
-		SELECT group_id, requester_id FROM group_join_requests 
-		WHERE id = ? AND status = 'pending'
+		SELECT group_id, invitee_id FROM group_invitations 
+		WHERE id = ? AND status = 'pending' AND inviter_id = invitee_id
 	`, requestID).Scan(&groupID, &requesterID)
 	if err != nil {
 		return err
@@ -378,7 +512,7 @@ func HandleJoinRequest(requestID int, accept bool) error {
 
 	// Update request status
 	_, err = tx.Exec(`
-		UPDATE group_join_requests 
+		UPDATE group_invitations 
 		SET status = ? 
 		WHERE id = ?
 	`, status, requestID)
@@ -386,7 +520,44 @@ func HandleJoinRequest(requestID int, accept bool) error {
 		return err
 	}
 
-	return tx.Commit()
+	// Update notification as action taken
+	_, err = tx.Exec(`
+		UPDATE notifications 
+		SET action_taken = ?, is_read = 1
+		WHERE reference_id = ? AND type = 'group_join_request'
+	`, status, requestID)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	// If user accepted, notify existing members and followers
+	if accept {
+		go func() {
+			// Get group details
+			groupName, _ := GetGroupNameByID(groupID)
+			userName, _ := GetUserNameByID(requesterID)
+			
+			// Notify existing group members
+			memberIDs, err := GetGroupMembersForNotification(groupID)
+			if err == nil {
+				for _, memberID := range memberIDs {
+					if memberID != requesterID { // Don't notify the new member
+						CreateGroupMembershipNotification(memberID, requesterID, userName, groupName, groupID)
+					}
+				}
+			}
+			
+			// Notify user's followers
+			NotifyFollowersOfGroupActivity(requesterID, groupID, groupName, "joined")
+		}()
+	}
+
+	return nil
 }
 
 // RemoveGroupMember removes a user from a group
@@ -417,7 +588,7 @@ func GetUserGroupInvitations(userID int) ([]models.GroupInvitation, error) {
 		FROM group_invitations gi
 		JOIN groups g ON gi.group_id = g.id
 		JOIN users u ON gi.inviter_id = u.id
-		WHERE gi.invitee_id = ? AND gi.status = 'pending'
+		WHERE gi.invitee_id = ? AND gi.status = 'pending' AND gi.inviter_id != gi.invitee_id
 		ORDER BY gi.created_at DESC
 	`
 
@@ -445,12 +616,12 @@ func GetUserGroupInvitations(userID int) ([]models.GroupInvitation, error) {
 // GetGroupJoinRequests returns pending join requests for groups created by a user
 func GetGroupJoinRequests(userID int) ([]models.GroupJoinRequest, error) {
 	query := `
-		SELECT gjr.id, gjr.group_id, g.name, gjr.requester_id, u.nickname, gjr.created_at
-		FROM group_join_requests gjr
-		JOIN groups g ON gjr.group_id = g.id
-		JOIN users u ON gjr.requester_id = u.id
-		WHERE g.creator_id = ? AND gjr.status = 'pending'
-		ORDER BY gjr.created_at DESC
+		SELECT gi.id, gi.group_id, g.name, gi.invitee_id, u.nickname, gi.created_at
+		FROM group_invitations gi
+		JOIN groups g ON gi.group_id = g.id
+		JOIN users u ON gi.invitee_id = u.id
+		WHERE g.creator_id = ? AND gi.status = 'pending' AND gi.inviter_id = gi.invitee_id
+		ORDER BY gi.created_at DESC
 	`
 
 	rows, err := sqlite.GetDB().Query(query, userID)
@@ -472,4 +643,73 @@ func GetGroupJoinRequests(userID int) ([]models.GroupJoinRequest, error) {
 	}
 
 	return requests, nil
+}
+
+// GetAllGroupsWithUserStatus returns all groups with pagination and user membership status
+func GetAllGroupsWithUserStatus(userID int, limit, offset int) ([]models.Group, error) {
+	query := `
+		SELECT g.id, g.name, g.description, g.creator_id, u.nickname, g.created_at,
+			   COUNT(gm.user_id) as member_count,
+			   CASE WHEN gm2.user_id IS NOT NULL THEN 1 ELSE 0 END as is_member,
+			   CASE WHEN g.creator_id = ? THEN 1 ELSE 0 END as is_creator,
+			   CASE WHEN gi.id IS NOT NULL THEN 1 ELSE 0 END as has_pending_request
+		FROM groups g
+		LEFT JOIN users u ON g.creator_id = u.id
+		LEFT JOIN group_members gm ON g.id = gm.group_id
+		LEFT JOIN group_members gm2 ON g.id = gm2.group_id AND gm2.user_id = ?
+		LEFT JOIN group_invitations gi ON g.id = gi.group_id AND gi.invitee_id = ? AND gi.inviter_id = gi.invitee_id AND gi.status = 'pending'
+		GROUP BY g.id
+		ORDER BY g.created_at DESC
+		LIMIT ? OFFSET ?
+	`
+
+	rows, err := sqlite.GetDB().Query(query, userID, userID, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var groups []models.Group
+	for rows.Next() {
+		var group models.Group
+		var hasPendingRequest int
+		err := rows.Scan(&group.ID, &group.Title, &group.Description,
+			&group.CreatorID, &group.CreatorName, &group.CreatedAt, &group.MemberCount,
+			&group.IsMember, &group.IsCreator, &hasPendingRequest)
+		if err != nil {
+			return nil, err
+		}
+		group.HasPendingRequest = hasPendingRequest == 1
+		groups = append(groups, group)
+	}
+
+	return groups, nil
+}
+
+// GetGroupFollowers returns followers who are also group members for targeted notifications
+func GetGroupFollowers(groupID, userID int) ([]int, error) {
+	query := `
+		SELECT DISTINCT f.follower_id
+		FROM followers f
+		JOIN group_members gm ON f.follower_id = gm.user_id
+		WHERE f.followee_id = ? AND gm.group_id = ?
+	`
+
+	rows, err := sqlite.GetDB().Query(query, userID, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var followerIDs []int
+	for rows.Next() {
+		var followerID int
+		err := rows.Scan(&followerID)
+		if err != nil {
+			return nil, err
+		}
+		followerIDs = append(followerIDs, followerID)
+	}
+
+	return followerIDs, nil
 }

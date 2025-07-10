@@ -63,7 +63,7 @@ const UserRegister: React.FC<Props> = ({ onSuccess, onCancel }) => {
           .catch(() => ({ error: "An unknown error occurred." }));
         setError(data.error || "Registration failed");
       }
-    } catch (err) {
+    } catch {
       setError("A network error occurred. Please try again.");
     } finally {
       setLoading(false);

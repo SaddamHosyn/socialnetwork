@@ -1,22 +1,26 @@
 package db
 
 import (
-	"database/sql"
+	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
 )
 
-// CreateFollowRequest creates a new follow request
-func CreateFollowRequest(db *sql.DB, requesterID, requesteeID int) error {
-	query := `
+// CreateFollowRequest creates a new follow request and returns the ID
+func CreateFollowRequest(requesterID, requesteeID int) (int, error) {
+	result, err := sqlite.GetDB().Exec(`
 		INSERT INTO follow_requests (requester_id, requestee_id, status)
 		VALUES (?, ?, 'pending')
-	`
-	_, err := db.Exec(query, requesterID, requesteeID)
-	return err
+	`, requesterID, requesteeID)
+	if err != nil {
+		return 0, err
+	}
+	
+	id, err := result.LastInsertId()
+	return int(id), err
 }
 
 // GetFollowRequest gets a specific follow request
-func GetFollowRequest(db *sql.DB, requesterID, requesteeID int) (*models.FollowRequest, error) {
+func GetFollowRequest(requesterID, requesteeID int) (*models.FollowRequest, error) {
 	query := `
 		SELECT fr.id, fr.requester_id, fr.requestee_id, fr.status, fr.created_at, u.nickname
 		FROM follow_requests fr
@@ -24,7 +28,7 @@ func GetFollowRequest(db *sql.DB, requesterID, requesteeID int) (*models.FollowR
 		WHERE fr.requester_id = ? AND fr.requestee_id = ? AND fr.status = 'pending'
 	`
 	var req models.FollowRequest
-	err := db.QueryRow(query, requesterID, requesteeID).Scan(
+	err := sqlite.GetDB().QueryRow(query, requesterID, requesteeID).Scan(
 		&req.ID, &req.RequesterID, &req.RequesteeID, &req.Status, &req.CreatedAt, &req.RequesterNickname,
 	)
 	if err != nil {
@@ -34,7 +38,7 @@ func GetFollowRequest(db *sql.DB, requesterID, requesteeID int) (*models.FollowR
 }
 
 // GetPendingFollowRequests gets all pending follow requests for a user
-func GetPendingFollowRequests(db *sql.DB, userID int) ([]models.FollowRequest, error) {
+func GetPendingFollowRequests(userID int) ([]models.FollowRequest, error) {
 	query := `
 		SELECT fr.id, fr.requester_id, fr.requestee_id, fr.status, fr.created_at, u.nickname
 		FROM follow_requests fr
@@ -42,7 +46,7 @@ func GetPendingFollowRequests(db *sql.DB, userID int) ([]models.FollowRequest, e
 		WHERE fr.requestee_id = ? AND fr.status = 'pending'
 		ORDER BY fr.created_at DESC
 	`
-	rows, err := db.Query(query, userID)
+	rows, err := sqlite.GetDB().Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +65,7 @@ func GetPendingFollowRequests(db *sql.DB, userID int) ([]models.FollowRequest, e
 }
 
 // GetFollowers gets all followers of a user
-func GetFollowers(db *sql.DB, userID int) ([]models.Follower, error) {
+func GetFollowers(userID int) ([]models.Follower, error) {
 	query := `
 		SELECT f.follower_id, f.followee_id, f.followed_at, u.nickname
 		FROM followers f
@@ -69,7 +73,7 @@ func GetFollowers(db *sql.DB, userID int) ([]models.Follower, error) {
 		WHERE f.followee_id = ?
 		ORDER BY f.followed_at DESC
 	`
-	rows, err := db.Query(query, userID)
+	rows, err := sqlite.GetDB().Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +92,7 @@ func GetFollowers(db *sql.DB, userID int) ([]models.Follower, error) {
 }
 
 // GetFollowing gets all users that a user is following
-func GetFollowing(db *sql.DB, userID int) ([]models.Follower, error) {
+func GetFollowing(userID int) ([]models.Follower, error) {
 	query := `
 		SELECT f.follower_id, f.followee_id, f.followed_at, u.nickname
 		FROM followers f
@@ -96,7 +100,7 @@ func GetFollowing(db *sql.DB, userID int) ([]models.Follower, error) {
 		WHERE f.follower_id = ?
 		ORDER BY f.followed_at DESC
 	`
-	rows, err := db.Query(query, userID)
+	rows, err := sqlite.GetDB().Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -114,43 +118,48 @@ func GetFollowing(db *sql.DB, userID int) ([]models.Follower, error) {
 	return following, nil
 }
 
-// Rest of your functions remain the same...
-func UpdateFollowRequestStatus(db *sql.DB, requestID int, status string) error {
+// UpdateFollowRequestStatus updates the status of a follow request
+func UpdateFollowRequestStatus(requestID int, status string) error {
 	query := `UPDATE follow_requests SET status = ? WHERE id = ?`
-	_, err := db.Exec(query, status, requestID)
+	_, err := sqlite.GetDB().Exec(query, status, requestID)
 	return err
 }
 
-func CreateFollowRelationship(db *sql.DB, followerID, followeeID int) error {
+// CreateFollowRelationship creates a new follow relationship
+func CreateFollowRelationship(followerID, followeeID int) error {
 	query := `
 		INSERT INTO followers (follower_id, followee_id)
 		VALUES (?, ?)
 	`
-	_, err := db.Exec(query, followerID, followeeID)
+	_, err := sqlite.GetDB().Exec(query, followerID, followeeID)
 	return err
 }
 
-func DeleteFollowRelationship(db *sql.DB, followerID, followeeID int) error {
+// DeleteFollowRelationship removes a follow relationship
+func DeleteFollowRelationship(followerID, followeeID int) error {
 	query := `DELETE FROM followers WHERE follower_id = ? AND followee_id = ?`
-	_, err := db.Exec(query, followerID, followeeID)
+	_, err := sqlite.GetDB().Exec(query, followerID, followeeID)
 	return err
 }
 
-func IsFollowing(db *sql.DB, followerID, followeeID int) (bool, error) {
+// IsFollowing checks if user is following another user
+func IsFollowing(followerID, followeeID int) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM followers WHERE follower_id = ? AND followee_id = ?)`
 	var exists bool
-	err := db.QueryRow(query, followerID, followeeID).Scan(&exists)
+	err := sqlite.GetDB().QueryRow(query, followerID, followeeID).Scan(&exists)
 	return exists, err
 }
 
-func GetUserPrivacySetting(db *sql.DB, userID int) (bool, error) {
+// GetUserPrivacySetting gets user's privacy setting
+func GetUserPrivacySetting(userID int) (bool, error) {
 	query := `SELECT is_private FROM users WHERE id = ?`
 	var isPrivate bool
-	err := db.QueryRow(query, userID).Scan(&isPrivate)
+	err := sqlite.GetDB().QueryRow(query, userID).Scan(&isPrivate)
 	return isPrivate, err
 }
 
-func HasPendingFollowRequest(db *sql.DB, requesterID, requesteeID int) (bool, error) {
+// HasPendingFollowRequest checks if there's a pending follow request
+func HasPendingFollowRequest(requesterID, requesteeID int) (bool, error) {
 	query := `
 		SELECT EXISTS(
 			SELECT 1 FROM follow_requests 
@@ -158,27 +167,31 @@ func HasPendingFollowRequest(db *sql.DB, requesterID, requesteeID int) (bool, er
 		)
 	`
 	var exists bool
-	err := db.QueryRow(query, requesterID, requesteeID).Scan(&exists)
+	err := sqlite.GetDB().QueryRow(query, requesterID, requesteeID).Scan(&exists)
 	return exists, err
 }
 
-func GetFollowerCount(db *sql.DB, userID int) (int, error) {
+// GetFollowerCount gets the number of followers for a user
+func GetFollowerCount(userID int) (int, error) {
 	query := `SELECT COUNT(*) FROM followers WHERE followee_id = ?`
 	var count int
-	err := db.QueryRow(query, userID).Scan(&count)
+	err := sqlite.GetDB().QueryRow(query, userID).Scan(&count)
 	return count, err
 }
 
-func GetFollowingCount(db *sql.DB, userID int) (int, error) {
+// GetFollowingCount gets the number of users a user is following
+func GetFollowingCount(userID int) (int, error) {
 	query := `SELECT COUNT(*) FROM followers WHERE follower_id = ?`
 	var count int
-	err := db.QueryRow(query, userID).Scan(&count)
+	err := sqlite.GetDB().QueryRow(query, userID).Scan(&count)
 	return count, err
 }
 
-func GetUserDetails(db *sql.DB, userID int) (string, error) {
+// GetUserDetails gets user nickname by ID
+func GetUserDetails(userID int) (string, error) {
 	query := `SELECT nickname FROM users WHERE id = ?`
 	var nickname string
-	err := db.QueryRow(query, userID).Scan(&nickname)
+	err := sqlite.GetDB().QueryRow(query, userID).Scan(&nickname)
 	return nickname, err
 }
+

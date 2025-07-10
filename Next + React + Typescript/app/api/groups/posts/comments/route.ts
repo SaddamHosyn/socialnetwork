@@ -1,4 +1,4 @@
- import { type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +9,9 @@ export async function GET(req: NextRequest) {
   const offset = searchParams.get("offset") || "0";
   const cookie = req.headers.get("cookie");
 
+  console.log("Comments API called with post_id:", postId);
+  console.log("Cookie:", cookie);
+
   const res = await fetch(`http://localhost:8080/api/groups/posts/comments?post_id=${postId}&limit=${limit}&offset=${offset}`, {
     method: "GET",
     headers: {
@@ -17,22 +20,6 @@ export async function GET(req: NextRequest) {
     cache: "no-store",
   });
 
-  return res;
-}
-
-export async function POST(req: NextRequest) {
-  const cookie = req.headers.get("cookie");
-  const body = await req.text();
-
-  const res = await fetch("http://localhost:8080/api/groups/posts/comments", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Cookie: cookie || "",
-    },
-    body: body,
-    cache: "no-store",
-  });
-
+  console.log("Backend response status:", res.status);
   return res;
 }

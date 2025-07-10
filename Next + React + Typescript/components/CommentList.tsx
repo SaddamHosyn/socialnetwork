@@ -8,7 +8,7 @@ type Props = {
   pageSize?: number; // Optional, default to 50
 };
 
-const CommentList = ({ postId, pageSize = 50 }) => {
+const CommentList = ({ postId, pageSize = 50 }: Props) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);

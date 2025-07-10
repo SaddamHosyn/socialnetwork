@@ -37,10 +37,8 @@ func FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	database := sqlite.GetDB()
-
-	// Check if already following
-	isFollowing, err := db.IsFollowing(database, userID, targetUserID)
+	// Check if already following - FIXED: removed database parameter
+	isFollowing, err := db.IsFollowing(userID, targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Database error")
 		return
@@ -51,8 +49,8 @@ func FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if there's already a pending request
-	hasPendingRequest, err := db.HasPendingFollowRequest(database, userID, targetUserID)
+	// Check if there's already a pending request - FIXED: removed database parameter
+	hasPendingRequest, err := db.HasPendingFollowRequest(userID, targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Database error")
 		return
@@ -63,37 +61,30 @@ func FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if target user is private
-	isPrivate, err := db.GetUserPrivacySetting(database, targetUserID)
+	// Check if target user is private - FIXED: removed database parameter
+	isPrivate, err := db.GetUserPrivacySetting(targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Database error")
 		return
 	}
 
 	if isPrivate {
-		// Get requester's nickname for notification
-		requesterNickname, err := db.GetUserDetails(database, userID)
+		// Get requester's nickname for notification - FIXED: removed database parameter
+		requesterNickname, err := db.GetUserDetails(userID)
 		if err != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Failed to get user details")
 			return
 		}
 
-		// Send follow request for private users
-		err = db.CreateFollowRequest(database, userID, targetUserID)
+		// Send follow request for private users - FIXED: removed database parameter and return ID
+		followRequestID, err := db.CreateFollowRequest(userID, targetUserID)
 		if err != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Failed to send follow request")
 			return
 		}
 
-		// Get the created follow request to get its ID
-		followRequest, err := db.GetFollowRequest(database, userID, targetUserID)
-		if err != nil {
-			utils.Fail(w, http.StatusInternalServerError, "Failed to get follow request")
-			return
-		}
-
 		// Create notification for the target user
-		err = db.CreateFollowRequestNotification(targetUserID, userID, requesterNickname, followRequest.ID)
+		err = db.CreateFollowRequestNotification(targetUserID, userID, requesterNickname, followRequestID)
 		if err != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Failed to create notification")
 			return
@@ -104,8 +95,8 @@ func FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 			"status":  "pending",
 		})
 	} else {
-		// Directly follow public users
-		err = db.CreateFollowRelationship(database, userID, targetUserID)
+		// Directly follow public users - FIXED: removed database parameter
+		err = db.CreateFollowRelationship(userID, targetUserID)
 		if err != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Failed to follow user")
 			return
@@ -124,7 +115,6 @@ func RespondToFollowRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get current user ID from context
 	userID := r.Context().Value(userIDKey).(int)
 
 	// Parse request ID and action
@@ -147,13 +137,12 @@ func RespondToFollowRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	database := sqlite.GetDB()
-
 	// Get the follow request to verify it belongs to the current user
+	// FIXED: Use direct database query since this is handler-specific logic
 	var requesterID, requesteeID int
 	var status string
 	query := `SELECT requester_id, requestee_id, status FROM follow_requests WHERE id = ?`
-	err = database.QueryRow(query, requestID).Scan(&requesterID, &requesteeID, &status)
+	err = sqlite.GetDB().QueryRow(query, requestID).Scan(&requesterID, &requesteeID, &status)
 	if err != nil {
 		utils.Fail(w, http.StatusNotFound, "Follow request not found")
 		return
@@ -171,13 +160,13 @@ func RespondToFollowRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the request status
+	// Update the request status - FIXED: removed database parameter
 	newStatus := "declined"
 	if action == "accept" {
 		newStatus = "accepted"
 	}
 
-	err = db.UpdateFollowRequestStatus(database, requestID, newStatus)
+	err = db.UpdateFollowRequestStatus(requestID, newStatus)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to update request status")
 		return
@@ -193,9 +182,9 @@ func RespondToFollowRequestHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// If accepted, create the follow relationship
+	// If accepted, create the follow relationship - FIXED: removed database parameter
 	if action == "accept" {
-		err = db.CreateFollowRelationship(database, requesterID, requesteeID)
+		err = db.CreateFollowRelationship(requesterID, requesteeID)
 		if err != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Failed to create follow relationship")
 			return
@@ -208,17 +197,14 @@ func RespondToFollowRequestHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Rest of the handlers remain the same...
+// UnfollowUserHandler allows unfollowing users
 func UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	// Get current user ID from context
 	userID := r.Context().Value(userIDKey).(int)
-
-	// Parse the target user ID
 	targetUserIDStr := r.FormValue("user_id")
 	if targetUserIDStr == "" {
 		utils.Fail(w, http.StatusBadRequest, "user_id is required")
@@ -231,10 +217,8 @@ func UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	database := sqlite.GetDB()
-
-	// Check if actually following
-	isFollowing, err := db.IsFollowing(database, userID, targetUserID)
+	// Check if actually following - FIXED: removed database parameter
+	isFollowing, err := db.IsFollowing(userID, targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Database error")
 		return
@@ -245,8 +229,8 @@ func UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Unfollow the user
-	err = db.DeleteFollowRelationship(database, userID, targetUserID)
+	// Unfollow the user - FIXED: removed database parameter
+	err = db.DeleteFollowRelationship(userID, targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to unfollow user")
 		return
@@ -257,19 +241,17 @@ func UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetFollowRequestsHandler gets pending follow requests
 func GetFollowRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	// Get current user ID from context
 	userID := r.Context().Value(userIDKey).(int)
 
-	database := sqlite.GetDB()
-
-	// Get pending follow requests
-	requests, err := db.GetPendingFollowRequests(database, userID)
+	// Get pending follow requests - FIXED: removed database parameter
+	requests, err := db.GetPendingFollowRequests(userID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch follow requests")
 		return
@@ -280,13 +262,13 @@ func GetFollowRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetFollowersHandler gets user's followers
 func GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	// Get target user ID from query params
 	userIDStr := r.URL.Query().Get("user_id")
 	if userIDStr == "" {
 		utils.Fail(w, http.StatusBadRequest, "user_id is required")
@@ -299,10 +281,8 @@ func GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	database := sqlite.GetDB()
-
-	// Get followers
-	followers, err := db.GetFollowers(database, targetUserID)
+	// Get followers - FIXED: removed database parameter
+	followers, err := db.GetFollowers(targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch followers")
 		return
@@ -313,13 +293,13 @@ func GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetFollowingHandler gets users that someone is following
 func GetFollowingHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	// Get target user ID from query params
 	userIDStr := r.URL.Query().Get("user_id")
 	if userIDStr == "" {
 		utils.Fail(w, http.StatusBadRequest, "user_id is required")
@@ -332,10 +312,8 @@ func GetFollowingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	database := sqlite.GetDB()
-
-	// Get following
-	following, err := db.GetFollowing(database, targetUserID)
+	// Get following - FIXED: removed database parameter
+	following, err := db.GetFollowing(targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch following")
 		return
@@ -346,16 +324,14 @@ func GetFollowingHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetFollowStatusHandler gets follow relationship status
 func GetFollowStatusHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	// Get current user ID from context
 	currentUserID := r.Context().Value(userIDKey).(int)
-
-	// Get target user ID from query params
 	targetUserIDStr := r.URL.Query().Get("user_id")
 	if targetUserIDStr == "" {
 		utils.Fail(w, http.StatusBadRequest, "user_id is required")
@@ -368,24 +344,22 @@ func GetFollowStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	database := sqlite.GetDB()
-
-	// Check if following
-	isFollowing, err := db.IsFollowing(database, currentUserID, targetUserID)
+	// Check if following - FIXED: removed database parameter
+	isFollowing, err := db.IsFollowing(currentUserID, targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Database error")
 		return
 	}
 
-	// Check if there's a pending request
-	hasPendingRequest, err := db.HasPendingFollowRequest(database, currentUserID, targetUserID)
+	// Check if there's a pending request - FIXED: removed database parameter
+	hasPendingRequest, err := db.HasPendingFollowRequest(currentUserID, targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Database error")
 		return
 	}
 
-	// Get user privacy setting
-	isPrivate, err := db.GetUserPrivacySetting(database, targetUserID)
+	// Get user privacy setting - FIXED: removed database parameter
+	isPrivate, err := db.GetUserPrivacySetting(targetUserID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Database error")
 		return
@@ -405,86 +379,3 @@ func GetFollowStatusHandler(w http.ResponseWriter, r *http.Request) {
 		"target_is_private":   isPrivate,
 	})
 }
-
-// RespondToFollowRequestHandler handles accepting/declining follow requests
-/*
-func RespondToFollowRequestHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	// Get current user ID from context
-	userID := r.Context().Value(userIDKey).(int)
-
-	// Parse request ID and action
-	requestIDStr := r.FormValue("request_id")
-	action := r.FormValue("action") // "accept" or "decline"
-
-	if requestIDStr == "" || action == "" {
-		utils.Fail(w, http.StatusBadRequest, "request_id and action are required")
-		return
-	}
-
-	if action != "accept" && action != "decline" {
-		utils.Fail(w, http.StatusBadRequest, "action must be 'accept' or 'decline'")
-		return
-	}
-
-	requestID, err := strconv.Atoi(requestIDStr)
-	if err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Invalid request_id")
-		return
-	}
-
-	database := sqlite.GetDB()
-
-	// Get the follow request to verify it belongs to the current user
-	var requesterID, requesteeID int
-	var status string
-	query := `SELECT requester_id, requestee_id, status FROM follow_requests WHERE id = ?`
-	err = database.QueryRow(query, requestID).Scan(&requesterID, &requesteeID, &status)
-	if err != nil {
-		utils.Fail(w, http.StatusNotFound, "Follow request not found")
-		return
-	}
-
-	// Verify the current user is the requestee
-	if requesteeID != userID {
-		utils.Fail(w, http.StatusForbidden, "Not authorized to respond to this request")
-		return
-	}
-
-	// Check if request is still pending
-	if status != "pending" {
-		utils.Fail(w, http.StatusBadRequest, "Request has already been processed")
-		return
-	}
-
-	// Update the request status
-	newStatus := "declined"
-	if action == "accept" {
-		newStatus = "accepted"
-	}
-
-	err = db.UpdateFollowRequestStatus(database, requestID, newStatus)
-	if err != nil {
-		utils.Fail(w, http.StatusInternalServerError, "Failed to update request status")
-		return
-	}
-
-	// If accepted, create the follow relationship
-	if action == "accept" {
-		err = db.CreateFollowRelationship(database, requesterID, requesteeID)
-		if err != nil {
-			utils.Fail(w, http.StatusInternalServerError, "Failed to create follow relationship")
-			return
-		}
-	}
-
-	utils.Success(w, http.StatusOK, map[string]interface{}{
-		"message": "Follow request " + newStatus,
-		"action":  action,
-	})
-}
-*/
