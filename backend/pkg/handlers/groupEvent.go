@@ -96,7 +96,7 @@ func FetchGroupEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	events, err := db.GetGroupEvents(groupID)
+	events, err := db.GetGroupEventsForUser(groupID, userID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return
@@ -107,28 +107,41 @@ func FetchGroupEvents(w http.ResponseWriter, r *http.Request) {
 
 // RespondToEventHandler allows a user to respond to an event (going/not_going)
 func RespondToEventHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("RespondToEventHandler called with method: %s", r.Method)
+
 	if r.Method != http.MethodPost {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
+		log.Printf("Error parsing form: %v", err)
 		utils.Fail(w, http.StatusBadRequest, "Bad request")
 		return
 	}
 
 	userID := r.Context().Value(userIDKey).(int)
-	eventID, err := strconv.Atoi(r.FormValue("event_id"))
+	log.Printf("User ID from context: %d", userID)
+
+	eventIDStr := r.FormValue("event_id")
+	responseStr := r.FormValue("response")
+	log.Printf("Event ID string: '%s', Response: '%s'", eventIDStr, responseStr)
+
+	eventID, err := strconv.Atoi(eventIDStr)
 	if err != nil {
+		log.Printf("Error parsing event ID '%s': %v", eventIDStr, err)
 		utils.Fail(w, http.StatusBadRequest, "Invalid event ID")
 		return
 	}
 
-	response := r.FormValue("response") // "going" or "not_going"
+	response := responseStr // "going" or "not_going"
 	if response != "going" && response != "not_going" {
+		log.Printf("Invalid response value: '%s'", response)
 		utils.Fail(w, http.StatusBadRequest, "Response must be 'going' or 'not_going'")
 		return
 	}
+
+	log.Printf("Processing RSVP - Event ID: %d, User ID: %d, Response: %s", eventID, userID, response)
 
 	// Check if the event exists and user has access to it
 	groupID, err := db.GetEventGroupID(eventID)
@@ -159,6 +172,7 @@ func RespondToEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("Successfully recorded RSVP for event %d, user %d: %s", eventID, userID, response)
 	utils.Success(w, http.StatusOK, map[string]string{
 		"message": "Response recorded successfully",
 	})

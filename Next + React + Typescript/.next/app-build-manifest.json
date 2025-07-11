@@ -16,11 +16,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/me/route.js"
     ],
-    "/api/logout/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/logout/route.js"
-    ],
     "/api/login/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -56,20 +51,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/groups/posts/route.js"
     ],
-    "/api/groups/posts/create/route": [
+    "/api/groups/events/respond/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/groups/posts/create/route.js"
+      "static/chunks/app/api/groups/events/respond/route.js"
     ],
-    "/api/groups/posts/comments/route": [
+    "/api/logout/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/groups/posts/comments/route.js"
-    ],
-    "/api/groups/posts/comments/create/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/groups/posts/comments/create/route.js"
+      "static/chunks/app/api/logout/route.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
