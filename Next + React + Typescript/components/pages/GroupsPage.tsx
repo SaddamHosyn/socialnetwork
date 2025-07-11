@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import { useGroups } from "../../hooks/useGroups";
 import { Group } from "../../types/groups";
 import GroupDetails from "../GroupDetails";
+import GroupInvitations from "../GroupInvitations";
+import GroupJoinRequests from "../GroupJoinRequests";
 
 const GroupsPage = () => {
-  const [viewMode, setViewMode] = useState<"list" | "create" | "details">("list");
+  const [viewMode, setViewMode] = useState<"list" | "create" | "details" | "invitations" | "join-requests">("list");
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const { groups, loading, error, createGroup, fetchGroups, requestJoinGroup, leaveGroup } = useGroups();
   
@@ -117,22 +119,26 @@ const GroupsPage = () => {
     } else {
       // Request to join group
       try {
-        await requestJoinGroup(group.id);
-        alert("Join request sent successfully");
-        fetchGroups(); // Refresh groups list
-      } catch (error) {
-        console.error("Error requesting to join group:", error);
-        if (error instanceof Error) {
-          if (error.message.includes('already requested')) {
+        const result = await requestJoinGroup(group.id);
+        if (result && result.success === false) {
+          // Handle specific error cases
+          if (result.message.includes('already requested')) {
             alert("You have already requested to join this group. Please wait for the group creator to accept your request.");
-          } else if (error.message.includes('already member')) {
+          } else if (result.message.includes('already member')) {
             alert("You are already a member of this group.");
           } else {
-            alert(`Error: ${error.message}`);
+            alert(`Error: ${result.message}`);
           }
         } else {
-          alert("Failed to send join request");
+          alert("Join request sent successfully");
+          // No need to call fetchGroups() since useGroups already updates the state
         }
+      } catch (error) {
+        // Only log unexpected errors
+        if (!(error instanceof Error) || !error.message.includes('already')) {
+          console.error("Error requesting to join group:", error);
+        }
+        alert("Failed to send join request");
       }
     }
   };
@@ -143,6 +149,28 @@ const GroupsPage = () => {
         <h1>Groups</h1>
         <button onClick={() => setViewMode("create")} className="create-button">
           + Create Group
+        </button>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="groups-tabs">
+        <button 
+          className={`tab ${viewMode === "list" ? "active" : ""}`}
+          onClick={() => setViewMode("list")}
+        >
+          All Groups
+        </button>
+        <button 
+          className={`tab ${viewMode === "invitations" ? "active" : ""}`}
+          onClick={() => setViewMode("invitations")}
+        >
+          My Invitations
+        </button>
+        <button 
+          className={`tab ${viewMode === "join-requests" ? "active" : ""}`}
+          onClick={() => setViewMode("join-requests")}
+        >
+          Join Requests
         </button>
       </div>
 
@@ -260,6 +288,28 @@ const GroupsPage = () => {
           groupId={selectedGroupId} 
           onBack={handleBackToList}
         />
+      )}
+
+      {viewMode === "invitations" && (
+        <div className="invitations-view">
+          <GroupInvitations 
+            onInvitationHandled={() => {
+              // Refresh groups list after handling invitation
+              fetchGroups();
+            }}
+          />
+        </div>
+      )}
+
+      {viewMode === "join-requests" && (
+        <div className="join-requests-view">
+          <GroupJoinRequests 
+            onRequestHandled={() => {
+              // Refresh groups list after handling request
+              fetchGroups();
+            }}
+          />
+        </div>
       )}
     </div>
   );

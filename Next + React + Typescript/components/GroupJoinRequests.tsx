@@ -16,7 +16,8 @@ const GroupJoinRequests: React.FC<Props> = ({ onRequestHandled }) => {
     const loadRequests = async () => {
       setLoading(true);
       const requestData = await getGroupJoinRequests();
-      setRequests(requestData);
+      // Ensure we always have an array
+      setRequests(Array.isArray(requestData) ? requestData : []);
       setLoading(false);
     };
 
@@ -40,7 +41,7 @@ const GroupJoinRequests: React.FC<Props> = ({ onRequestHandled }) => {
   return (
     <div>
       <h2>Group Join Requests</h2>
-      {requests.length === 0 ? (
+      {!Array.isArray(requests) || requests.length === 0 ? (
         <div>No pending join requests.</div>
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>

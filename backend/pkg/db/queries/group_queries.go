@@ -186,6 +186,11 @@ func getGroupMembers(groupID int) ([]models.GroupMember, error) {
 	return members, nil
 }
 
+// GetGroupMembers returns all members of a specific group (public version)
+func GetGroupMembers(groupID int) ([]models.GroupMember, error) {
+	return getGroupMembers(groupID)
+}
+
 // IsGroupMember checks if a user is a member of a group or the creator
 func IsGroupMember(userID, groupID int) (bool, error) {
 	var count int

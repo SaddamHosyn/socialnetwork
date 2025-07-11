@@ -160,7 +160,7 @@ func InviteToGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = db.CreateGroupInvitation(groupID, userID, inviteeID)
 	if err != nil {
-		if strings.Contains(err.Error(), "already invited") {
+		if strings.Contains(err.Error(), "already invited") || strings.Contains(err.Error(), "UNIQUE constraint failed") {
 			utils.Fail(w, http.StatusConflict, "User already invited")
 		} else if strings.Contains(err.Error(), "already member") {
 			utils.Fail(w, http.StatusConflict, "User is already a member")
@@ -198,7 +198,7 @@ func RequestJoinGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = db.CreateJoinRequest(groupID, userID)
 	if err != nil {
-		if strings.Contains(err.Error(), "already requested") {
+		if strings.Contains(err.Error(), "already requested") || strings.Contains(err.Error(), "UNIQUE constraint failed") {
 			utils.Fail(w, http.StatusConflict, "Join request already sent")
 		} else if strings.Contains(err.Error(), "already member") {
 			utils.Fail(w, http.StatusConflict, "You are already a member")
@@ -400,4 +400,44 @@ func FetchGroupJoinRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.Success(w, http.StatusOK, requests)
+}
+
+// FetchGroupMembers returns all members of a specific group
+func FetchGroupMembers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userID := r.Context().Value(userIDKey).(int)
+	groupIDStr := r.URL.Query().Get("group_id")
+	if groupIDStr == "" {
+		utils.Fail(w, http.StatusBadRequest, "Group ID is required")
+		return
+	}
+
+	groupID, err := strconv.Atoi(groupIDStr)
+	if err != nil {
+		utils.Fail(w, http.StatusBadRequest, "Invalid group ID")
+		return
+	}
+
+	// Check if user is a member of the group
+	isMember, err := db.IsGroupMember(userID, groupID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Server error")
+		return
+	}
+	if !isMember {
+		utils.Fail(w, http.StatusForbidden, "You must be a group member to view members")
+		return
+	}
+
+	members, err := db.GetGroupMembers(groupID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Server error")
+		return
+	}
+
+	utils.Success(w, http.StatusOK, members)
 }

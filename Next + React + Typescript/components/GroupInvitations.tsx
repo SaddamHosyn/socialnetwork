@@ -16,7 +16,8 @@ const GroupInvitations: React.FC<Props> = ({ onInvitationHandled }) => {
     const loadInvitations = async () => {
       setLoading(true);
       const invitationData = await getGroupInvitations();
-      setInvitations(invitationData);
+      // Ensure we always have an array
+      setInvitations(Array.isArray(invitationData) ? invitationData : []);
       setLoading(false);
     };
 
@@ -40,7 +41,7 @@ const GroupInvitations: React.FC<Props> = ({ onInvitationHandled }) => {
   return (
     <div>
       <h2>Group Invitations</h2>
-      {invitations.length === 0 ? (
+      {!Array.isArray(invitations) || invitations.length === 0 ? (
         <div>No pending invitations.</div>
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>

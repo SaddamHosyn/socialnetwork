@@ -66,6 +66,7 @@ func main() {
 	// Group invitations and requests
 	http.Handle("/api/groups/invitations", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupInvitations)))
 	http.Handle("/api/groups/join-requests", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupJoinRequests)))
+	http.Handle("/api/groups/members", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupMembers)))
 
 	// Group events routes
 	http.Handle("/api/groups/events", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupEvents)))

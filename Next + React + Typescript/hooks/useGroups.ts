@@ -99,28 +99,65 @@ export const useGroups = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        const errorMessage = errorData?.message || `Failed to request join: ${response.status}`;
+        const errorMessage = errorData?.error || errorData?.message || `Failed to request join: ${response.status}`;
+        
+        console.log('Join request failed:', { status: response.status, errorData, errorMessage });
         
         // Handle specific error cases
         if (response.status === 409) {
           if (errorMessage.includes('already requested')) {
-            throw new Error('You have already requested to join this group');
+            setError('You have already requested to join this group');
+            // Update state to reflect pending request
+            setGroups(prevGroups => 
+              prevGroups.map(group => 
+                group.id === groupId 
+                  ? { ...group, has_pending_request: true }
+                  : group
+              )
+            );
+            return { success: false, message: 'You have already requested to join this group' };
           } else if (errorMessage.includes('already member')) {
-            throw new Error('You are already a member of this group');
+            setError('You are already a member of this group');
+            // Update state to reflect membership
+            setGroups(prevGroups => 
+              prevGroups.map(group => 
+                group.id === groupId 
+                  ? { ...group, is_member: true, has_pending_request: false }
+                  : group
+              )
+            );
+            return { success: false, message: 'You are already a member of this group' };
           } else {
-            throw new Error('Cannot send join request - conflict detected');
+            setError('Cannot send join request - conflict detected');
+            return { success: false, message: errorMessage || 'Cannot send join request - conflict detected' };
           }
         }
         
-        throw new Error(errorMessage);
+        setError(errorMessage);
+        return { success: false, message: errorMessage };
       }
 
       const result = await response.json();
+      
+      // Update the group's status in the local state after successful join request
+      setGroups(prevGroups => 
+        prevGroups.map(group => 
+          group.id === groupId 
+            ? { ...group, has_pending_request: true }
+            : group
+        )
+      );
+      
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to request join';
-      setError(errorMessage);
-      throw err;
+      // If it's a network error or JSON parsing error, handle it
+      if (err instanceof Error && !err.message.includes('already')) {
+        const errorMessage = err.message;
+        setError(errorMessage);
+        return { success: false, message: errorMessage };
+      }
+      // For other errors that we've already handled above, just return the error response
+      return { success: false, message: err instanceof Error ? err.message : 'Failed to request join' };
     } finally {
       setLoading(false);
     }
@@ -160,6 +197,128 @@ export const useGroups = () => {
     }
   }, []);
 
+  const getGroupInvitations = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/groups/invitations', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to fetch invitations: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result.data || result || [];
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invitations';
+      setError(errorMessage);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getGroupJoinRequests = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/groups/join-requests', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to fetch join requests: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result.data || result || [];
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch join requests';
+      setError(errorMessage);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleInvitation = useCallback(async (invitationId: number, action: "accept" | "decline") => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('invitation_id', invitationId.toString());
+      formData.append('action', action);
+
+      const response = await fetch('/api/groups/invitation/handle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to handle invitation: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to handle invitation';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleJoinRequest = useCallback(async (requestId: number, action: "accept" | "decline") => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('request_id', requestId.toString());
+      formData.append('action', action);
+
+      const response = await fetch('/api/groups/handle-join-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to handle join request: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to handle join request';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     groups,
     loading,
@@ -168,5 +327,9 @@ export const useGroups = () => {
     fetchGroups,
     requestJoinGroup,
     leaveGroup,
+    getGroupInvitations,
+    getGroupJoinRequests,
+    handleInvitation,
+    handleJoinRequest,
   };
 };
