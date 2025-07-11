@@ -56,10 +56,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/profile/route.js"
     ],
-    "/_not-found/page": [
+    "/api/logout/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/api/logout/route.js"
+    ],
+    "/api/post/create/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/post/create/route.js"
     ]
   }
 }
