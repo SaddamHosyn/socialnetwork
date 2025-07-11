@@ -51,9 +51,32 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   };
 
   const renderButton = () => {
+    const baseButtonStyle = {
+      padding: "0.4rem 0.8rem",
+      fontSize: "0.8rem",
+      fontWeight: "500",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      minWidth: "80px",
+      textAlign: "center" as const,
+      display: "inline-block",
+      lineHeight: "1.2"
+    };
+
     if (loading) {
       return (
-        <button disabled className={`follow-button loading ${className}`}>
+        <button 
+          disabled 
+          style={{
+            ...baseButtonStyle,
+            backgroundColor: "#6c757d",
+            color: "white",
+            cursor: "not-allowed",
+            opacity: 0.7
+          }}
+        >
           Loading...
         </button>
       );
@@ -64,14 +87,33 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
         return (
           <button
             onClick={handleUnfollow}
-            className={`follow-button unfollow-btn ${className}`}
+            style={{
+              ...baseButtonStyle,
+              backgroundColor: "#dc3545",
+              color: "white",
+              border: "1px solid #dc3545"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#c82333";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "#dc3545";
+            }}
           >
             Unfollow
           </button>
         );
       case 'pending':
         return (
-          <span className={`follow-button pending-status ${className}`}>
+          <span 
+            style={{
+              ...baseButtonStyle,
+              backgroundColor: "#ffc107",
+              color: "#212529",
+              border: "1px solid #ffc107",
+              cursor: "default"
+            }}
+          >
             Request Sent
           </span>
         );
@@ -80,7 +122,18 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
         return (
           <button
             onClick={handleFollow}
-            className={`follow-button follow-btn ${className}`}
+            style={{
+              ...baseButtonStyle,
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "1px solid #007bff"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#0056b3";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "#007bff";
+            }}
           >
             Follow
           </button>
@@ -89,7 +142,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   };
 
   return (
-    <div className="follow-button-container">
+    <div style={{ display: "inline-block" }}>
       {renderButton()}
     </div>
   );

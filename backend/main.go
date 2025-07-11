@@ -107,6 +107,9 @@ func main() {
 	http.Handle("/api/groups/events/details", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchEventDetails)))
 
 	// WebSocket and Chat endpoints
+	// User settings endpoints
+	http.Handle("/api/user/privacy", handlers.AuthMiddleware(http.HandlerFunc(handlers.UpdatePrivacyHandler)))
+
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)
 	http.HandleFunc("/api/chat/history", chat.HandleChatHistory)

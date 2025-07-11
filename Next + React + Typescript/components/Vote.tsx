@@ -11,7 +11,7 @@ const Vote = ({ votes, onVote, userVote = 0 }: Props) => (
         e.stopPropagation();
         onVote(1);
       }}
-      disabled={userVote === -1}
+      // Correctly apply color based on user's vote
       style={{ color: userVote === 1 ? "#15803d" : "#444" }}
       aria-label="Upvote"
     >
@@ -23,7 +23,7 @@ const Vote = ({ votes, onVote, userVote = 0 }: Props) => (
         e.stopPropagation();
         onVote(-1);
       }}
-      disabled={userVote === -1}
+      // Correctly apply color based on user's vote
       style={{ color: userVote === -1 ? "#dc2626" : "#444" }}
       aria-label="Downvote"
     >

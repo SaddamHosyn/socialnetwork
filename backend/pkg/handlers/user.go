@@ -146,3 +146,53 @@ func FetchAllUsers(w http.ResponseWriter, r *http.Request) {
 
 	utils.Success(w, http.StatusOK, users)
 }
+
+// UpdatePrivacyHandler handles privacy setting updates
+func UpdatePrivacyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userID, ok := r.Context().Value(userIDKey).(int)
+	if !ok {
+		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Parse the privacy setting from form data
+	privacyStr := r.FormValue("privacy")
+	if privacyStr == "" {
+		utils.Fail(w, http.StatusBadRequest, "Privacy setting is required")
+		return
+	}
+
+	var isPrivate bool
+	switch privacyStr {
+	case "private":
+		isPrivate = true
+	case "public":
+		isPrivate = false
+	default:
+		utils.Fail(w, http.StatusBadRequest, "Invalid privacy setting. Use 'public' or 'private'")
+		return
+	}
+
+	// Update the user's privacy setting in the database
+	err := db.UpdateUserPrivacy(userID, isPrivate)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to update privacy setting")
+		return
+	}
+
+	// Return success with the new privacy setting
+	privacyStatus := "public"
+	if isPrivate {
+		privacyStatus = "private"
+	}
+
+	utils.Success(w, http.StatusOK, map[string]interface{}{
+		"message": "Privacy setting updated successfully",
+		"privacy": privacyStatus,
+	})
+}
