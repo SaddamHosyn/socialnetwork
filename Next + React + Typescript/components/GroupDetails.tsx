@@ -15,7 +15,7 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "posts" | "events" | "members" | "create-event"
+    "posts" | "events" | "members" | "group-chat" | "create-event"
   >("posts");
   const [expandedComments, setExpandedComments] = useState<Set<number>>(
     new Set()
@@ -187,12 +187,19 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
         >
           Events ({events.length})
         </button>
-          <button
-          className={`tab ${activeTab === "events" ? "active" : ""}`}
-          onClick={() => setActiveTab("events")}
+        <button
+          className={`tab ${activeTab === "members" ? "active" : ""}`}
+          onClick={() => setActiveTab("members")}
         >
-            Members ({events.length})
+          Members
         </button>
+        <button
+          className={`tab ${activeTab === "group-chat" ? "active" : ""}`}
+          onClick={() => setActiveTab("group-chat")}
+        >
+          Group Chat
+        </button>
+        
       </div>
 
       <div className="group-content">
@@ -374,6 +381,26 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
               }}
               onCancel={() => setActiveTab("events")}
             />
+          </div>
+        )}
+
+        {activeTab === "members" && (
+          <div className="members-section">
+            <h2>Group Members</h2>
+            <div className="no-content">
+              <p>Members list will be displayed here.</p>
+              <p>Total members: {group.member_count}</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "group-chat" && (
+          <div className="group-chat-section">
+            <h2>Group Chat</h2>
+            <div className="no-content">
+              <p>Group chat interface will be displayed here.</p>
+              <p>Real-time messaging for group members.</p>
+            </div>
           </div>
         )}
       </div>
