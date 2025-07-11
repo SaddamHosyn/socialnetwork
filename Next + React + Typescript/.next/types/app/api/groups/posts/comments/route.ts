@@ -1,8 +1,8 @@
-// File: /Users/saddam.hussain/Downloads/social-network/Next + React + Typescript/app/api/groups/events/respond/route.ts
-import * as entry from '../../../../../../../app/api/groups/events/respond/route.js'
+// File: /Users/eliza.john/Downloads/social-network/Next + React + Typescript/app/api/groups/posts/comments/route.ts
+import * as entry from '../../../../../../../app/api/groups/posts/comments/route.js'
 import type { NextRequest } from 'next/server.js'
 
-type TEntry = typeof import('../../../../../../../app/api/groups/events/respond/route.js')
+type TEntry = typeof import('../../../../../../../app/api/groups/posts/comments/route.js')
 
 type SegmentParams<T extends Object = any> = T extends Record<string, any>
   ? { [K in keyof T]: T[K] extends string ? string | string[] | undefined : never }

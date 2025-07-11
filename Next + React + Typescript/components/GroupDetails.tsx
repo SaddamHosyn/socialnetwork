@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { Group, GroupPost, GroupEvent } from "../types/groups";
+import GroupComments from "./GroupComments";
 
 interface GroupDetailsProps {
   groupId: number;
@@ -13,12 +14,17 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
   const [events, setEvents] = useState<GroupEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"posts" | "events" | "members" | "create-event">("posts");
+  const [activeTab, setActiveTab] = useState<
+    "posts" | "events" | "members" | "create-event"
+  >("posts");
+  const [expandedComments, setExpandedComments] = useState<Set<number>>(
+    new Set()
+  );
 
   const fetchGroupDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/groups/details?id=${groupId}`, {
-        credentials: 'include'
+        credentials: "include",
       });
       if (response.ok) {
         const result = await response.json();
@@ -32,7 +38,7 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
   const fetchGroupPosts = useCallback(async () => {
     try {
       const response = await fetch(`/api/groups/posts?group_id=${groupId}`, {
-        credentials: 'include'
+        credentials: "include",
       });
       if (response.ok) {
         const result = await response.json();
@@ -46,7 +52,7 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
   const fetchGroupEvents = useCallback(async () => {
     try {
       const response = await fetch(`/api/groups/events?group_id=${groupId}`, {
-        credentials: 'include'
+        credentials: "include",
       });
       if (response.ok) {
         const result = await response.json();
@@ -65,27 +71,28 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
     fetchGroupEvents();
   }, [fetchGroupDetails, fetchGroupPosts, fetchGroupEvents]);
 
-  const createPost = async (content: string) => {
+  const createPost = async (content: string, imageFile?: File) => {
     try {
-      const formData = new URLSearchParams();
-      formData.append('group_id', groupId.toString());
-      formData.append('content', content);
-      formData.append('title', 'Group Post'); // Default title
+      const formData = new FormData();
+      formData.append("group_id", groupId.toString());
+      formData.append("content", content);
+      formData.append("title", "Group Post"); // Default title
 
-      const response = await fetch('/api/groups/posts/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        credentials: 'include',
-        body: formData.toString(),
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      const response = await fetch("/api/groups/posts/create", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
       });
 
       if (response.ok) {
         fetchGroupPosts(); // Refresh posts
         return true;
       } else {
-        throw new Error('Failed to create post');
+        throw new Error("Failed to create post");
       }
     } catch (err) {
       console.error("Error creating post:", err);
@@ -94,32 +101,48 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
     }
   };
 
-  const handleRSVP = async (eventId: number, response: 'going' | 'not_going') => {
+  const toggleComments = (postId: number) => {
+    setExpandedComments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleRSVP = async (
+    eventId: number,
+    response: "going" | "not_going"
+  ) => {
     try {
       setLoading(true);
       const formData = new URLSearchParams();
-      formData.append('event_id', eventId.toString());
-      formData.append('response', response);
+      formData.append("event_id", eventId.toString());
+      formData.append("response", response);
 
-      const apiResponse = await fetch('/api/groups/events/respond', {
-        method: 'POST',
+      const apiResponse = await fetch("/api/groups/events/respond", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        credentials: 'include',
+        credentials: "include",
         body: formData.toString(),
       });
 
       if (apiResponse.ok) {
         // Refresh events to get updated counts and user response
         await fetchGroupEvents();
-        
+
         // Show success message
-        const actionText = response === 'going' ? 'marked as going' : 'marked as not going';
+        const actionText =
+          response === "going" ? "marked as going" : "marked as not going";
         console.log(`Successfully ${actionText} for event`);
       } else {
         const errorData = await apiResponse.text();
-        console.error('RSVP failed:', apiResponse.status, errorData);
+        console.error("RSVP failed:", apiResponse.status, errorData);
         throw new Error(`Failed to update RSVP: ${apiResponse.status}`);
       }
     } catch (error) {
@@ -130,7 +153,8 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
     }
   };
 
-  if (loading) return <div className="loading-spinner">Loading group details...</div>;
+  if (loading)
+    return <div className="loading-spinner">Loading group details...</div>;
   if (error) return <div className="error-message">{error}</div>;
   if (!group) return <div className="error-message">Group not found</div>;
 
@@ -151,51 +175,89 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
       </div>
 
       <div className="group-tabs">
-        <button 
-          className={`tab ${activeTab === 'posts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('posts')}
+        <button
+          className={`tab ${activeTab === "posts" ? "active" : ""}`}
+          onClick={() => setActiveTab("posts")}
         >
           Posts ({posts.length})
         </button>
-        <button 
-          className={`tab ${activeTab === 'events' ? 'active' : ''}`}
-          onClick={() => setActiveTab('events')}
+        <button
+          className={`tab ${activeTab === "events" ? "active" : ""}`}
+          onClick={() => setActiveTab("events")}
         >
           Events ({events.length})
         </button>
       </div>
 
       <div className="group-content">
-        {activeTab === 'posts' && (
+        {activeTab === "posts" && (
           <div className="posts-section">
-            {group.is_member && (
-              <PostCreator onCreatePost={createPost} />
-            )}
+            {group.is_member && <PostCreator onCreatePost={createPost} />}
             <div className="posts-list">
               {posts.length > 0 ? (
-                posts.map(post => (
+                posts.map((post) => (
                   <div key={post.id} className="post-card">
                     <div className="post-header">
                       <span className="post-author">{post.nickname}</span>
-                      <span className="post-time">{new Date(post.created_at).toLocaleDateString()}</span>
+                      <span className="post-time">
+                        {new Date(post.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="post-content">{post.content}</div>
+
+                    {/* Display post images if they exist */}
+                    {post.image_paths && post.image_paths.length > 0 && (
+                      <div className="post-images">
+                        {post.image_paths.map((imagePath, index) => (
+                          <img
+                            key={index}
+                            src={`http://localhost:8080${imagePath.replace(
+                              /^\./,
+                              ""
+                            )}`}
+                            alt={`Post image ${index + 1}`}
+                            className="post-image"
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="post-actions">
+                      <button
+                        className="comments-toggle"
+                        onClick={() => toggleComments(post.id)}
+                      >
+                        💬 Comments ({post.comments_count})
+                      </button>
+                    </div>
+
+                    {/* Comments section */}
+                    {expandedComments.has(post.id) && (
+                      <div className="comments-section">
+                        <GroupComments postId={post.id} />
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
                 <div className="no-content">
-                  <p>No posts yet. {group.is_member ? "Be the first to post!" : "Join the group to see posts."}</p>
+                  <p>
+                    No posts yet.{" "}
+                    {group.is_member
+                      ? "Be the first to post!"
+                      : "Join the group to see posts."}
+                  </p>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {activeTab === 'events' && (
+        {activeTab === "events" && (
           <div className="events-section">
             {group.is_member && (
               <div className="create-event-button">
-                <button 
+                <button
                   className="primary-button"
                   onClick={() => {
                     console.log("Create Event button clicked!");
@@ -208,16 +270,19 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
             )}
             <div className="events-list">
               {events.length > 0 ? (
-                events.map(event => (
+                events.map((event) => (
                   <div key={event.id} className="event-card">
                     <div className="event-header">
                       <h3>{event.title}</h3>
                       <div className="event-meta">
-                        <span>📅 {new Date(event.event_date).toLocaleDateString()} at {new Date(event.event_date).toLocaleTimeString()}</span>
+                        <span>
+                          📅 {new Date(event.event_date).toLocaleDateString()}{" "}
+                          at {new Date(event.event_date).toLocaleTimeString()}
+                        </span>
                         <span>👤 Created by {event.creator_nickname}</span>
                       </div>
                     </div>
-                    
+
                     <div className="event-description">
                       <p>{event.description}</p>
                     </div>
@@ -227,26 +292,38 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
                       <div className="event-rsvp-section">
                         <div className="rsvp-buttons">
                           <button
-                            className={`rsvp-button going ${event.user_response === 'going' ? 'selected' : ''}`}
-                            onClick={() => handleRSVP(event.id, 'going')}
+                            className={`rsvp-button going ${
+                              event.user_response === "going" ? "selected" : ""
+                            }`}
+                            onClick={() => handleRSVP(event.id, "going")}
                             disabled={loading}
                           >
                             ✅ Going ({event.going_count})
                           </button>
                           <button
-                            className={`rsvp-button not-going ${event.user_response === 'not_going' ? 'selected' : ''}`}
-                            onClick={() => handleRSVP(event.id, 'not_going')}
+                            className={`rsvp-button not-going ${
+                              event.user_response === "not_going"
+                                ? "selected"
+                                : ""
+                            }`}
+                            onClick={() => handleRSVP(event.id, "not_going")}
                             disabled={loading}
                           >
                             ❌ Not Going ({event.not_going_count})
                           </button>
                         </div>
-                        
+
                         {/* Response Status */}
                         <div className="current-response">
                           {event.user_response ? (
-                            <span className={`response-status ${event.user_response}`}>
-                              You are {event.user_response === 'going' ? 'going' : 'not going'} to this event
+                            <span
+                              className={`response-status ${event.user_response}`}
+                            >
+                              You are{" "}
+                              {event.user_response === "going"
+                                ? "going"
+                                : "not going"}{" "}
+                              to this event
                             </span>
                           ) : (
                             <span className="response-status no-response">
@@ -268,18 +345,23 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
                 ))
               ) : (
                 <div className="no-content">
-                  <p>No events yet. {group.is_member ? "Create the first event!" : "Join the group to see events."}</p>
+                  <p>
+                    No events yet.{" "}
+                    {group.is_member
+                      ? "Create the first event!"
+                      : "Join the group to see events."}
+                  </p>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {activeTab === 'create-event' && (
+        {activeTab === "create-event" && (
           <div className="create-event-section">
             <h2>Create New Event</h2>
-            <EventCreator 
-              groupId={groupId} 
+            <EventCreator
+              groupId={groupId}
               onEventCreated={() => {
                 setActiveTab("events");
                 fetchGroupEvents(); // Refresh events list
@@ -294,11 +376,12 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
 };
 
 interface PostCreatorProps {
-  onCreatePost: (content: string) => Promise<boolean>;
+  onCreatePost: (content: string, imageFile?: File) => Promise<boolean>;
 }
 
 const PostCreator = ({ onCreatePost }: PostCreatorProps) => {
   const [content, setContent] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -306,11 +389,22 @@ const PostCreator = ({ onCreatePost }: PostCreatorProps) => {
     if (!content.trim()) return;
 
     setIsSubmitting(true);
-    const success = await onCreatePost(content);
+    const success = await onCreatePost(content, selectedImage || undefined);
     if (success) {
       setContent("");
+      setSelectedImage(null);
     }
     setIsSubmitting(false);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
   };
 
   return (
@@ -323,6 +417,35 @@ const PostCreator = ({ onCreatePost }: PostCreatorProps) => {
           rows={3}
           required
         />
+
+        {/* Image upload section */}
+        <div className="image-upload-section">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            disabled={isSubmitting}
+            style={{ display: "none" }}
+            id="post-image-upload"
+          />
+          <label htmlFor="post-image-upload" className="image-upload-label">
+            📷 Add Image
+          </label>
+
+          {selectedImage && (
+            <div className="selected-image">
+              <span>{selectedImage.name}</span>
+              <button
+                type="button"
+                onClick={removeImage}
+                className="remove-image-btn"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="form-actions">
           <button type="submit" disabled={isSubmitting || !content.trim()}>
             {isSubmitting ? "Posting..." : "Post"}
@@ -339,7 +462,11 @@ interface EventCreatorProps {
   onCancel: () => void;
 }
 
-const EventCreator = ({ groupId, onEventCreated, onCancel }: EventCreatorProps) => {
+const EventCreator = ({
+  groupId,
+  onEventCreated,
+  onCancel,
+}: EventCreatorProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -353,27 +480,27 @@ const EventCreator = ({ groupId, onEventCreated, onCancel }: EventCreatorProps) 
     try {
       // Convert datetime-local format to RFC3339 format
       const eventDateRFC3339 = new Date(eventDate).toISOString();
-      
-      const formData = new URLSearchParams();
-      formData.append('group_id', groupId.toString());
-      formData.append('title', title.trim());
-      formData.append('description', description.trim());
-      formData.append('event_date', eventDateRFC3339);
 
-      console.log('Creating event with data:', {
+      const formData = new URLSearchParams();
+      formData.append("group_id", groupId.toString());
+      formData.append("title", title.trim());
+      formData.append("description", description.trim());
+      formData.append("event_date", eventDateRFC3339);
+
+      console.log("Creating event with data:", {
         group_id: groupId.toString(),
         title: title.trim(),
         description: description.trim(),
         event_date: eventDateRFC3339,
-        original_event_date: eventDate
+        original_event_date: eventDate,
       });
 
-      const response = await fetch('/api/groups/events/create', {
-        method: 'POST',
+      const response = await fetch("/api/groups/events/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        credentials: 'include',
+        credentials: "include",
         body: formData.toString(),
       });
 
@@ -385,8 +512,10 @@ const EventCreator = ({ groupId, onEventCreated, onCancel }: EventCreatorProps) 
       } else {
         // Get the error details from the server
         const errorData = await response.text();
-        console.error('Server response:', response.status, errorData);
-        throw new Error(`Failed to create event: ${response.status} - ${errorData}`);
+        console.error("Server response:", response.status, errorData);
+        throw new Error(
+          `Failed to create event: ${response.status} - ${errorData}`
+        );
       }
     } catch (error) {
       console.error("Error creating event:", error);
@@ -423,7 +552,7 @@ const EventCreator = ({ groupId, onEventCreated, onCancel }: EventCreatorProps) 
             disabled={isSubmitting}
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="event-description">Event Description:</label>
           <textarea
@@ -437,7 +566,7 @@ const EventCreator = ({ groupId, onEventCreated, onCancel }: EventCreatorProps) 
             disabled={isSubmitting}
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="event-date">Event Date & Time:</label>
           <input
@@ -450,9 +579,14 @@ const EventCreator = ({ groupId, onEventCreated, onCancel }: EventCreatorProps) 
             disabled={isSubmitting}
           />
         </div>
-        
+
         <div className="form-actions">
-          <button type="submit" disabled={isSubmitting || !title.trim() || !description.trim() || !eventDate}>
+          <button
+            type="submit"
+            disabled={
+              isSubmitting || !title.trim() || !description.trim() || !eventDate
+            }
+          >
             {isSubmitting ? "Creating..." : "Create Event"}
           </button>
           <button type="button" onClick={onCancel} disabled={isSubmitting}>
