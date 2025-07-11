@@ -148,6 +148,47 @@ func GetGroupEvents(groupID int) ([]models.GroupEvent, error) {
 	return events, nil
 }
 
+// GetGroupEventsForUser returns all events for a group with user-specific response information
+func GetGroupEventsForUser(groupID, userID int) ([]models.GroupEvent, error) {
+	query := `
+		SELECT ge.id, ge.group_id, ge.creator_id, u.nickname as creator_nickname, ge.title, 
+			   ge.description, ge.event_date, ge.created_at,
+			   COALESCE(SUM(CASE WHEN ger.response = 'going' THEN 1 ELSE 0 END), 0) as going_count,
+			   COALESCE(SUM(CASE WHEN ger.response = 'not_going' THEN 1 ELSE 0 END), 0) as not_going_count,
+			   COALESCE(user_ger.response, '') as user_response
+		FROM group_events ge
+		JOIN users u ON ge.creator_id = u.id
+		LEFT JOIN group_event_responses ger ON ge.id = ger.event_id
+		LEFT JOIN group_event_responses user_ger ON ge.id = user_ger.event_id AND user_ger.user_id = ?
+		WHERE ge.group_id = ?
+		GROUP BY ge.id, ge.group_id, ge.creator_id, u.nickname, ge.title, ge.description, ge.event_date, ge.created_at, user_ger.response
+		ORDER BY ge.event_date ASC
+	`
+
+	rows, err := sqlite.GetDB().Query(query, userID, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.GroupEvent
+	for rows.Next() {
+		var event models.GroupEvent
+
+		err := rows.Scan(&event.ID, &event.GroupID, &event.CreatorID,
+			&event.CreatorNickname, &event.Title, &event.Description,
+			&event.EventDate, &event.CreatedAt, &event.GoingCount,
+			&event.NotGoingCount, &event.UserResponse)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
 // getEventResponses is a helper function to get responses for an event
 func getEventResponses(eventID int) ([]models.GroupEventResponse, error) {
 	query := `
@@ -233,12 +274,6 @@ func GetEventDetails(eventID, userID int) (*models.GroupEvent, error) {
 
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
-	}
-
-	if err == nil {
-		// User has responded
-		userResponse.Nickname = "" // We don't need this for user's own response
-		event.UserResponse = &userResponse
 	}
 
 	return &event, nil

@@ -58,6 +58,7 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
       });
       if (response.ok) {
         const result = await response.json();
+        console.log("Fetched events data:", result);
         setEvents(result.data || result || []);
       }
     } catch (err) {
@@ -82,7 +83,12 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
 
       if (imageFile) {
         formData.append("images", imageFile);
-        console.log("Creating post with image:", imageFile.name, imageFile.type, imageFile.size);
+        console.log(
+          "Creating post with image:",
+          imageFile.name,
+          imageFile.type,
+          imageFile.size
+        );
       } else {
         console.log("Creating text-only post");
       }
@@ -93,7 +99,11 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
         body: formData,
       });
 
-      console.log("Post creation response:", response.status, response.statusText);
+      console.log(
+        "Post creation response:",
+        response.status,
+        response.statusText
+      );
 
       if (response.ok) {
         console.log("Post created successfully, refreshing posts...");
@@ -128,10 +138,18 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
     response: "going" | "not_going"
   ) => {
     try {
+      console.log(
+        `Attempting RSVP for event ${eventId} with response: ${response}`
+      );
       setLoading(true);
       const formData = new URLSearchParams();
       formData.append("event_id", eventId.toString());
       formData.append("response", response);
+
+      console.log("Sending RSVP request with data:", {
+        event_id: eventId,
+        response: response,
+      });
 
       const apiResponse = await fetch("/api/groups/events/respond", {
         method: "POST",
@@ -142,8 +160,11 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
         body: formData.toString(),
       });
 
+      console.log("RSVP API response status:", apiResponse.status);
+
       if (apiResponse.ok) {
         // Refresh events to get updated counts and user response
+        console.log("RSVP successful, refreshing events...");
         await fetchGroupEvents();
 
         // Show success message
@@ -219,7 +240,12 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
             <div className="posts-list">
               {posts.length > 0 ? (
                 posts.map((post) => {
-                  console.log("Rendering post:", post.id, "image_paths:", post.image_paths);
+                  console.log(
+                    "Rendering post:",
+                    post.id,
+                    "image_paths:",
+                    post.image_paths
+                  );
                   return (
                     <div key={post.id} className="post-card">
                       <div className="post-header">
@@ -234,7 +260,10 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
                       {post.image_paths && post.image_paths.length > 0 && (
                         <div className="post-images">
                           {post.image_paths.map((imagePath, index) => {
-                            const imageUrl = `http://localhost:8080${imagePath.replace(/^\./, "")}`;
+                            const imageUrl = `http://localhost:8080${imagePath.replace(
+                              /^\./,
+                              ""
+                            )}`;
                             console.log("Rendering image:", imageUrl);
                             return (
                               <img
@@ -242,8 +271,15 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
                                 src={imageUrl}
                                 alt={`Post image ${index + 1}`}
                                 className="post-image"
-                                onLoad={() => console.log("Image loaded:", imageUrl)}
-                                onError={() => console.error("Image failed to load:", imageUrl)}
+                                onLoad={() =>
+                                  console.log("Image loaded:", imageUrl)
+                                }
+                                onError={() =>
+                                  console.error(
+                                    "Image failed to load:",
+                                    imageUrl
+                                  )
+                                }
                               />
                             );
                           })}

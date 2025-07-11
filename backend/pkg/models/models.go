@@ -120,16 +120,19 @@ type GroupComment struct {
 }
 
 type GroupEvent struct {
-	ID           int                  `json:"id"`
-	GroupID      int                  `json:"group_id"`
-	CreatorID    int                  `json:"creator_id"`
-	CreatorName  string               `json:"creator_name"`
-	Title        string               `json:"title"`
-	Description  string               `json:"description"`
-	EventDate    time.Time            `json:"event_date"`
-	CreatedAt    time.Time            `json:"created_at"`
-	Responses    []GroupEventResponse `json:"responses"`
-	UserResponse *GroupEventResponse  `json:"user_response,omitempty"`
+	ID              int                  `json:"id"`
+	GroupID         int                  `json:"group_id"`
+	CreatorID       int                  `json:"creator_id"`
+	CreatorName     string               `json:"creator_name"`
+	CreatorNickname string               `json:"creator_nickname"`
+	Title           string               `json:"title"`
+	Description     string               `json:"description"`
+	EventDate       time.Time            `json:"event_date"`
+	CreatedAt       time.Time            `json:"created_at"`
+	GoingCount      int                  `json:"going_count"`
+	NotGoingCount   int                  `json:"not_going_count"`
+	UserResponse    string               `json:"user_response,omitempty"`
+	Responses       []GroupEventResponse `json:"responses"`
 }
 
 type GroupEventResponse struct {
