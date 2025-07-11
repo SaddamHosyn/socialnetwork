@@ -1,6 +1,16 @@
 {
+  "/api/me/route": "app/api/me/route.js",
+  "/api/logout/route": "app/api/logout/route.js",
+  "/api/login/route": "app/api/login/route.js",
+  "/api/posts/route": "app/api/posts/route.js",
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/groups/route": "app/api/groups/route.js",
   "/api/groups/events/route": "app/api/groups/events/route.js",
   "/api/groups/details/route": "app/api/groups/details/route.js",
   "/api/groups/posts/route": "app/api/groups/posts/route.js",
+  "/api/groups/posts/create/route": "app/api/groups/posts/create/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/groups/posts/comments/route": "app/api/groups/posts/comments/route.js",
+  "/api/groups/posts/comments/create/route": "app/api/groups/posts/comments/create/route.js",
   "/page": "app/page.js"
 }

@@ -134,7 +134,7 @@ func CreateGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 			utils.Fail(w, http.StatusBadRequest, verr.Message)
 			return
 		}
-		if err := db.AddPostImage(tx, int64(postID), imgPath, idx+1); err != nil {
+		if err := db.AddGroupPostImage(tx, int64(postID), imgPath, idx+1); err != nil {
 			log.Printf("image link error: %v", err)
 			utils.Fail(w, http.StatusInternalServerError, "Server error linking images")
 			return
