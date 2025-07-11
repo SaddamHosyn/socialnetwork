@@ -187,6 +187,12 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
         >
           Events ({events.length})
         </button>
+          <button
+          className={`tab ${activeTab === "events" ? "active" : ""}`}
+          onClick={() => setActiveTab("events")}
+        >
+            Members ({events.length})
+        </button>
       </div>
 
       <div className="group-content">
