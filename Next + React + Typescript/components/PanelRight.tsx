@@ -140,6 +140,30 @@ const PanelRight = () => {
             />
           </div>
         )}
+        
+        {currentUserId && (
+          <div style={{
+            marginTop: "1rem",
+            textAlign: "center"
+          }}>
+            <button
+              onClick={() => setShowFollowerSystem(!showFollowerSystem)}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: showFollowerSystem ? "#dc3545" : "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                fontWeight: "500",
+                transition: "background-color 0.2s"
+              }}
+            >
+              {showFollowerSystem ? "Hide Follower System" : "Show Follower System"}
+            </button>
+          </div>
+        )}
       </div>
 
       {showFollowerSystem && currentUserId && (

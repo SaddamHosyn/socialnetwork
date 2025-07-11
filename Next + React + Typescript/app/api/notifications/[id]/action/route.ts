@@ -22,6 +22,7 @@ export async function PUT(
     
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Error updating notification action:', error);
     return NextResponse.json(
       { error: 'Failed to update notification action' },
       { status: 500 }

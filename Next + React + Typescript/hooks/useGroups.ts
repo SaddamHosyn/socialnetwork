@@ -1,6 +1,7 @@
 // useGroups.ts
 import { useState, useCallback } from 'react';
 import { Group } from '../types/groups';
+import { useNotificationService } from './useNotificationService';
 
 interface CreateGroupData {
   name: string;
@@ -11,6 +12,7 @@ export const useGroups = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { sendGroupInvitationNotification, sendGroupJoinRequestNotification } = useNotificationService();
 
   const createGroup = useCallback(async (groupData: CreateGroupData) => {
     setLoading(true);
@@ -277,6 +279,70 @@ export const useGroups = () => {
     }
   }, []);
 
+  // Get group invitations for the current user
+  const getGroupInvitations = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/groups/invitations', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to fetch invitations: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result.invitations || [];
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invitations';
+      setError(errorMessage);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Handle group invitation (accept or decline)
+  const handleInvitation = useCallback(async (invitationId: number, action: 'accept' | 'decline') => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('invitation_id', invitationId.toString());
+      formData.append('action', action);
+
+      const response = await fetch('/api/groups/invitation/handle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to ${action} invitation: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : `Failed to ${action} invitation`;
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     groups,
     loading,
@@ -289,5 +355,7 @@ export const useGroups = () => {
     handleJoinRequest,
     requestJoinGroup,
     leaveGroup,
+    getGroupInvitations,
+    handleInvitation,
   };
 };

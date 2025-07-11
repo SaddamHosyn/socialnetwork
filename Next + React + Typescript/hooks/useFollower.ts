@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { Follower, FollowStatus, FollowRequest, PublicUser } from '../types/types';
+import { useNotificationService } from './useNotificationService';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -15,6 +16,7 @@ interface FollowData {
 export const useFollower = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { sendFollowRequestNotification } = useNotificationService();
 
   const makeRequest = useCallback(
     async <T>(
@@ -65,13 +67,17 @@ export const useFollower = () => {
       setLoading(false);
 
       if (result.success && result.data) {
+        // If the follow status is 'pending', send a notification to the target user
+        if (result.data.status === 'pending') {
+          await sendFollowRequestNotification(userId);
+        }
         return result.data;
       } else {
         setError(result.error || "Follow failed");
         return null;
       }
     },
-    [makeRequest]
+    [makeRequest, sendFollowRequestNotification]
   );
 
   const unfollowUser = useCallback(

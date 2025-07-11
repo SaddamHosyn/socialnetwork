@@ -46,6 +46,8 @@ export type User = {
 export type ProfileData = {
   user: User;
   posts: Post[];
+  follower_count?: number;
+  following_count?: number;
 };
 
 export type Group = {
@@ -100,7 +102,11 @@ export type Notification = {
   is_read: boolean;
   requires_action?: boolean;
   action_taken?: 'pending' | 'accepted' | 'rejected';
-  type?: string;
+  type: 'follow_request' | 'group_invitation' | 'group_join_request' | 'group_event' | 'general';
   sender_id?: number;
   sender_name?: string;
+  group_id?: number;
+  group_name?: string;
+  event_id?: number;
+  event_title?: string;
 };

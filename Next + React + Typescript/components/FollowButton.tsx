@@ -142,7 +142,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   };
 
   return (
-    <div style={{ display: "inline-block" }}>
+    <div className={className} style={{ display: "inline-block" }}>
       {renderButton()}
     </div>
   );

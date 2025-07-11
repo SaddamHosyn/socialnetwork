@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
 import type { GroupEvent } from "../types/groups";
+import { useNotificationService } from './useNotificationService';
 
 export const useGroupEvents = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { sendGroupEventNotification } = useNotificationService();
 
   const getGroupEvents = useCallback(async (groupId: number): Promise<GroupEvent[]> => {
     setLoading(true);
@@ -18,6 +20,7 @@ export const useGroupEvents = () => {
         return [];
       }
     } catch (err) {
+      console.error("Error fetching group events:", err);
       setError("An error occurred while fetching group events");
       return [];
     } finally {
@@ -29,7 +32,8 @@ export const useGroupEvents = () => {
     groupId: number,
     title: string,
     description: string,
-    eventDate: string
+    eventDate: string,
+    groupName?: string
   ) => {
     setLoading(true);
     setError(null);
@@ -50,18 +54,28 @@ export const useGroupEvents = () => {
 
       const data = await response.json();
       if (data.success) {
+        // Send notification to all group members about the new event
+        if (data.data?.id && groupName) {
+          await sendGroupEventNotification(
+            groupId,
+            groupName,
+            data.data.id,
+            title
+          );
+        }
         return data.data;
       } else {
         setError(data.error || "Failed to create event");
         return null;
       }
     } catch (err) {
+      console.error("Error creating event:", err);
       setError("An error occurred while creating the event");
       return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sendGroupEventNotification]);
 
   const respondToEvent = useCallback(async (
     eventId: number,
@@ -90,6 +104,7 @@ export const useGroupEvents = () => {
         return false;
       }
     } catch (err) {
+      console.error("Error responding to event:", err);
       setError("An error occurred while responding to the event");
       return false;
     } finally {
