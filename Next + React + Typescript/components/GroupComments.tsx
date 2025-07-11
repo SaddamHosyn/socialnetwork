@@ -1,10 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 type Comment = {
   id: number;
   content: string;
   author: string;
+  created_at: string;
+  image?: string;
+};
+
+type RawComment = {
+  id: number;
+  content: string;
+  nickname: string;
   created_at: string;
   image?: string;
 };
@@ -20,7 +28,7 @@ const GroupComments: React.FC<Props> = ({ postId }) => {
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
 
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     console.log("Loading comments for post ID:", postId);
     try {
       const response = await fetch(
@@ -42,7 +50,7 @@ const GroupComments: React.FC<Props> = ({ postId }) => {
       console.log("Comment response data:", data);
       if (data.success) {
         setComments(
-          data.data.map((comment: any) => ({
+          data.data.map((comment: RawComment) => ({
             id: comment.id,
             content: comment.content,
             author: comment.nickname,
@@ -58,11 +66,11 @@ const GroupComments: React.FC<Props> = ({ postId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId]);
 
   useEffect(() => {
     loadComments();
-  }, [postId]);
+  }, [loadComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -7,7 +7,7 @@ import ProfilePage from "../components/pages/ProfilePage";
 import LoginPage from "../components/pages/LoginPage";
 import RegisterPage from "../components/pages/RegisterPage";
 import GroupsPage from "../components/pages/GroupsPage";
-import type { Category } from "../types/types";
+
 
 type PageType = "home" | "posts" | "profile" | "login" | "register" | "groups";
 
@@ -62,7 +62,7 @@ export default function Page() {
         } else {
           setIsLoggedIn(false);
         }
-      } catch (error) {
+      } catch  {
         setIsLoggedIn(false);
       } finally {
         setAuthChecked(true);

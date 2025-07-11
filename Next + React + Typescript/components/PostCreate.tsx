@@ -1,10 +1,10 @@
 "use client";
 import { useState, useRef } from "react";
-import type { Category } from "../types/types";
+import type { Category, Post } from "../types/types";
 
 type Props = {
   categories: Category[];
-  onSubmit?: (newPost?: any) => void;
+  onSubmit?: (newPost?: Post) => void;
   onCancel: () => void;
 };
 

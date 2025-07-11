@@ -647,61 +647,40 @@ body {
 }
 
 .post-actions {
-  display: flex;
-  gap: 1rem;
+  margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--light-gray);
+  display: flex;
+  gap: 1rem;
 }
 
-.reaction-btn {
+.comments-toggle {
+  background: none;
+  border: none;
+  color: var(--gray-color);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-small);
+  transition: var(--transition);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  background: transparent;
-  cursor: pointer;
-  transition: var(--transition);
-  font-weight: 500;
+  gap: 0.25rem;
 }
 
-.reaction-icon {
-  font-size: 1.2rem;
-  transition: var(--transition);
-}
-
-.like-btn:hover {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success-color);
-}
-
-.dislike-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger-color);
-}
-
-.comment-btn:hover {
-  background: rgba(99, 102, 241, 0.1);
+.comments-toggle:hover {
+  background: var(--light-gray);
   color: var(--primary-color);
 }
 
-.reaction-btn.active {
-  font-weight: 600;
-}
-
-.like-btn.active {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success-color);
-}
-
-.dislike-btn.active {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger-color);
-}
-
-.reaction-btn.active .reaction-icon {
-  transform: scale(1.2);
+/* Comments section */
+.comments-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--light-gray);
+  background: var(--light-color);
+  border-radius: var(--border-radius-small);
+  padding: 1rem;
 }
 
 /* ================================
@@ -1411,5 +1390,299 @@ body {
 }
 
 /* ================================
-   END GROUP DETAILS STYLES
+   EVENT RSVP STYLES
+   ================================ */
+
+.event-rsvp-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-gray);
+}
+
+.rsvp-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.rsvp-button {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.75rem 1rem;
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-small);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--gray-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.rsvp-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: var(--transition);
+}
+
+.rsvp-button:hover::before {
+  left: 100%;
+}
+
+.rsvp-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.rsvp-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.rsvp-button.going {
+  border-color: var(--success-light);
+  color: var(--success-color);
+}
+
+.rsvp-button.going:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success-color);
+}
+
+.rsvp-button.going.selected {
+  background: linear-gradient(135deg, var(--success-color), var(--success-dark));
+  color: white;
+  border-color: var(--success-color);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+}
+
+.rsvp-button.not-going {
+  border-color: var(--danger-light);
+  color: var(--danger-color);
+}
+
+.rsvp-button.not-going:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger-color);
+}
+
+.rsvp-button.not-going.selected {
+  background: linear-gradient(135deg, var(--danger-color), var(--danger-dark));
+  color: white;
+  border-color: var(--danger-color);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+  transform: translateY(-2px);
+}
+
+.current-response {
+  text-align: center;
+  padding: 0.75rem;
+  border-radius: var(--border-radius-small);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.response-status.going {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.response-status.not_going {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.response-status.no-response {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--gray-color);
+  border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.event-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-gray);
+}
+
+.event-stats span {
+  font-size: 0.9rem;
+  color: var(--gray-color);
+  font-weight: 500;
+}
+
+.event-header {
+  margin-bottom: 1rem;
+}
+
+.event-header h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.3rem;
+}
+
+.event-description {
+  margin-bottom: 1rem;
+}
+
+.event-description p {
+  line-height: 1.6;
+  color: var(--gray-color);
+}
+
+/* Success and Error Colors for RSVP */
+:root {
+  --success-color: #10b981;
+  --success-light: #34d399;
+  --success-dark: #059669;
+  --danger-color: #ef4444;
+  --danger-light: #f87171;
+  --danger-dark: #dc2626;
+}
+
+/* Mobile Responsive RSVP */
+@media (max-width: 768px) {
+  .rsvp-buttons {
+    flex-direction: column;
+  }
+  
+  .rsvp-button {
+    flex: none;
+    width: 100%;
+  }
+}
+
+/* ================================
+   END EVENT RSVP STYLES
+   ================================ */
+
+/* ================================
+   POST IMAGES & COMMENTS STYLES
+   ================================ */
+
+/* Image upload section in post creator */
+.image-upload-section {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.image-upload-label {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: var(--light-color);
+  border: 2px solid var(--border-gray);
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--gray-color);
+  transition: var(--transition);
+}
+
+.image-upload-label:hover {
+  background: var(--light-gray);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.selected-image {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--light-gray);
+  border-radius: var(--border-radius-small);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.remove-image-btn {
+  background: none;
+  border: none;
+  color: var(--danger-color);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem;
+  border-radius: var(--border-radius-small);
+  transition: var(--transition);
+}
+
+.remove-image-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Post images display */
+.post-images {
+  margin: 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.post-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: var(--border-radius-small);
+  border: 1px solid var(--border-gray);
+  object-fit: cover;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.post-image:hover {
+  transform: scale(1.02);
+  box-shadow: var(--box-shadow);
+}
+
+/* Post actions */
+.post-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--light-gray);
+  display: flex;
+  gap: 1rem;
+}
+
+.comments-toggle {
+  background: none;
+  border: none;
+  color: var(--gray-color);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-small);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.comments-toggle:hover {
+  background: var(--light-gray);
+  color: var(--primary-color);
+}
+
+/* Comments section */
+.comments-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--light-gray);
+  background: var(--light-color);
+  border-radius: var(--border-radius-small);
+  padding: 1rem;
+}
+
+/* ================================
+   END POST IMAGES & COMMENTS STYLES
    ================================ */
