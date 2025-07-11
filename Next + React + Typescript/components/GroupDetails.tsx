@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Group, GroupPost, GroupEvent } from "../types/groups";
 import GroupComments from "./GroupComments";
+import GroupMembers from "./GroupMembers";
+import GroupChat from "./GroupChat";
 
 interface GroupDetailsProps {
   groupId: number;
@@ -385,23 +387,11 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
         )}
 
         {activeTab === "members" && (
-          <div className="members-section">
-            <h2>Group Members</h2>
-            <div className="no-content">
-              <p>Members list will be displayed here.</p>
-              <p>Total members: {group.member_count}</p>
-            </div>
-          </div>
+          <GroupMembers groupId={groupId} isGroupMember={group.is_member} />
         )}
 
         {activeTab === "group-chat" && (
-          <div className="group-chat-section">
-            <h2>Group Chat</h2>
-            <div className="no-content">
-              <p>Group chat interface will be displayed here.</p>
-              <p>Real-time messaging for group members.</p>
-            </div>
-          </div>
+          <GroupChat groupId={groupId} isGroupMember={group.is_member} />
         )}
       </div>
     </div>
