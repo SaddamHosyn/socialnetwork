@@ -81,7 +81,10 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
       formData.append("title", "Group Post"); // Default title
 
       if (imageFile) {
-        formData.append("image", imageFile);
+        formData.append("images", imageFile);
+        console.log("Creating post with image:", imageFile.name, imageFile.type, imageFile.size);
+      } else {
+        console.log("Creating text-only post");
       }
 
       const response = await fetch("/api/groups/posts/create", {
@@ -90,10 +93,15 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
         body: formData,
       });
 
+      console.log("Post creation response:", response.status, response.statusText);
+
       if (response.ok) {
-        fetchGroupPosts(); // Refresh posts
+        console.log("Post created successfully, refreshing posts...");
+        await fetchGroupPosts(); // Refresh posts
         return true;
       } else {
+        const errorText = await response.text();
+        console.error("Post creation failed:", response.status, errorText);
         throw new Error("Failed to create post");
       }
     } catch (err) {
@@ -210,50 +218,56 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
             {group.is_member && <PostCreator onCreatePost={createPost} />}
             <div className="posts-list">
               {posts.length > 0 ? (
-                posts.map((post) => (
-                  <div key={post.id} className="post-card">
-                    <div className="post-header">
-                      <span className="post-author">{post.nickname}</span>
-                      <span className="post-time">
-                        {new Date(post.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="post-content">{post.content}</div>
-
-                    {/* Display post images if they exist */}
-                    {post.image_paths && post.image_paths.length > 0 && (
-                      <div className="post-images">
-                        {post.image_paths.map((imagePath, index) => (
-                          <img
-                            key={index}
-                            src={`http://localhost:8080${imagePath.replace(
-                              /^\./,
-                              ""
-                            )}`}
-                            alt={`Post image ${index + 1}`}
-                            className="post-image"
-                          />
-                        ))}
+                posts.map((post) => {
+                  console.log("Rendering post:", post.id, "image_paths:", post.image_paths);
+                  return (
+                    <div key={post.id} className="post-card">
+                      <div className="post-header">
+                        <span className="post-author">{post.nickname}</span>
+                        <span className="post-time">
+                          {new Date(post.created_at).toLocaleDateString()}
+                        </span>
                       </div>
-                    )}
+                      <div className="post-content">{post.content}</div>
 
-                    <div className="post-actions">
-                      <button
-                        className="comments-toggle"
-                        onClick={() => toggleComments(post.id)}
-                      >
-                        💬 Comments ({post.comments_count})
-                      </button>
-                    </div>
+                      {/* Display post images if they exist */}
+                      {post.image_paths && post.image_paths.length > 0 && (
+                        <div className="post-images">
+                          {post.image_paths.map((imagePath, index) => {
+                            const imageUrl = `http://localhost:8080${imagePath.replace(/^\./, "")}`;
+                            console.log("Rendering image:", imageUrl);
+                            return (
+                              <img
+                                key={index}
+                                src={imageUrl}
+                                alt={`Post image ${index + 1}`}
+                                className="post-image"
+                                onLoad={() => console.log("Image loaded:", imageUrl)}
+                                onError={() => console.error("Image failed to load:", imageUrl)}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
 
-                    {/* Comments section */}
-                    {expandedComments.has(post.id) && (
-                      <div className="comments-section">
-                        <GroupComments postId={post.id} />
+                      <div className="post-actions">
+                        <button
+                          className="comments-toggle"
+                          onClick={() => toggleComments(post.id)}
+                        >
+                          💬 Comments ({post.comments_count})
+                        </button>
                       </div>
-                    )}
-                  </div>
-                ))
+
+                      {/* Comments section */}
+                      {expandedComments.has(post.id) && (
+                        <div className="comments-section">
+                          <GroupComments postId={post.id} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               ) : (
                 <div className="no-content">
                   <p>

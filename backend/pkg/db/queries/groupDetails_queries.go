@@ -20,16 +20,22 @@ func InsertGroupPost(tx *sql.Tx, userID, groupID int, title, content string) (in
 	return postID, err
 }
 
+// AddGroupPostImage adds an image to a group post
+func AddGroupPostImage(tx *sql.Tx, groupPostID int64, path string, pos int) error {
+	_, err := tx.Exec(`INSERT INTO group_post_images(group_post_id, image_path, position) VALUES(?,?,?)`, groupPostID, path, pos)
+	return err
+}
+
 // GetGroupPosts returns posts for a specific group
 func GetGroupPosts(groupID, limit, offset int) ([]models.GroupPost, error) {
 	query := `
 		SELECT gp.id, gp.group_id, gp.user_id, u.nickname, gp.title, gp.content, 
 			   gp.created_at, COALESCE(gp.votes, 0) as votes,
-			   GROUP_CONCAT(pi.image_path) as image_paths,
+			   GROUP_CONCAT(gpi.image_path) as image_paths,
 			   COUNT(DISTINCT gc.id) as comments_count
 		FROM group_posts gp
 		JOIN users u ON gp.user_id = u.id
-		LEFT JOIN post_images pi ON gp.id = pi.post_id
+		LEFT JOIN group_post_images gpi ON gp.id = gpi.group_post_id
 		LEFT JOIN group_comments gc ON gp.id = gc.post_id
 		WHERE gp.group_id = ?
 		GROUP BY gp.id
