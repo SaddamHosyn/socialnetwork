@@ -269,20 +269,40 @@ func CreateJoinRequest(groupID, userID int) error {
 		return fmt.Errorf("user is already member")
 	}
 
-	// Check if request already exists
-	var count int
+	// Check if pending request already exists
+	var pendingCount int
 	err = sqlite.GetDB().QueryRow(`
 		SELECT COUNT(*) FROM group_join_requests 
 		WHERE group_id = ? AND requester_id = ? AND status = 'pending'
-	`, groupID, userID).Scan(&count)
+	`, groupID, userID).Scan(&pendingCount)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if pendingCount > 0 {
 		return fmt.Errorf("join request already requested")
 	}
 
-	// Create join request
+	// Check if any previous request exists (accepted/declined)
+	var existingRequestID int
+	err = sqlite.GetDB().QueryRow(`
+		SELECT id FROM group_join_requests 
+		WHERE group_id = ? AND requester_id = ?
+		ORDER BY created_at DESC LIMIT 1
+	`, groupID, userID).Scan(&existingRequestID)
+	
+	if err == nil {
+		// Update existing request to pending
+		_, err = sqlite.GetDB().Exec(`
+			UPDATE group_join_requests 
+			SET status = 'pending', created_at = ?
+			WHERE id = ?
+		`, time.Now(), existingRequestID)
+		return err
+	} else if err != sql.ErrNoRows {
+		return err
+	}
+
+	// Create new join request if no previous request exists
 	_, err = sqlite.GetDB().Exec(`
 		INSERT INTO group_join_requests (group_id, requester_id, status, created_at)
 		VALUES (?, ?, 'pending', ?)
@@ -381,7 +401,14 @@ func HandleJoinRequest(requestID int, accept bool) error {
 
 // RemoveGroupMember removes a user from a group
 func RemoveGroupMember(userID, groupID int) error {
-	result, err := sqlite.GetDB().Exec(`
+	tx, err := sqlite.GetDB().Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Remove from group_members
+	result, err := tx.Exec(`
 		DELETE FROM group_members 
 		WHERE user_id = ? AND group_id = ?
 	`, userID, groupID)
@@ -397,7 +424,16 @@ func RemoveGroupMember(userID, groupID int) error {
 		return sql.ErrNoRows
 	}
 
-	return nil
+	// Clean up any pending join requests for this user and group
+	_, err = tx.Exec(`
+		DELETE FROM group_join_requests 
+		WHERE requester_id = ? AND group_id = ? AND status = 'pending'
+	`, userID, groupID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // GetUserGroupInvitations returns pending invitations for a user
