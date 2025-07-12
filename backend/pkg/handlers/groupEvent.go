@@ -14,6 +14,8 @@ import (
 // CreateGroupEventHandler creates a new event in a group
 // Update CreateGroupEventHandler in groupEvent.go
 func CreateGroupEventHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🎉 CreateGroupEventHandler called")
+
 	if r.Method != http.MethodPost {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -34,6 +36,8 @@ func CreateGroupEventHandler(w http.ResponseWriter, r *http.Request) {
 	title := strings.TrimSpace(r.FormValue("title"))
 	description := strings.TrimSpace(r.FormValue("description"))
 	eventDateStr := r.FormValue("event_date")
+
+	log.Printf("📅 Creating event '%s' for group %d by user %d", title, groupID, userID)
 
 	// Parse event date (expecting RFC3339 format)
 	eventDate, err := time.Parse(time.RFC3339, eventDateStr)

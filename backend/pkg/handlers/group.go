@@ -125,6 +125,8 @@ func FetchGroupDetails(w http.ResponseWriter, r *http.Request) {
 // InviteToGroupHandler sends an invitation to join a group
 // Update InviteToGroupHandler in group.go
 func InviteToGroupHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🎯 InviteToGroupHandler called")
+
 	if r.Method != http.MethodPost {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -148,6 +150,8 @@ func InviteToGroupHandler(w http.ResponseWriter, r *http.Request) {
 		utils.Fail(w, http.StatusBadRequest, "Invalid invitee ID")
 		return
 	}
+
+	log.Printf("👥 Inviting user %d to group %d (by user %d)", inviteeID, groupID, userID)
 
 	// Check if user is a member of the group
 	isMember, err := db.IsGroupMember(userID, groupID)
@@ -200,6 +204,8 @@ func InviteToGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 // Update RequestJoinGroupHandler in group.go
 func RequestJoinGroupHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🚪 RequestJoinGroupHandler called")
+
 	if r.Method != http.MethodPost {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -217,6 +223,8 @@ func RequestJoinGroupHandler(w http.ResponseWriter, r *http.Request) {
 		utils.Fail(w, http.StatusBadRequest, "Invalid group ID")
 		return
 	}
+
+	log.Printf("👤 User %d requesting to join group %d", userID, groupID)
 
 	// Create the join request
 	requestID, err := db.CreateJoinRequest(groupID, userID)
@@ -260,27 +268,7 @@ func RequestJoinGroupHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // HandleInvitationHandler accepts or declines a group invitation
-
 
 // Enhanced HandleInvitationHandler with follower notifications
 func HandleInvitationHandler(w http.ResponseWriter, r *http.Request) {
@@ -337,7 +325,7 @@ func HandleInvitationHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return
 			}
-			
+
 			// Notify user's followers that they joined a group
 			err = db.NotifyFollowersOfGroupActivity(userID, groupID, groupName, "joined")
 			if err != nil {
@@ -438,29 +426,6 @@ func HandleJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
 		"message": message,
 	})
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // LeaveGroupHandler allows a user to leave a group
 func LeaveGroupHandler(w http.ResponseWriter, r *http.Request) {

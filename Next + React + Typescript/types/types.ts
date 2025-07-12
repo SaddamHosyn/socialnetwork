@@ -97,16 +97,14 @@ export type PublicUser = {
 
 export type Notification = {
   id: number;
+  user_id: number;
+  type: string;
+  reference_id: number;
   content: string;
-  created_at: string;
   is_read: boolean;
-  requires_action?: boolean;
-  action_taken?: 'pending' | 'accepted' | 'rejected';
-  type: 'follow_request' | 'group_invitation' | 'group_join_request' | 'group_event' | 'general';
-  sender_id?: number;
-  sender_name?: string;
-  group_id?: number;
-  group_name?: string;
-  event_id?: number;
-  event_title?: string;
+  created_at: string;
+  requires_action: boolean;
+  action_taken: string;
+  sender_id: number;
+  sender_name: string;
 };

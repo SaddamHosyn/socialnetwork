@@ -29,13 +29,21 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   }, [userId, getFollowStatus]);
 
   const handleFollow = async () => {
-    const result = await followUser(userId);
-    if (result) {
-      setFollowStatus(result.status);
-      onFollowChange?.(result.status);
-      addToast(result.message, 'success');
-    } else {
-      addToast('Failed to follow user', 'error');
+    console.log('Follow button clicked for user:', userId);
+    try {
+      const result = await followUser(userId);
+      console.log('Follow result:', result);
+      if (result) {
+        setFollowStatus(result.status);
+        onFollowChange?.(result.status);
+        addToast(result.message, 'success');
+      } else {
+        console.error('Follow failed - no result returned');
+        addToast('Failed to follow user', 'error');
+      }
+    } catch (error) {
+      console.error('Follow error:', error);
+      addToast('Error following user', 'error');
     }
   };
 
@@ -121,7 +129,10 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
       default:
         return (
           <button
-            onClick={handleFollow}
+            onClick={(e) => {
+              console.log('Follow button clicked event:', e);
+              handleFollow();
+            }}
             style={{
               ...baseButtonStyle,
               backgroundColor: "#007bff",

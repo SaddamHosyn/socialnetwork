@@ -4,6 +4,7 @@ import PostCreate from "../PostCreate";
 import PostSingle from "../PostSingle";
 import PostList from "../PostList";
 import CategoryList from "../CategoryList";
+import PanelRight from "../PanelRight";
 import type { Category, Post } from "../../types/types";
 
 const PostsPage = () => {
@@ -117,7 +118,7 @@ const PostsPage = () => {
     : null;
 
   return (
-    <div className="posts-page">
+    <div className="posts-page" style={{ display: "flex", gap: "20px" }}>
       <div className="posts-sidebar">
         <h2>Categories</h2>
         <CategoryList
@@ -127,7 +128,7 @@ const PostsPage = () => {
         />
       </div>
 
-      <div className="posts-main">
+      <div className="posts-main" style={{ flex: 1 }}>
         {viewMode === "list" && (
           <>
             <div className="post-bar">
@@ -175,6 +176,11 @@ const PostsPage = () => {
             />
           </div>
         )}
+      </div>
+
+      {/* Right Panel with Follow System */}
+      <div className="posts-right-panel" style={{ width: "300px", flexShrink: 0 }}>
+        <PanelRight />
       </div>
     </div>
   );

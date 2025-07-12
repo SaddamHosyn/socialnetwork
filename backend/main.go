@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"social-network/backend/pkg/chat"
-
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/handlers"
 
@@ -29,7 +28,6 @@ func main() {
 
 	manager := chat.NewManager()
 	go manager.Run()
-
 	sqlite.SetDB(database)
 
 	// Simple API status endpoint for root path
@@ -74,6 +72,7 @@ func main() {
 	http.Handle("/api/notifications", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetNotificationsHandler)))
 	http.Handle("/api/notifications/read", handlers.AuthMiddleware(http.HandlerFunc(handlers.MarkNotificationReadHandler)))
 	http.Handle("/api/notifications/follow/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToFollowNotificationHandler)))
+	
 
 	// Follower system endpoints
 	http.Handle("/api/follow", handlers.AuthMiddleware(http.HandlerFunc(handlers.FollowUserHandler)))

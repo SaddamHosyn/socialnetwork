@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import type { Follower, FollowStatus, FollowRequest, PublicUser } from '../types/types';
-import { useNotificationService } from './useNotificationService';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -16,7 +15,6 @@ interface FollowData {
 export const useFollower = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { sendFollowRequestNotification } = useNotificationService();
 
   const makeRequest = useCallback(
     async <T>(
@@ -24,6 +22,9 @@ export const useFollower = () => {
       method = "GET",
       body?: URLSearchParams
     ): Promise<ApiResponse<T>> => {
+      console.log('Making request to:', url, 'with method:', method);
+      console.log('Request body:', body?.toString());
+      
       const options: RequestInit = {
         method,
         credentials: "include",
@@ -38,9 +39,14 @@ export const useFollower = () => {
 
       try {
         const response = await fetch(url, options);
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
         const data = await response.json();
+        console.log('Response data:', data);
         return data;
       } catch (error) {
+        console.error('Request error:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -52,32 +58,36 @@ export const useFollower = () => {
 
   const followUser = useCallback(
     async (userId: number): Promise<FollowData | null> => {
+      console.log('Starting follow request for user:', userId);
       setLoading(true);
       setError(null);
 
       const formData = new URLSearchParams();
       formData.append("user_id", userId.toString());
 
+      console.log('Making follow request with formData:', formData.toString());
+      
       const result = await makeRequest<FollowData>(
         "/api/follow",
         "POST",
         formData
       );
 
+      console.log('Follow API result:', result);
+      
       setLoading(false);
 
       if (result.success && result.data) {
-        // If the follow status is 'pending', send a notification to the target user
-        if (result.data.status === 'pending') {
-          await sendFollowRequestNotification(userId);
-        }
+        // Backend automatically creates notifications when follow status is 'pending'
+        console.log('Follow successful:', result.data);
         return result.data;
       } else {
+        console.error('Follow failed:', result.error);
         setError(result.error || "Follow failed");
         return null;
       }
     },
-    [makeRequest, sendFollowRequestNotification]
+    [makeRequest]
   );
 
   const unfollowUser = useCallback(

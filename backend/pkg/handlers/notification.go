@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -11,13 +12,16 @@ import (
 
 func GetNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(int)
+	log.Printf("🔍 GetNotificationsHandler called for user %d", userID)
 
 	notifs, err := db.GetNotificationsForUser(userID)
 	if err != nil {
+		log.Printf("❌ Error fetching notifications: %v", err)
 		utils.Fail(w, http.StatusInternalServerError, "Could not fetch notifications")
 		return
 	}
 
+	log.Printf("📋 Returning %d notifications for user %d", len(notifs), userID)
 	utils.Success(w, http.StatusOK, notifs)
 }
 

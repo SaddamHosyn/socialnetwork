@@ -32,19 +32,25 @@ const PanelRight = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        console.log('Fetching users...');
         setLoading(true);
         const response = await fetch("/api/users");
+        
+        console.log('Users response status:', response.status);
         
         if (!response.ok) {
           throw new Error("Failed to fetch users");
         }
 
         const data = await response.json();
+        console.log('Users data:', data);
         
         if (data.success) {
           setUsers(data.data || []);
+          console.log('Users loaded:', data.data?.length || 0);
         } else {
           setError(data.error || "Failed to load users");
+          console.error('Users fetch error:', data.error);
         }
       } catch (error) {
         console.error("Error fetching users:", error);

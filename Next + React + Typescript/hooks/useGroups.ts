@@ -1,7 +1,6 @@
 // useGroups.ts
 import { useState, useCallback } from 'react';
 import { Group } from '../types/groups';
-import { useNotificationService } from './useNotificationService';
 
 interface CreateGroupData {
   name: string;
@@ -12,7 +11,6 @@ export const useGroups = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { sendGroupInvitationNotification, sendGroupJoinRequestNotification } = useNotificationService();
 
   const createGroup = useCallback(async (groupData: CreateGroupData) => {
     setLoading(true);
@@ -118,6 +116,9 @@ export const useGroups = () => {
       }
 
       const result = await response.json();
+      
+      // Backend automatically creates notifications for group join requests
+      
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to request join';
@@ -343,6 +344,48 @@ export const useGroups = () => {
     }
   }, []);
 
+  // Invite a user to a group
+  const inviteUserToGroup = useCallback(async (
+    groupId: number,
+    userId: number
+  ) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('group_id', groupId.toString());
+      formData.append('user_id', userId.toString());
+
+      const response = await fetch('/api/groups/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to invite user: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      
+      // Backend automatically creates notifications for group invitations
+      
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to invite user';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     groups,
     loading,
@@ -357,5 +400,6 @@ export const useGroups = () => {
     leaveGroup,
     getGroupInvitations,
     handleInvitation,
+    inviteUserToGroup,
   };
 };

@@ -1,19 +1,32 @@
 package db
 
 import (
+	"log"
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
 )
 
 func CreateNotification(userID int, notifType string, refID int, content string, requiresAction bool, senderID int, senderName string) error {
+	log.Printf("🔔 Creating notification: userID=%d, type=%s, refID=%d, content=%s, requiresAction=%t, senderID=%d, senderName=%s",
+		userID, notifType, refID, content, requiresAction, senderID, senderName)
+
 	_, err := sqlite.GetDB().Exec(`
         INSERT INTO notifications (user_id, type, reference_id, content, requires_action, sender_id, sender_name)
         VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		userID, notifType, refID, content, requiresAction, senderID, senderName)
+
+	if err != nil {
+		log.Printf("❌ Error creating notification: %v", err)
+	} else {
+		log.Printf("✅ Notification created successfully for user %d", userID)
+	}
+
 	return err
 }
 
 func GetNotificationsForUser(userID int) ([]models.Notification, error) {
+	log.Printf("🔍 Fetching notifications for user %d", userID)
+
 	rows, err := sqlite.GetDB().Query(`
         SELECT id, user_id, type, reference_id, content, is_read, created_at, 
                requires_action, action_taken, sender_id, sender_name
@@ -21,23 +34,27 @@ func GetNotificationsForUser(userID int) ([]models.Notification, error) {
         WHERE user_id = ?
         ORDER BY created_at DESC`, userID)
 	if err != nil {
+		log.Printf("❌ Error querying notifications: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	var notifications []models.Notification
+	var notifications []models.Notification = make([]models.Notification, 0)
 	for rows.Next() {
 		var n models.Notification
 		var isRead, requiresAction int
 		if err := rows.Scan(&n.ID, &n.UserID, &n.Type, &n.ReferenceID, &n.Content,
 			&isRead, &n.CreatedAt, &requiresAction, &n.ActionTaken,
 			&n.SenderID, &n.SenderName); err != nil {
+			log.Printf("❌ Error scanning notification: %v", err)
 			return nil, err
 		}
 		n.IsRead = isRead == 1
 		n.RequiresAction = requiresAction == 1
 		notifications = append(notifications, n)
 	}
+
+	log.Printf("📋 Found %d notifications for user %d", len(notifications), userID)
 	return notifications, nil
 }
 
