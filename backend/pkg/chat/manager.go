@@ -3,11 +3,18 @@ package chat
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"social-network/backend/pkg/models"
+
+	"github.com/gorilla/websocket"
 )
+
+var GlobalManager *Manager
+
+func SetManager(manager *Manager) {
+	GlobalManager = manager
+}
 
 func (m *Manager) Run() {
 
@@ -21,10 +28,20 @@ func (m *Manager) Run() {
 			continue
 		}
 
+		// Track which users have already received this message to avoid duplicates
+		sentToUsers := make(map[int]bool)
+
 		for wsclient := range m.Clients {
 			if msg.Type == "update" {
 				//Sending update message to all clients
 				wsclient.Send <- message
+			} else if msg.Type == "group_message" {
+				// Handle group messages - send to each user only once
+				// (even if they have multiple WebSocket connections)
+				if !sentToUsers[wsclient.UserID] {
+					wsclient.Send <- message
+					sentToUsers[wsclient.UserID] = true
+				}
 			} else {
 				if wsclient.UserID == msg.ReceiverID || wsclient.UserID == msg.SenderID {
 					wsclient.Send <- message
@@ -93,6 +110,9 @@ func (m *Manager) AddClient(client *Client) {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins for development
+	},
 }
 
 func (m *Manager) RemoveClient(client *Client) {

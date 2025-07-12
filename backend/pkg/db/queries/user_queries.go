@@ -173,3 +173,14 @@ func GetCommentsByUser(userID int, nick string) ([]models.Comment, error) {
 	}
 	return comments, rows.Err()
 }
+
+// GetUserByID retrieves a user by their ID
+func GetUserByID(userID int) (models.User, error) {
+	var user models.User
+	err := sqlite.GetDB().QueryRow(`
+		SELECT id, email, first_name, last_name, date_of_birth, gender, nickname, avatar, about_me
+		FROM users WHERE id = ?`, userID,
+	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.DateOfBirth,
+		&user.Gender, &user.Nickname, &user.Avatar, &user.AboutMe)
+	return user, err
+}

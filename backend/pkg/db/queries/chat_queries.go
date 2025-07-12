@@ -76,3 +76,107 @@ func GetMessages(senderID, receiverID, limit, offset int) ([]models.Message, err
 
 	return messages, nil
 }
+
+// Group Chat Functions
+
+// SaveGroupMessage saves a message to a group chat and returns the message ID
+func SaveGroupMessage(groupID, userID int, content string) (int64, error) {
+	result, err := sqlite.GetDB().Exec(`
+		INSERT INTO group_messages (group_id, user_id, content) 
+		VALUES (?, ?, ?)
+	`, groupID, userID, content)
+	if err != nil {
+		return 0, err
+	}
+
+	messageID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return messageID, nil
+}
+
+// GetGroupMessages retrieves messages for a specific group
+func GetGroupMessages(groupID, limit, offset int) ([]models.GroupMessage, error) {
+	rows, err := sqlite.GetDB().Query(`
+		SELECT 
+			gm.id,
+			gm.group_id,
+			gm.user_id,
+			gm.content,
+			gm.sent_at,
+			u.nickname AS sender_nickname
+		FROM group_messages gm
+		LEFT JOIN users u ON gm.user_id = u.id
+		WHERE gm.group_id = ?
+		ORDER BY gm.sent_at DESC
+		LIMIT ? OFFSET ?
+	`, groupID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []models.GroupMessage
+	for rows.Next() {
+		var msg models.GroupMessage
+		if err := rows.Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt, &msg.SenderName); err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+
+	return messages, nil
+}
+
+// GetLatestGroupMessage gets the most recent message from a group
+func GetLatestGroupMessage(groupID int) (*models.GroupMessage, error) {
+	var msg models.GroupMessage
+	err := sqlite.GetDB().QueryRow(`
+		SELECT 
+			gm.id,
+			gm.group_id,
+			gm.user_id,
+			gm.content,
+			gm.sent_at,
+			u.nickname AS sender_nickname
+		FROM group_messages gm
+		LEFT JOIN users u ON gm.user_id = u.id
+		WHERE gm.group_id = ?
+		ORDER BY gm.sent_at DESC
+		LIMIT 1
+	`, groupID).Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt, &msg.SenderName)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // No messages found
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
+// GetGroupMessageByID retrieves a specific group message by its ID
+func GetGroupMessageByID(messageID int) (*models.GroupMessage, error) {
+	var msg models.GroupMessage
+	err := sqlite.GetDB().QueryRow(`
+		SELECT 
+			gm.id,
+			gm.group_id,
+			gm.user_id,
+			gm.content,
+			gm.sent_at,
+			u.nickname AS sender_nickname
+		FROM group_messages gm
+		LEFT JOIN users u ON gm.user_id = u.id
+		WHERE gm.id = ?
+	`, messageID).Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt, &msg.SenderName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}

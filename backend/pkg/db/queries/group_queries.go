@@ -568,3 +568,16 @@ func GetAllUsersForInvitation(currentUserID int) ([]models.User, error) {
 
 	return users, nil
 }
+
+// IsUserGroupMember checks if a user is a member of a group
+func IsUserGroupMember(userID, groupID int) (bool, error) {
+	var count int
+	err := sqlite.GetDB().QueryRow(`
+		SELECT COUNT(*) FROM group_members 
+		WHERE user_id = ? AND group_id = ?
+	`, userID, groupID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}

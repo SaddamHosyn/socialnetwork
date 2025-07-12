@@ -53,16 +53,17 @@ const GroupMembers = ({ groupId, isGroupMember }: GroupMembersProps) => {
     if (searchTerm.trim() === "") {
       setFilteredMembers(members);
     } else {
-      const filtered = members.filter((member) =>
-        member.nickname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.email.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = members.filter(
+        (member) =>
+          member.nickname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          member.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredMembers(filtered);
     }
   }, [searchTerm, members]);
 
   const getAvatarUrl = (avatarPath?: string) => {
-    if (!avatarPath) return "/uploads/avatars/default_avatar.png";
+    if (!avatarPath) return "/uploads/avatars/default_avatar.svg";
     return `http://localhost:8080${avatarPath.replace(/^\./, "")}`;
   };
 

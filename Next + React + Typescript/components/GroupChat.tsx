@@ -3,11 +3,12 @@ import { useState, useEffect, useRef } from "react";
 
 interface ChatMessage {
   id: number;
-  user_id: number;
-  nickname: string;
-  avatar_path?: string;
-  message: string;
+  group_id: number;
+  sender_id: number;
+  sender_name: string;
+  content: string;
   created_at: string;
+  isOptimistic?: boolean; // Flag to identify optimistic messages
 }
 
 interface Member {
@@ -21,31 +22,150 @@ interface GroupChatProps {
   isGroupMember: boolean;
 }
 
+interface CurrentUser {
+  id: number;
+  nickname: string;
+  email?: string;
+}
+
 const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
+  const [websocket, setWebsocket] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = async () => {
     try {
-      // This would be your chat messages API endpoint
-      const response = await fetch(`/api/groups/chat?group_id=${groupId}`, {
-        credentials: "include",
-      });
+      const response = await fetch(
+        `/api/groups/chat/messages?group_id=${groupId}`,
+        {
+          credentials: "include",
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
-        setMessages(result.data || result || []);
+        setMessages(result.data?.messages || []);
       }
     } catch (err) {
       console.error("Error fetching messages:", err);
     }
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch("/api/me", {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        // Handle both direct user data and wrapped responses
+        const user = userData.data || userData;
+        setCurrentUser(user);
+      }
+    } catch (err) {
+      console.error("Error fetching current user:", err);
+    }
+  };
+
+  const connectWebSocket = () => {
+    // Close existing connection if any
+    if (websocket) {
+      websocket.close();
+      setWebsocket(null);
+    }
+
+    const ws = new WebSocket(`ws://localhost:8080/ws`);
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+
+        if (message.type === "group_message" && message.group_id === groupId) {
+          // Add the new message to the chat
+          const newGroupMessage: ChatMessage = {
+            id: message.id || Date.now() + Math.random(), // Use actual message ID from backend
+            group_id: message.group_id,
+            sender_id: message.sender_id,
+            sender_name: message.sender_name,
+            content: message.message,
+            created_at: message.time,
+            isOptimistic: false, // Mark as real message from server
+          };
+
+          setMessages((prev) => {
+            // Check if message already exists by ID to prevent duplicates
+            const existsById = prev.some((m) => m.id === newGroupMessage.id);
+            if (existsById) {
+              return prev;
+            }
+
+            // If this is from the current user, remove any optimistic messages with the same content
+            let filteredPrev = prev;
+            if (currentUser && newGroupMessage.sender_id === currentUser.id) {
+              filteredPrev = prev.filter((m) => {
+                // Remove optimistic messages with the same content
+                const isSameContent =
+                  m.sender_id === newGroupMessage.sender_id &&
+                  m.content === newGroupMessage.content;
+
+                if (m.isOptimistic && isSameContent) {
+                  return false; // Remove this message
+                }
+                return true; // Keep this message
+              });
+            }
+
+            // Also check by content and sender to catch any other duplicates
+            const existsByContent = filteredPrev.some(
+              (m) =>
+                m.sender_id === newGroupMessage.sender_id &&
+                m.content === newGroupMessage.content &&
+                Math.abs(
+                  new Date(m.created_at).getTime() -
+                    new Date(newGroupMessage.created_at).getTime()
+                ) < 2000
+            );
+
+            if (existsByContent) {
+              return prev;
+            }
+
+            return [...filteredPrev, newGroupMessage];
+          });
+        }
+      } catch (err) {
+        console.error("Error parsing WebSocket message:", err);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket disconnected");
+      // Try to reconnect after 3 seconds, but only if we don't have an active connection
+      setTimeout(() => {
+        if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+          connectWebSocket();
+        }
+      }, 3000);
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    setWebsocket(ws);
   };
 
   const fetchMembers = async () => {
@@ -68,11 +188,24 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
   };
 
   useEffect(() => {
-    if (isGroupMember) {
-      fetchMessages();
-    }
+    fetchCurrentUser();
     fetchMembers();
-  }, [groupId, isGroupMember]);
+  }, [groupId]);
+
+  useEffect(() => {
+    if (isGroupMember && currentUser) {
+      fetchMessages();
+      connectWebSocket();
+    }
+
+    // Cleanup WebSocket on unmount or dependency change
+    return () => {
+      if (websocket) {
+        websocket.close();
+        setWebsocket(null);
+      }
+    };
+  }, [groupId, isGroupMember, currentUser]);
 
   useEffect(() => {
     scrollToBottom();
@@ -95,31 +228,49 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || sending || !isGroupMember) return;
+    if (!newMessage.trim() || sending || !isGroupMember || !currentUser) return;
 
+    const messageContent = newMessage.trim();
+    setNewMessage(""); // Clear input immediately for better UX
     setSending(true);
-    try {
-      const formData = new URLSearchParams();
-      formData.append("group_id", groupId.toString());
-      formData.append("message", newMessage.trim());
 
+    // Create optimistic message
+    const optimisticMessage: ChatMessage = {
+      id: Date.now() + Math.random(), // Temporary unique ID with decimal
+      group_id: groupId,
+      sender_id: currentUser.id,
+      sender_name: currentUser.nickname,
+      content: messageContent,
+      created_at: new Date().toISOString(),
+      isOptimistic: true, // Mark as optimistic
+    };
+
+    // Add optimistic message immediately
+    setMessages((prev) => [...prev, optimisticMessage]);
+
+    try {
       const response = await fetch("/api/groups/chat/send", {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
         },
         credentials: "include",
-        body: formData.toString(),
+        body: JSON.stringify({
+          group_id: groupId,
+          content: messageContent,
+        }),
       });
 
-      if (response.ok) {
-        setNewMessage("");
-        fetchMessages(); // Refresh messages
-      } else {
+      if (!response.ok) {
         throw new Error("Failed to send message");
       }
+      // On success, we don't need to do anything - WebSocket will handle the real message
+      // and our duplicate detection will replace the optimistic message
     } catch (err) {
       console.error("Error sending message:", err);
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
+      setNewMessage(messageContent); // Restore message in input
       alert("Failed to send message");
     } finally {
       setSending(false);
@@ -127,13 +278,13 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
   };
 
   const getAvatarUrl = (avatarPath?: string) => {
-    if (!avatarPath) return "/uploads/avatars/default_avatar.png";
+    if (!avatarPath) return "/uploads/avatars/default_avatar.svg";
     return `http://localhost:8080${avatarPath.replace(/^\./, "")}`;
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   const formatDate = (dateString: string) => {
@@ -155,6 +306,17 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     return (
       <div className="chat-section">
         <div className="loading-spinner">Loading chat...</div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="chat-section">
+        <div className="access-denied">
+          <h3>Group Chat</h3>
+          <p>You need to be logged in to access the chat.</p>
+        </div>
       </div>
     );
   }
@@ -189,32 +351,56 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
               <>
                 {messages.map((message, index) => {
                   const previousMessage = messages[index - 1];
-                  const showDateDivider = !previousMessage || 
-                    formatDate(message.created_at) !== formatDate(previousMessage.created_at);
+                  const showDateDivider =
+                    !previousMessage ||
+                    formatDate(message.created_at) !==
+                      formatDate(previousMessage.created_at);
+                  const isOwnMessage =
+                    currentUser && message.sender_id === currentUser.id;
+
+                  // Create a unique key combining multiple factors to prevent duplicates
+                  const uniqueKey = `msg-${message.id}-${message.sender_id}-${index}-${message.created_at}`;
 
                   return (
-                    <div key={message.id}>
+                    <div key={uniqueKey}>
                       {showDateDivider && (
-                        <div className="date-divider">
+                        <div
+                          className="date-divider"
+                          key={`date-${formatDate(
+                            message.created_at
+                          )}-${index}`}
+                        >
                           {formatDate(message.created_at)}
                         </div>
                       )}
-                      <div className="message">
-                        <div className="message-avatar">
-                          <img
-                            src={getAvatarUrl(message.avatar_path)}
-                            alt={`${message.nickname}'s avatar`}
-                            className="avatar-image"
-                          />
-                        </div>
-                        <div className="message-content">
-                          <div className="message-header">
-                            <span className="message-author">{message.nickname}</span>
-                            <span className="message-time">
+                      <div
+                        className={`message-wrapper ${
+                          isOwnMessage ? "own-message" : "other-message"
+                        }`}
+                      >
+                        <div className="message-bubble">
+                          {!isOwnMessage && (
+                            <div className="message-avatar">
+                              <img
+                                src={getAvatarUrl()}
+                                alt={`${message.sender_name}'s avatar`}
+                                className="avatar-image"
+                              />
+                            </div>
+                          )}
+                          <div className="message-content">
+                            {!isOwnMessage && (
+                              <div className="message-author">
+                                {message.sender_name}
+                              </div>
+                            )}
+                            <div className="message-text">
+                              {message.content}
+                            </div>
+                            <div className="message-time">
                               {formatTime(message.created_at)}
-                            </span>
+                            </div>
                           </div>
-                          <div className="message-text">{message.message}</div>
                         </div>
                       </div>
                     </div>
@@ -261,7 +447,7 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
                 ✕
               </button>
             </div>
-            
+
             <div className="search-bar">
               <input
                 type="text"
@@ -341,7 +527,9 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
           flex: 1;
           overflow-y: auto;
           padding: 16px;
-          background: #fafafa;
+          background: #f8f9fa;
+          display: flex;
+          flex-direction: column;
         }
 
         .date-divider {
@@ -352,48 +540,98 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
           font-weight: bold;
         }
 
-        .message {
+        .message-wrapper {
           display: flex;
           margin-bottom: 12px;
+          width: 100%;
+        }
+
+        .message-wrapper.own-message {
+          justify-content: flex-end;
+        }
+
+        .message-wrapper.other-message {
+          justify-content: flex-start;
+        }
+
+        .message-bubble {
+          display: flex;
+          max-width: 70%;
+          align-items: flex-end;
+          gap: 8px;
+        }
+
+        .own-message .message-bubble {
+          flex-direction: row-reverse;
+        }
+
+        .other-message .message-bubble {
+          flex-direction: row;
         }
 
         .message-avatar {
-          margin-right: 12px;
+          flex-shrink: 0;
         }
 
         .avatar-image {
-          width: 40px;
-          height: 40px;
+          width: 32px;
+          height: 32px;
           border-radius: 50%;
           object-fit: cover;
         }
 
         .message-content {
-          flex: 1;
+          border-radius: 18px;
+          padding: 12px 16px;
+          word-wrap: break-word;
+          position: relative;
         }
 
-        .message-header {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 4px;
+        .own-message .message-content {
+          background: #007bff;
+          color: white;
+          border-bottom-right-radius: 4px;
+        }
+
+        .other-message .message-content {
+          background: #e9ecef;
+          color: #333;
+          border-bottom-left-radius: 4px;
         }
 
         .message-author {
-          font-weight: bold;
-          color: #333;
-          font-size: 14px;
+          font-weight: 600;
+          font-size: 12px;
+          margin-bottom: 4px;
+          opacity: 0.8;
         }
 
-        .message-time {
-          color: #666;
-          font-size: 12px;
+        .own-message .message-author {
+          color: #fff;
+        }
+
+        .other-message .message-author {
+          color: #007bff;
         }
 
         .message-text {
-          color: #333;
           line-height: 1.4;
-          word-wrap: break-word;
+          font-size: 14px;
+          margin-bottom: 4px;
+        }
+
+        .message-time {
+          font-size: 11px;
+          opacity: 0.7;
+          text-align: right;
+        }
+
+        .own-message .message-time {
+          color: #fff;
+        }
+
+        .other-message .message-time {
+          color: #666;
         }
 
         .no-messages {
@@ -439,6 +677,11 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: background-color 0.2s;
+        }
+
+        .send-button:hover:not(:disabled) {
+          background: #0056b3;
         }
 
         .send-button:disabled {

@@ -62,6 +62,7 @@ type Message struct {
 	SenderID   int    `json:"sender_id"`
 	SenderName string `json:"sender_name"`
 	ReceiverID int    `json:"receiverId"`
+	GroupID    int    `json:"group_id,omitempty"`
 	Message    string `json:"message"`
 	Time       string `json:"time"`
 }

@@ -367,6 +367,101 @@ export const useGroups = () => {
     }
   }, []);
 
+  // Group Chat Functions
+  const sendGroupMessage = useCallback(async (groupId: number, content: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/groups/chat/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          group_id: groupId,
+          content: content,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to send message: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getGroupMessages = useCallback(async (groupId: number, limit = 50, offset = 0) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const url = new URL('/api/groups/chat/messages', window.location.origin);
+      url.searchParams.append('group_id', groupId.toString());
+      url.searchParams.append('limit', limit.toString());
+      url.searchParams.append('offset', offset.toString());
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to fetch messages: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch messages';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getLatestGroupMessage = useCallback(async (groupId: number) => {
+    try {
+      const url = new URL('/api/groups/chat/latest', window.location.origin);
+      url.searchParams.append('group_id', groupId.toString());
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null; // No messages yet
+        }
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to fetch latest message: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch latest message';
+      setError(errorMessage);
+      throw err;
+    }
+  }, []);
+
   return {
     groups,
     loading,
@@ -380,5 +475,9 @@ export const useGroups = () => {
     getGroupJoinRequests,
     handleInvitation,
     handleJoinRequest,
+    // Group chat functions
+    sendGroupMessage,
+    getGroupMessages,
+    getLatestGroupMessage,
   };
 };

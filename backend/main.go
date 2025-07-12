@@ -20,6 +20,7 @@ func main() {
 	}
 
 	manager := chat.NewManager()
+	chat.SetManager(manager)
 	go manager.Run()
 
 	sqlite.SetDB(database)
@@ -79,6 +80,11 @@ func main() {
 	http.Handle("/api/groups/posts/create", handlers.AuthMiddleware(http.HandlerFunc(handlers.CreateGroupPostHandler)))
 	http.Handle("/api/groups/posts/comments", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchGroupCommentsHandler)))
 	http.Handle("/api/groups/posts/comments/create", handlers.AuthMiddleware(http.HandlerFunc(handlers.CreateGroupCommentHandler)))
+
+	// Group chat routes
+	http.Handle("/api/groups/chat/send", handlers.AuthMiddleware(http.HandlerFunc(handlers.SendGroupMessage)))
+	http.Handle("/api/groups/chat/messages", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetGroupMessages)))
+	http.Handle("/api/groups/chat/latest", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetLatestGroupMessage)))
 
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)

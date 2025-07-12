@@ -65,3 +65,12 @@ export interface GroupComment {
   image: string;
   created_at: string;
 }
+
+export interface GroupMessage {
+  id: number;
+  group_id: number;
+  sender_id: number;
+  sender_name: string;
+  content: string;
+  created_at: string;
+}
