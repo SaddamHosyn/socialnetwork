@@ -7,9 +7,16 @@ import ProfilePage from "../components/pages/ProfilePage";
 import LoginPage from "../components/pages/LoginPage";
 import RegisterPage from "../components/pages/RegisterPage";
 import GroupsPage from "../components/pages/GroupsPage";
+import PrivateChat from "../components/PrivateChat";
 
-
-type PageType = "home" | "posts" | "profile" | "login" | "register" | "groups";
+type PageType =
+  | "home"
+  | "posts"
+  | "profile"
+  | "login"
+  | "register"
+  | "groups"
+  | "chat";
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -45,7 +52,7 @@ export default function Page() {
 
   const handleNavigate = (page: PageType) => {
     // Prevent navigation to protected pages if not logged in
-    if (!isLoggedIn && ["posts", "profile", "groups"].includes(page)) {
+    if (!isLoggedIn && ["posts", "profile", "groups", "chat"].includes(page)) {
       setCurrentPage("login");
       return;
     }
@@ -62,7 +69,7 @@ export default function Page() {
         } else {
           setIsLoggedIn(false);
         }
-      } catch  {
+      } catch {
         setIsLoggedIn(false);
       } finally {
         setAuthChecked(true);
@@ -101,6 +108,8 @@ export default function Page() {
         );
       case "groups":
         return <GroupsPage />;
+      case "chat":
+        return <PrivateChat />;
       default:
         return (
           <HomePage

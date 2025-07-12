@@ -1,6 +1,13 @@
 "use client";
 
-type PageType = "home" | "posts" | "profile" | "login" | "register" | "groups";
+type PageType =
+  | "home"
+  | "posts"
+  | "profile"
+  | "login"
+  | "register"
+  | "groups"
+  | "chat";
 
 type Props = {
   onLogout: () => void;
@@ -30,6 +37,12 @@ const Header = ({ onLogout, isLoggedIn, currentPage, onNavigate }: Props) => (
             onClick={() => onNavigate("groups")}
           >
             Groups
+          </button>
+          <button
+            className={`nav-button ${currentPage === "chat" ? "active" : ""}`}
+            onClick={() => onNavigate("chat")}
+          >
+            💬 Chat
           </button>
           <button
             className={`nav-button ${
