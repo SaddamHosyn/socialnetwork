@@ -85,42 +85,82 @@ const GroupInviteTest: React.FC = () => {
   return (
     <div
       style={{
-        padding: "20px",
-        border: "1px solid #ccc",
-        margin: "20px",
-        borderRadius: "8px",
+        padding: "24px",
+        backgroundColor: "#ffffff",
+        borderRadius: "12px",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        maxWidth: "600px",
+        margin: "0 auto",
       }}
     >
-      <h3>Test Group Invitations</h3>
+      <h3
+        style={{
+          color: "#2d3748",
+          marginBottom: "24px",
+          fontSize: "24px",
+          fontWeight: "600",
+          textAlign: "center",
+        }}
+      >
+        Send Group Invitations
+      </h3>
 
       <div
         style={{
-          marginBottom: "15px",
-          padding: "10px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "4px",
+          marginBottom: "24px",
+          padding: "16px",
+          backgroundColor: "#f7fafc",
+          borderRadius: "8px",
+          border: "1px solid #e2e8f0",
         }}
       >
-        <strong>Debug Info:</strong>
-        <br />
-        Groups loaded: {groups.length}
-        <br />
-        Users loaded: {users.length}
-        {users.length > 0 && (
+        <div style={{ color: "#4a5568", fontSize: "14px", lineHeight: "1.5" }}>
           <div>
-            <br />
-            Available users:{" "}
-            {users.map((u) => u.nickname || u.email).join(", ")}
+            <strong>Groups available:</strong> {groups.length}
           </div>
-        )}
+          <div>
+            <strong>Users available:</strong> {users.length}
+          </div>
+          {users.length > 0 && (
+            <div style={{ marginTop: "8px" }}>
+              <strong>Users:</strong>{" "}
+              {users.map((u) => u.nickname || u.email).join(", ")}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div style={{ marginBottom: "15px" }}>
-        <label>Select Group:</label>
+      <div style={{ marginBottom: "20px" }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: "8px",
+            fontWeight: "500",
+            color: "#2d3748",
+            fontSize: "14px",
+          }}
+        >
+          Select Group:
+        </label>
         <select
           value={selectedGroup}
           onChange={(e) => setSelectedGroup(Number(e.target.value))}
-          style={{ marginLeft: "10px", padding: "5px" }}
+          style={{
+            width: "100%",
+            padding: "12px",
+            border: "2px solid #e2e8f0",
+            borderRadius: "8px",
+            fontSize: "14px",
+            backgroundColor: "#ffffff",
+            transition: "border-color 0.2s",
+            outline: "none",
+          }}
+          onFocus={(e) =>
+            ((e.target as HTMLSelectElement).style.borderColor = "#6f42c1")
+          }
+          onBlur={(e) =>
+            ((e.target as HTMLSelectElement).style.borderColor = "#e2e8f0")
+          }
         >
           <option value={0}>-- Select a Group --</option>
           {groups.map((group) => (
@@ -131,12 +171,37 @@ const GroupInviteTest: React.FC = () => {
         </select>
       </div>
 
-      <div style={{ marginBottom: "15px" }}>
-        <label>Select User to Invite:</label>
+      <div style={{ marginBottom: "24px" }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: "8px",
+            fontWeight: "500",
+            color: "#2d3748",
+            fontSize: "14px",
+          }}
+        >
+          Select User to Invite:
+        </label>
         <select
           value={selectedUser}
           onChange={(e) => setSelectedUser(Number(e.target.value))}
-          style={{ marginLeft: "10px", padding: "5px" }}
+          style={{
+            width: "100%",
+            padding: "12px",
+            border: "2px solid #e2e8f0",
+            borderRadius: "8px",
+            fontSize: "14px",
+            backgroundColor: "#ffffff",
+            transition: "border-color 0.2s",
+            outline: "none",
+          }}
+          onFocus={(e) =>
+            ((e.target as HTMLSelectElement).style.borderColor = "#6f42c1")
+          }
+          onBlur={(e) =>
+            ((e.target as HTMLSelectElement).style.borderColor = "#e2e8f0")
+          }
         >
           <option value={0}>-- Select a User --</option>
           {users.map((user) => (
@@ -151,29 +216,65 @@ const GroupInviteTest: React.FC = () => {
         onClick={handleSendInvitation}
         disabled={loading || !selectedGroup || !selectedUser}
         style={{
-          padding: "10px 20px",
-          backgroundColor: loading ? "#ccc" : "#007bff",
-          color: "white",
+          width: "100%",
+          padding: "14px 24px",
+          backgroundColor:
+            loading || !selectedGroup || !selectedUser ? "#e2e8f0" : "#6f42c1",
+          color:
+            loading || !selectedGroup || !selectedUser ? "#a0aec0" : "white",
           border: "none",
-          borderRadius: "4px",
-          cursor: loading ? "not-allowed" : "pointer",
+          borderRadius: "8px",
+          fontSize: "16px",
+          fontWeight: "500",
+          cursor:
+            loading || !selectedGroup || !selectedUser
+              ? "not-allowed"
+              : "pointer",
+          transition: "all 0.2s",
+          boxShadow:
+            loading || !selectedGroup || !selectedUser
+              ? "none"
+              : "0 2px 4px rgba(111, 66, 193, 0.3)",
+        }}
+        onMouseEnter={(e) => {
+          if (!loading && selectedGroup && selectedUser) {
+            const target = e.target as HTMLButtonElement;
+            target.style.backgroundColor = "#553c9a";
+            target.style.transform = "translateY(-1px)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!loading && selectedGroup && selectedUser) {
+            const target = e.target as HTMLButtonElement;
+            target.style.backgroundColor = "#6f42c1";
+            target.style.transform = "translateY(0)";
+          }
         }}
       >
-        {loading ? "Sending..." : "Send Invitation"}
+        {loading ? "Sending Invitation..." : "Send Invitation"}
       </button>
 
       {message && (
         <div
           style={{
-            marginTop: "15px",
-            padding: "10px",
-            backgroundColor: message.includes("success")
-              ? "#d4edda"
-              : "#f8d7da",
-            border: `1px solid ${
-              message.includes("success") ? "#c3e6cb" : "#f5c6cb"
+            marginTop: "20px",
+            padding: "16px",
+            backgroundColor:
+              message.includes("success") || message.includes("sent")
+                ? "#f0fff4"
+                : "#fef5e7",
+            border: `2px solid ${
+              message.includes("success") || message.includes("sent")
+                ? "#68d391"
+                : "#f6ad55"
             }`,
-            borderRadius: "4px",
+            borderRadius: "8px",
+            color:
+              message.includes("success") || message.includes("sent")
+                ? "#2f855a"
+                : "#c05621",
+            fontSize: "14px",
+            fontWeight: "500",
           }}
         >
           {message}

@@ -197,9 +197,9 @@ const GroupsPage = () => {
         <button
           className={`tab ${viewMode === "test-invite" ? "active" : ""}`}
           onClick={() => setViewMode("test-invite")}
-          style={{ backgroundColor: "#28a745", color: "white" }}
+          style={{ backgroundColor: "#6f42c1", color: "white" }}
         >
-          Test Invites
+          Send Invites
         </button>
       </div>
 
