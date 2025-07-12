@@ -43,6 +43,18 @@ func ValidateRegister(email, password, firstName, lastName, nickname, aboutMe st
 		return &ValidationError{Message: "Names must be 1-20 characters"}
 	}
 
+	// Validate nickname if provided (it's optional)
+	if nickname != "" {
+		if len(nickname) < 3 || len(nickname) > 20 {
+			return &ValidationError{Message: "Nickname must be 3-20 characters if provided"}
+		}
+		// Check for valid characters (alphanumeric and underscore only)
+		nicknameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+		if !nicknameRegex.MatchString(nickname) {
+			return &ValidationError{Message: "Nickname can only contain letters, numbers, and underscores"}
+		}
+	}
+
 	if len(aboutMe) > 500 {
 		return &ValidationError{Message: "Maximum 500 characeters"}
 	}

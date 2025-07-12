@@ -5,11 +5,31 @@ import (
 	"time"
 )
 
-func RegisterUser(email, hashedPassword, firstName, lastName, nickname, aboutMe, avatarPath string, dob time.Time, genderInt int) error {
+func RegisterUser(email, hashedPassword, firstName, lastName, nickname, aboutMe, avatarPath string, dob time.Time, genderInt int, isPrivate bool) error {
+	privateInt := 0
+	if isPrivate {
+		privateInt = 1
+	}
+
+	// Handle optional fields - use NULL instead of empty strings
+	var nicknameVal interface{} = nickname
+	var aboutMeVal interface{} = aboutMe
+	var avatarPathVal interface{} = avatarPath
+
+	if nickname == "" {
+		nicknameVal = nil
+	}
+	if aboutMe == "" {
+		aboutMeVal = nil
+	}
+	if avatarPath == "" {
+		avatarPathVal = nil
+	}
+
 	_, err := sqlite.GetDB().Exec(`
-	    INSERT INTO users (email, password, date_of_birth, gender, first_name, last_name, nickname, about_me, avatar)
-	    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		email, hashedPassword, dob.Format("2006-01-02"), genderInt, firstName, lastName, nickname, aboutMe, avatarPath)
+	    INSERT INTO users (email, password, date_of_birth, gender, first_name, last_name, nickname, about_me, avatar, is_private)
+	    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		email, hashedPassword, dob.Format("2006-01-02"), genderInt, firstName, lastName, nicknameVal, aboutMeVal, avatarPathVal, privateInt)
 	return err
 }
 

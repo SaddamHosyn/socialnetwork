@@ -2735,7 +2735,6 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1rem;
 }
 
 .submit-btn-modern:hover:not(:disabled) {
@@ -2791,4 +2790,78 @@ body {
     margin: 1rem auto;
     padding: 0 1rem;
   }
+}
+
+/* Privacy Selection Styles for Registration Form */
+.privacy-section {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.privacy-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.privacy-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.privacy-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 2px solid #e9ecef;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.privacy-option.selected {
+  border-color: #007bff;
+  background-color: #f0f7ff;
+}
+
+.privacy-option input[type="radio"] {
+  margin-top: 0.2rem;
+  width: 16px;
+  height: 16px;
+  accent-color: #007bff;
+  cursor: pointer;
+}
+
+.privacy-option-content {
+  flex: 1;
+}
+
+.privacy-option label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: #333;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.privacy-option p {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Form error styles for privacy validation */
+.form-error {
+  color: #dc3545;
+  margin-top: 1rem;
+  font-size: 0.9rem;
 }
