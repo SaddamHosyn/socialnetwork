@@ -289,7 +289,7 @@ func CreateJoinRequest(groupID, userID int) error {
 		WHERE group_id = ? AND requester_id = ?
 		ORDER BY created_at DESC LIMIT 1
 	`, groupID, userID).Scan(&existingRequestID)
-	
+
 	if err == nil {
 		// Update existing request to pending
 		_, err = sqlite.GetDB().Exec(`
