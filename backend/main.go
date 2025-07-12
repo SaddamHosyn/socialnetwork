@@ -31,7 +31,7 @@ func main() {
 	http.HandleFunc("/api/login", handlers.LoginHandler)
 	http.HandleFunc("/api/posts", handlers.FetchAllPosts)
 	http.HandleFunc("/api/post", handlers.FetchOnePost)
-	http.HandleFunc("/api/users", handlers.FetchUsers)
+	http.Handle("/api/users", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchUsers)))
 	http.HandleFunc("/api/categories", handlers.FetchCategories)
 	http.HandleFunc("/api/comment/fetch", handlers.FetchComments)
 

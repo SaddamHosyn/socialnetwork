@@ -1,5 +1,17 @@
-import { NextResponse } from 'next/server';
+import { type NextRequest } from "next/server";
 
-export async function GET() {
-  return NextResponse.json({ message: 'Users endpoint - not implemented yet' }, { status: 501 });
+export const dynamic = "force-dynamic";
+
+export async function GET(req: NextRequest) {
+  const cookie = req.headers.get("cookie");
+
+  const res = await fetch("http://localhost:8080/api/users", {
+    method: "GET",
+    headers: {
+      Cookie: cookie || "",
+    },
+    cache: "no-store",
+  });
+
+  return res;
 }

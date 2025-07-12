@@ -5,17 +5,33 @@ import { Group } from "../../types/groups";
 import GroupDetails from "../GroupDetails";
 import GroupInvitations from "../GroupInvitations";
 import GroupJoinRequests from "../GroupJoinRequests";
+import GroupInviteTest from "../GroupInviteTest";
 
 const GroupsPage = () => {
-  const [viewMode, setViewMode] = useState<"list" | "create" | "details" | "invitations" | "join-requests">("list");
+  const [viewMode, setViewMode] = useState<
+    | "list"
+    | "create"
+    | "details"
+    | "invitations"
+    | "join-requests"
+    | "test-invite"
+  >("list");
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
-  const { groups, loading, error, createGroup, fetchGroups, requestJoinGroup, leaveGroup } = useGroups();
-  
+  const {
+    groups,
+    loading,
+    error,
+    createGroup,
+    fetchGroups,
+    requestJoinGroup,
+    leaveGroup,
+  } = useGroups();
+
   // Form state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    privacy: "public"
+    privacy: "public",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -24,59 +40,63 @@ const GroupsPage = () => {
     fetchGroups();
   }, [fetchGroups]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
       alert("Please enter a group name");
       return;
     }
-    
+
     if (!formData.description.trim()) {
       alert("Please enter a group description");
       return;
     }
-    
+
     if (formData.title.length < 3 || formData.title.length > 50) {
       alert("Group name must be between 3 and 50 characters");
       return;
     }
-    
+
     if (formData.description.length < 10 || formData.description.length > 500) {
       alert("Group description must be between 10 and 500 characters");
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       await createGroup({
         name: formData.title,
-        description: formData.description
+        description: formData.description,
       });
-      
+
       // Reset form and switch back to list view
       setFormData({ title: "", description: "", privacy: "public" });
       setViewMode("list");
-      
+
       // Refresh the groups list
       fetchGroups();
     } catch (error) {
       console.error("Error creating group:", error);
-      
+
       // More specific error handling
       if (error instanceof Error) {
-        if (error.message.includes('401')) {
+        if (error.message.includes("401")) {
           alert("You need to be logged in to create a group.");
-        } else if (error.message.includes('400')) {
+        } else if (error.message.includes("400")) {
           alert("Please check your input and try again.");
         } else {
           alert(`Error: ${error.message}`);
@@ -122,9 +142,11 @@ const GroupsPage = () => {
         const result = await requestJoinGroup(group.id);
         if (result && result.success === false) {
           // Handle specific error cases
-          if (result.message.includes('already requested')) {
-            alert("You have already requested to join this group. Please wait for the group creator to accept your request.");
-          } else if (result.message.includes('already member')) {
+          if (result.message.includes("already requested")) {
+            alert(
+              "You have already requested to join this group. Please wait for the group creator to accept your request."
+            );
+          } else if (result.message.includes("already member")) {
             alert("You are already a member of this group.");
           } else {
             alert(`Error: ${result.message}`);
@@ -135,7 +157,7 @@ const GroupsPage = () => {
         }
       } catch (error) {
         // Only log unexpected errors
-        if (!(error instanceof Error) || !error.message.includes('already')) {
+        if (!(error instanceof Error) || !error.message.includes("already")) {
           console.error("Error requesting to join group:", error);
         }
         alert("Failed to send join request");
@@ -154,23 +176,30 @@ const GroupsPage = () => {
 
       {/* Navigation Tabs */}
       <div className="groups-tabs">
-        <button 
+        <button
           className={`tab ${viewMode === "list" ? "active" : ""}`}
           onClick={() => setViewMode("list")}
         >
           All Groups
         </button>
-        <button 
+        <button
           className={`tab ${viewMode === "invitations" ? "active" : ""}`}
           onClick={() => setViewMode("invitations")}
         >
           My Invitations
         </button>
-        <button 
+        <button
           className={`tab ${viewMode === "join-requests" ? "active" : ""}`}
           onClick={() => setViewMode("join-requests")}
         >
           Join Requests
+        </button>
+        <button
+          className={`tab ${viewMode === "test-invite" ? "active" : ""}`}
+          onClick={() => setViewMode("test-invite")}
+          style={{ backgroundColor: "#28a745", color: "white" }}
+        >
+          Test Invites
         </button>
       </div>
 
@@ -183,9 +212,9 @@ const GroupsPage = () => {
               {groups.length > 0 ? (
                 groups.map((group: Group) => (
                   <div key={group.id} className="group-card">
-                    <h3 
+                    <h3
                       onClick={() => handleViewGroup(group.id)}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: "pointer" }}
                       title="Click to view group details"
                     >
                       {group.title}
@@ -194,16 +223,25 @@ const GroupsPage = () => {
                     <div className="group-meta">
                       <span>{group.member_count || 0} members</span>
                       <span>Created by: {group.creator_nickname}</span>
-                      <button 
+                      <button
                         className="join-button"
                         onClick={() => handleJoinLeave(group)}
                         disabled={group.is_creator || group.has_pending_request}
-                        data-status={group.is_creator ? "creator" : group.has_pending_request ? "pending" : ""}
+                        data-status={
+                          group.is_creator
+                            ? "creator"
+                            : group.has_pending_request
+                            ? "pending"
+                            : ""
+                        }
                       >
-                        {group.is_creator ? "Creator" : 
-                         group.is_member ? "Leave" : 
-                         group.has_pending_request ? "Request Pending" : 
-                         "Request to Join"}
+                        {group.is_creator
+                          ? "Creator"
+                          : group.is_member
+                          ? "Leave"
+                          : group.has_pending_request
+                          ? "Request Pending"
+                          : "Request to Join"}
                       </button>
                     </div>
                   </div>
@@ -211,7 +249,10 @@ const GroupsPage = () => {
               ) : (
                 <div className="no-groups">
                   <p>No groups found. Create the first one!</p>
-                  <button onClick={() => setViewMode("create")} className="create-button">
+                  <button
+                    onClick={() => setViewMode("create")}
+                    className="create-button"
+                  >
                     Create Group
                   </button>
                 </div>
@@ -233,12 +274,12 @@ const GroupsPage = () => {
             <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
                 <label>Group Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="Enter group name (3-50 characters)" 
+                  placeholder="Enter group name (3-50 characters)"
                   required
                   minLength={3}
                   maxLength={50}
@@ -247,11 +288,11 @@ const GroupsPage = () => {
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <textarea 
+                <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="Describe your group (10-500 characters)" 
+                  placeholder="Describe your group (10-500 characters)"
                   rows={4}
                   required
                   minLength={10}
@@ -261,7 +302,7 @@ const GroupsPage = () => {
               </div>
               <div className="form-group">
                 <label>Privacy</label>
-                <select 
+                <select
                   name="privacy"
                   value={formData.privacy}
                   onChange={handleInputChange}
@@ -271,10 +312,21 @@ const GroupsPage = () => {
                 </select>
               </div>
               <div className="form-actions">
-                <button type="button" onClick={handleCancel} disabled={isSubmitting}>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={isSubmitting || !formData.title.trim() || !formData.description.trim()}>
+                <button
+                  type="submit"
+                  disabled={
+                    isSubmitting ||
+                    !formData.title.trim() ||
+                    !formData.description.trim()
+                  }
+                >
                   {isSubmitting ? "Creating..." : "Create Group"}
                 </button>
               </div>
@@ -284,15 +336,12 @@ const GroupsPage = () => {
       )}
 
       {viewMode === "details" && selectedGroupId && (
-        <GroupDetails 
-          groupId={selectedGroupId} 
-          onBack={handleBackToList}
-        />
+        <GroupDetails groupId={selectedGroupId} onBack={handleBackToList} />
       )}
 
       {viewMode === "invitations" && (
         <div className="invitations-view">
-          <GroupInvitations 
+          <GroupInvitations
             onInvitationHandled={() => {
               // Refresh groups list after handling invitation
               fetchGroups();
@@ -303,12 +352,18 @@ const GroupsPage = () => {
 
       {viewMode === "join-requests" && (
         <div className="join-requests-view">
-          <GroupJoinRequests 
+          <GroupJoinRequests
             onRequestHandled={() => {
               // Refresh groups list after handling request
               fetchGroups();
             }}
           />
+        </div>
+      )}
+
+      {viewMode === "test-invite" && (
+        <div className="test-invite-view">
+          <GroupInviteTest />
         </div>
       )}
     </div>

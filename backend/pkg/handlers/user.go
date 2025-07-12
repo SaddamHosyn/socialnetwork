@@ -3,7 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
-	"social-network/backend/pkg/db/queries"
+	db "social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
 	"time"
@@ -15,20 +15,9 @@ func FetchUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := r.Cookie("session_token")
-	if err != nil {
-		utils.Fail(w, http.StatusUnauthorized, "Missing session token")
-		return
-	}
+	userID := r.Context().Value(userIDKey).(int)
 
-	currentUser, err := db.GetUserBySessionToken(cookie.Value)
-	if err != nil {
-		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	threshold := time.Now().UTC().Add(-10 * time.Minute)
-	users, err := db.GetChatUserList(currentUser.ID, threshold)
+	users, err := db.GetAllUsersForInvitation(userID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return

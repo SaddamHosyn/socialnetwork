@@ -319,6 +319,54 @@ export const useGroups = () => {
     }
   }, []);
 
+  const inviteToGroup = useCallback(async (groupId: number, userId: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('group_id', groupId.toString());
+      formData.append('invitee_id', userId.toString());
+
+      const response = await fetch('/api/groups/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: formData.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.error || errorData?.message || `Failed to send invitation: ${response.status}`;
+        
+        // Handle specific error cases
+        if (response.status === 409) {
+          if (errorMessage.includes('already invited')) {
+            setError('User has already been invited to this group');
+            return { success: false, message: 'User has already been invited to this group' };
+          } else if (errorMessage.includes('already member')) {
+            setError('User is already a member of this group');
+            return { success: false, message: 'User is already a member of this group' };
+          }
+        }
+        
+        setError(errorMessage);
+        return { success: false, message: errorMessage };
+      }
+
+      const result = await response.json();
+      return { success: true, message: result.message || 'Invitation sent successfully' };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send invitation';
+      setError(errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     groups,
     loading,
@@ -327,6 +375,7 @@ export const useGroups = () => {
     fetchGroups,
     requestJoinGroup,
     leaveGroup,
+    inviteToGroup,
     getGroupInvitations,
     getGroupJoinRequests,
     handleInvitation,
