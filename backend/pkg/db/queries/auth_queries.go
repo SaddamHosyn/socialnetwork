@@ -66,6 +66,12 @@ func DeleteSessionByToken(token string) error {
 	return err
 }
 
+// DeleteAllUserSessions deletes all sessions for a specific user
+func DeleteAllUserSessions(userID int) error {
+	_, err := sqlite.GetDB().Exec("DELETE FROM sessions WHERE user_id = ?", userID)
+	return err
+}
+
 func GetSessionInfo(token string) (int, string, error) {
 	var userID int
 	var expiresAt string
