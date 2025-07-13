@@ -25,7 +25,7 @@ func SendGroupMessage(w http.ResponseWriter, r *http.Request) {
 		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-	
+
 	userID, ok := userIDValue.(int)
 	if !ok {
 		utils.Fail(w, http.StatusUnauthorized, "Invalid user context")
@@ -121,7 +121,7 @@ func GetGroupMessages(w http.ResponseWriter, r *http.Request) {
 		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-	
+
 	userID, ok := userIDValue.(int)
 	if !ok {
 		log.Printf("GetGroupMessages: userIDKey found but not an int: %v", userIDValue)
@@ -211,7 +211,7 @@ func GetLatestGroupMessage(w http.ResponseWriter, r *http.Request) {
 		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-	
+
 	userID, ok := userIDValue.(int)
 	if !ok {
 		utils.Fail(w, http.StatusUnauthorized, "Invalid user context")

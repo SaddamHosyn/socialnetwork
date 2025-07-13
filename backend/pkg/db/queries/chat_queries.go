@@ -106,7 +106,7 @@ func GetGroupMessages(groupID, limit, offset int) ([]models.GroupMessage, error)
 			gm.user_id as sender_id,
 			gm.content,
 			gm.sent_at as created_at,
-			u.nickname AS sender_name
+			COALESCE(u.nickname, 'Unknown User') AS sender_name
 		FROM group_messages gm
 		LEFT JOIN users u ON gm.user_id = u.id
 		WHERE gm.group_id = ?
@@ -140,7 +140,7 @@ func GetLatestGroupMessage(groupID int) (*models.GroupMessage, error) {
 			gm.user_id as sender_id,
 			gm.content,
 			gm.sent_at as created_at,
-			u.nickname AS sender_name
+			COALESCE(u.nickname, 'Unknown User') AS sender_name
 		FROM group_messages gm
 		LEFT JOIN users u ON gm.user_id = u.id
 		WHERE gm.group_id = ?
