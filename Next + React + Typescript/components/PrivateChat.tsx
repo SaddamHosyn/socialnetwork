@@ -56,6 +56,7 @@ const PrivateChat = () => {
   }, [selectedUser]);
 
   useEffect(() => {
+    console.log("CurrentUser state changed to:", currentUser);
     currentUserRef.current = currentUser;
   }, [currentUser]);
 
@@ -67,8 +68,11 @@ const PrivateChat = () => {
 
       if (response.ok) {
         const userData = await response.json();
-        const user = userData.data || userData;
+        const user = userData.data?.user || userData.user || userData;
+        console.log("Setting current user:", user);
         setCurrentUser(user);
+        // Also update the ref immediately with the correct user object
+        currentUserRef.current = user;
       }
     } catch (err) {
       console.error("Error fetching current user:", err);
@@ -154,27 +158,34 @@ const PrivateChat = () => {
   };
 
   const connectWebSocket = () => {
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.id) {
+      console.log(
+        "No currentUser or currentUser.id, skipping WebSocket connection"
+      );
+      return;
+    }
 
     // Close existing connection if any
     if (websocket) {
       websocket.close();
     }
 
-    console.log("Connecting to WebSocket...");
+    console.log("Connecting to WebSocket for user:", currentUser);
     const ws = new WebSocket("ws://localhost:8080/ws");
 
     ws.onopen = () => {
       console.log("WebSocket connected for private chat");
       setWebsocket(ws);
       setIsWebSocketConnected(true);
-      ws.send(
-        JSON.stringify({
-          type: "register",
-          user_id: currentUser.id,
-          nickname: currentUser.nickname,
-        })
-      );
+
+      const registerMessage = {
+        type: "register",
+        user_id: currentUser.id,
+        nickname: currentUser.nickname,
+      };
+      console.log("Sending WebSocket registration:", registerMessage);
+
+      ws.send(JSON.stringify(registerMessage));
     };
 
     ws.onmessage = (event) => {
@@ -184,13 +195,15 @@ const PrivateChat = () => {
 
         if (
           data.type === "private_message" ||
-          (!data.type && data.sender_id && data.receiver_id)
+          (!data.type &&
+            data.sender_id &&
+            (data.receiver_id || data.receiverId))
         ) {
           const newMessage: ChatMessage = {
             id: data.id || Date.now(),
             sender_id: data.sender_id,
             sender_name: data.sender_name || "Unknown",
-            receiver_id: data.receiver_id,
+            receiver_id: data.receiver_id || data.receiverId,
             receiver_name: data.receiver_name || "Unknown",
             content: data.content || data.message,
             created_at:
@@ -205,43 +218,72 @@ const PrivateChat = () => {
 
             console.log("Processing message:", {
               messageFrom: data.sender_id,
-              messageTo: data.receiver_id,
+              messageTo: data.receiver_id || data.receiverId,
               currentSelectedUserId,
               currentUserId,
               content: data.content || data.message,
+              currentUserRefValue: currentUserRef.current,
+              selectedUserRefValue: selectedUserRef.current,
+              currentUserFromState: currentUser,
             });
 
             if (!currentUserId) {
-              console.log("No current user, skipping message update");
+              console.log(
+                "No current user, skipping message update. CurrentUser ref:",
+                currentUserRef.current,
+                "CurrentUser state:",
+                currentUser
+              );
               return prevMessages;
             }
 
+            const messageReceiverId = data.receiver_id || data.receiverId;
             const isForCurrentChat =
               currentSelectedUserId &&
               ((data.sender_id === currentUserId &&
-                data.receiver_id === currentSelectedUserId) ||
+                messageReceiverId === currentSelectedUserId) ||
                 (data.sender_id === currentSelectedUserId &&
-                  data.receiver_id === currentUserId));
+                  messageReceiverId === currentUserId));
 
             console.log("Is message for current chat:", isForCurrentChat);
 
             if (isForCurrentChat) {
-              // Remove optimistic message if this is the real one
-              const filtered = prevMessages.filter(
-                (msg) => !msg.isOptimistic || msg.content !== newMessage.content
+              // Remove any optimistic messages with the same content from the same sender
+              const filteredMessages = prevMessages.filter(
+                (msg) =>
+                  !(
+                    msg.isOptimistic &&
+                    msg.content === newMessage.content &&
+                    msg.sender_id === newMessage.sender_id
+                  )
               );
 
-              // Avoid duplicates
-              const existingMessage = filtered.find(
-                (msg) => msg.id === newMessage.id
+              // Simple duplicate check: don't add if the exact same message already exists
+              const exactDuplicate = filteredMessages.find(
+                (msg) =>
+                  msg.content === newMessage.content &&
+                  msg.sender_id === newMessage.sender_id &&
+                  !msg.isOptimistic &&
+                  Math.abs(
+                    new Date(msg.created_at).getTime() -
+                      new Date(newMessage.created_at).getTime()
+                  ) < 2000
               );
-              if (existingMessage) {
-                console.log("Message already exists, skipping duplicate");
-                return filtered;
+
+              if (exactDuplicate) {
+                console.log("Exact duplicate found, skipping");
+                return filteredMessages;
               }
 
               console.log("Adding new message to current chat:", newMessage);
-              return [...filtered, newMessage];
+              const updatedMessages = [...filteredMessages, newMessage];
+
+              // Force scroll to bottom after message is added
+              setTimeout(() => {
+                scrollToBottom();
+              }, 100);
+
+              return updatedMessages;
             }
 
             console.log("Message not for current chat, skipping UI update");
@@ -385,7 +427,19 @@ const PrivateChat = () => {
     };
 
     // Add optimistic message immediately
-    setMessages((prev) => [...prev, optimisticMessage]);
+    setMessages((prev) => {
+      const newMessages = [...prev, optimisticMessage];
+      console.log(
+        "Added optimistic message, total messages:",
+        newMessages.length
+      );
+      return newMessages;
+    });
+
+    // Force scroll to bottom
+    setTimeout(() => {
+      scrollToBottom();
+    }, 50);
 
     try {
       const response = await fetch("/api/private/chat/send", {
@@ -404,7 +458,34 @@ const PrivateChat = () => {
 
       const result = await response.json();
       console.log("Message sent successfully:", result);
-      // WebSocket will handle the real message
+
+      // Also send a test WebSocket message to ensure real-time delivery
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
+        console.log("Sending WebSocket notification for message delivery");
+        websocket.send(
+          JSON.stringify({
+            type: "message_sent_confirmation",
+            sender_id: currentUser.id,
+            receiver_id: selectedUser.id,
+            content: messageContent,
+            timestamp: new Date().toISOString(),
+          })
+        );
+      }
+
+      // WebSocket will handle the real message, but if it doesn't arrive in 2 seconds,
+      // we'll convert the optimistic message to a real one
+      setTimeout(() => {
+        setMessages((prev) => {
+          return prev.map((msg) => {
+            if (msg.id === optimisticMessage.id && msg.isOptimistic) {
+              console.log("Converting optimistic message to real message");
+              return { ...msg, isOptimistic: false, id: result.id || msg.id };
+            }
+            return msg;
+          });
+        });
+      }, 2000);
     } catch (err) {
       console.error("Error sending message:", err);
       // Remove optimistic message on error
@@ -488,7 +569,12 @@ const PrivateChat = () => {
                 className={`user-item ${
                   selectedUser?.id === user.id ? "selected" : ""
                 }`}
-                onClick={() => setSelectedUser(user)}
+                onClick={() => {
+                  console.log("Selecting user:", user);
+                  setSelectedUser(user);
+                  // Also update the ref immediately
+                  selectedUserRef.current = user;
+                }}
               >
                 <div className="user-avatar">
                   <img
@@ -566,12 +652,13 @@ const PrivateChat = () => {
                   <div
                     key={message.id}
                     className={`message ${
-                      message.sender_id === currentUser?.id
-                        ? "sent"
-                        : "received"
-                    } ${message.isOptimistic ? "optimistic" : ""}`}
+                      message.isOptimistic ? "optimistic" : ""
+                    }`}
                   >
                     <div className="message-content">
+                      <div className="message-sender">
+                        {message.sender_name}
+                      </div>
                       <div className="message-text">{message.content}</div>
                       <div className="message-time">
                         {formatTime(message.created_at)}
@@ -932,8 +1019,7 @@ const PrivateChat = () => {
         }
 
         .message {
-          display: flex;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
           animation: messageSlideIn 0.4s ease-out;
         }
 
@@ -948,55 +1034,38 @@ const PrivateChat = () => {
           }
         }
 
-        .message.sent {
-          justify-content: flex-end;
-        }
-
-        .message.received {
-          justify-content: flex-start;
-        }
-
         .message-content {
-          max-width: 75%;
+          width: 100%;
           padding: 16px 20px;
-          border-radius: 20px;
-          position: relative;
+          background: rgba(255, 255, 255, 0.95);
+          border: 1px solid rgba(232, 236, 244, 0.8);
+          border-radius: 12px;
           word-wrap: break-word;
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-          backdrop-filter: blur(10px);
-        }
-
-        .message.sent .message-content {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border-bottom-right-radius: 8px;
-        }
-
-        .message.received .message-content {
-          background: rgba(255, 255, 255, 0.9);
-          color: #2d3748;
-          border: 1px solid rgba(232, 236, 244, 0.6);
-          border-bottom-left-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         .message.optimistic {
           opacity: 0.7;
         }
 
+        .message-sender {
+          font-size: 13px;
+          font-weight: 600;
+          color: #667eea;
+          margin-bottom: 6px;
+        }
+
         .message-text {
           font-size: 15px;
           line-height: 1.6;
-          margin-bottom: 6px;
+          margin-bottom: 8px;
+          color: #2d3748;
         }
 
         .message-time {
           font-size: 11px;
-          opacity: 0.8;
-          text-align: right;
-        }
-
-        .message.received .message-time {
           color: #a0aec0;
+          text-align: right;
         }
 
         .message-input-container {
