@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"social-network/backend/pkg/chat"
 	db "social-network/backend/pkg/db/queries"
@@ -19,7 +20,17 @@ func SendGroupMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(userIDKey).(int)
+	userIDValue := r.Context().Value(userIDKey)
+	if userIDValue == nil {
+		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	
+	userID, ok := userIDValue.(int)
+	if !ok {
+		utils.Fail(w, http.StatusUnauthorized, "Invalid user context")
+		return
+	}
 
 	var req struct {
 		GroupID int    `json:"group_id"`
@@ -104,10 +115,25 @@ func GetGroupMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(userIDKey).(int)
+	userIDValue := r.Context().Value(userIDKey)
+	if userIDValue == nil {
+		log.Printf("GetGroupMessages: userIDKey not found in context")
+		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	
+	userID, ok := userIDValue.(int)
+	if !ok {
+		log.Printf("GetGroupMessages: userIDKey found but not an int: %v", userIDValue)
+		utils.Fail(w, http.StatusUnauthorized, "Invalid user context")
+		return
+	}
+
+	log.Printf("GetGroupMessages: userID=%d", userID)
 
 	// Get group ID from query parameters
 	groupIDStr := r.URL.Query().Get("group_id")
+	log.Printf("GetGroupMessages: requested group_id=%s", groupIDStr)
 	if groupIDStr == "" {
 		utils.Fail(w, http.StatusBadRequest, "Group ID is required")
 		return
@@ -115,17 +141,22 @@ func GetGroupMessages(w http.ResponseWriter, r *http.Request) {
 
 	groupID, err := strconv.Atoi(groupIDStr)
 	if err != nil {
+		log.Printf("GetGroupMessages: invalid group_id format: %s", groupIDStr)
 		utils.Fail(w, http.StatusBadRequest, "Invalid group ID")
 		return
 	}
 
+	log.Printf("GetGroupMessages: groupID=%d, userID=%d", groupID, userID)
+
 	// Check if user is a member of the group
 	isMember, err := db.IsUserGroupMember(userID, groupID)
 	if err != nil {
+		log.Printf("GetGroupMessages: error checking membership for user %d in group %d: %v", userID, groupID, err)
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return
 	}
 
+	log.Printf("GetGroupMessages: user %d is member of group %d: %t", userID, groupID, isMember)
 	if !isMember {
 		utils.Fail(w, http.StatusForbidden, "You are not a member of this group")
 		return
@@ -151,12 +182,15 @@ func GetGroupMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch messages
+	log.Printf("GetGroupMessages: fetching messages for group %d with limit %d, offset %d", groupID, limit, offset)
 	messages, err := db.GetGroupMessages(groupID, limit, offset)
 	if err != nil {
+		log.Printf("GetGroupMessages: error fetching messages for group %d: %v", groupID, err)
 		utils.Fail(w, http.StatusInternalServerError, "Failed to fetch messages")
 		return
 	}
 
+	log.Printf("GetGroupMessages: successfully fetched %d messages for group %d", len(messages), groupID)
 	utils.Success(w, http.StatusOK, map[string]interface{}{
 		"messages": messages,
 		"group_id": groupID,
@@ -172,7 +206,17 @@ func GetLatestGroupMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value(userIDKey).(int)
+	userIDValue := r.Context().Value(userIDKey)
+	if userIDValue == nil {
+		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	
+	userID, ok := userIDValue.(int)
+	if !ok {
+		utils.Fail(w, http.StatusUnauthorized, "Invalid user context")
+		return
+	}
 
 	// Get group ID from query parameters
 	groupIDStr := r.URL.Query().Get("group_id")
