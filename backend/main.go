@@ -51,7 +51,6 @@ func main() {
 	http.Handle("/api/notifications", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetNotificationsHandler)))
 	http.Handle("/api/notifications/read", handlers.AuthMiddleware(http.HandlerFunc(handlers.MarkNotificationReadHandler)))
 
-	// ADD THESE GROUP ROUTES:
 	// Group management routes
 	http.Handle("/api/groups", handlers.AuthMiddleware(http.HandlerFunc(handlers.GroupsHandler)))
 
@@ -87,6 +86,12 @@ func main() {
 	http.Handle("/api/groups/chat/send", handlers.AuthMiddleware(http.HandlerFunc(handlers.SendGroupMessage)))
 	http.Handle("/api/groups/chat/messages", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetGroupMessages)))
 	http.Handle("/api/groups/chat/latest", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetLatestGroupMessage)))
+
+	// Private chat routes
+	http.Handle("/api/private/chat/send", handlers.AuthMiddleware(http.HandlerFunc(handlers.SendPrivateMessage)))
+	http.Handle("/api/private/chat/messages", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetPrivateMessages)))
+	http.Handle("/api/private/chat/users", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetPrivateChats)))
+	http.Handle("/api/private/chat/available", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetChatUsers)))
 
 	// Follow system routes
 	http.Handle("/api/follow", handlers.AuthMiddleware(http.HandlerFunc(handlers.FollowUserHandler)))

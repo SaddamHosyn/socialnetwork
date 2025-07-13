@@ -43,21 +43,7 @@ const PrivateChat = () => {
   const [sending, setSending] = useState(false);
   const [websocket, setWebsocket] = useState<WebSocket | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Refs to track current values for WebSocket handlers (avoid stale closures)
-  const selectedUserRef = useRef<User | null>(null);
-  const currentUserRef = useRef<CurrentUser | null>(null);
-
-  // Update refs when state changes
-  useEffect(() => {
-    selectedUserRef.current = selectedUser;
-  }, [selectedUser]);
-
-  useEffect(() => {
-    currentUserRef.current = currentUser;
-  }, [currentUser]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -88,39 +74,29 @@ const PrivateChat = () => {
         usersList = result.data?.users || result.users || [];
       }
 
-      // Get all users with follow status and chat eligibility
-      const allResponse = await fetch("/api/private/chat/available", {
+      // Also get all available users with follow status
+      const availableResponse = await fetch("/api/private/chat/available", {
         credentials: "include",
       });
 
-      if (allResponse.ok) {
-        const allResult = await allResponse.json();
-        const allUsers = allResult.data?.users || allResult.users || [];
+      if (availableResponse.ok) {
+        const availableResult = await availableResponse.json();
+        const availableUsers =
+          availableResult.data?.users || availableResult.users || [];
 
-        // Merge chat history users with all users, prioritizing chat history for those who have it
-        const mergedUsers = [...allUsers];
-        usersList.forEach((chatUser: User) => {
-          const index = mergedUsers.findIndex((u) => u.id === chatUser.id);
-          if (index !== -1) {
-            // Merge data, keeping chat history info
-            mergedUsers[index] = { ...mergedUsers[index], ...chatUser };
+        // Merge chat history users with available users, avoiding duplicates
+        const allUsers = [...usersList];
+        availableUsers.forEach((user: User) => {
+          if (!allUsers.find((u) => u.id === user.id)) {
+            allUsers.push(user);
           }
         });
 
-        // Filter out users you cannot chat with (show only users where can_chat is true)
-        const chatableUsers = mergedUsers.filter(
-          (user) => user.can_chat === true
-        );
-
-        setUsers(chatableUsers);
-        setFilteredUsers(chatableUsers);
+        setUsers(allUsers);
+        setFilteredUsers(allUsers);
       } else {
-        // Filter chat history users to only show those you can chat with
-        const chatableUsers = usersList.filter(
-          (user: User) => user.can_chat === true
-        );
-        setUsers(chatableUsers);
-        setFilteredUsers(chatableUsers);
+        setUsers(usersList);
+        setFilteredUsers(usersList);
       }
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -156,18 +132,9 @@ const PrivateChat = () => {
   const connectWebSocket = () => {
     if (!currentUser) return;
 
-    // Close existing connection if any
-    if (websocket) {
-      websocket.close();
-    }
-
-    console.log("Connecting to WebSocket...");
     const ws = new WebSocket("ws://localhost:8080/ws");
-
     ws.onopen = () => {
       console.log("WebSocket connected for private chat");
-      setWebsocket(ws);
-      setIsWebSocketConnected(true);
       ws.send(
         JSON.stringify({
           type: "register",
@@ -186,67 +153,39 @@ const PrivateChat = () => {
           data.type === "private_message" ||
           (!data.type && data.sender_id && data.receiver_id)
         ) {
-          const newMessage: ChatMessage = {
-            id: data.id || Date.now(),
-            sender_id: data.sender_id,
-            sender_name: data.sender_name || "Unknown",
-            receiver_id: data.receiver_id,
-            receiver_name: data.receiver_name || "Unknown",
-            content: data.content || data.message,
-            created_at:
-              data.created_at || data.time || new Date().toISOString(),
-          };
+          const isForCurrentChat =
+            selectedUser &&
+            ((data.sender_id === currentUser.id &&
+              data.receiver_id === selectedUser.id) ||
+              (data.sender_id === selectedUser.id &&
+                data.receiver_id === currentUser.id));
 
-          // Update messages for any chat involving the current user
-          setMessages((prevMessages) => {
-            // Use refs to get current values and avoid stale closures
-            const currentSelectedUserId = selectedUserRef.current?.id;
-            const currentUserId = currentUserRef.current?.id;
-
-            console.log("Processing message:", {
-              messageFrom: data.sender_id,
-              messageTo: data.receiver_id,
-              currentSelectedUserId,
-              currentUserId,
+          if (isForCurrentChat) {
+            const newMessage: ChatMessage = {
+              id: data.id || Date.now(),
+              sender_id: data.sender_id,
+              sender_name: data.sender_name || "Unknown",
+              receiver_id: data.receiver_id,
+              receiver_name: data.receiver_name || "Unknown",
               content: data.content || data.message,
-            });
+              created_at:
+                data.created_at || data.time || new Date().toISOString(),
+            };
 
-            if (!currentUserId) {
-              console.log("No current user, skipping message update");
-              return prevMessages;
-            }
-
-            const isForCurrentChat =
-              currentSelectedUserId &&
-              ((data.sender_id === currentUserId &&
-                data.receiver_id === currentSelectedUserId) ||
-                (data.sender_id === currentSelectedUserId &&
-                  data.receiver_id === currentUserId));
-
-            console.log("Is message for current chat:", isForCurrentChat);
-
-            if (isForCurrentChat) {
+            setMessages((prev) => {
               // Remove optimistic message if this is the real one
-              const filtered = prevMessages.filter(
+              const filtered = prev.filter(
                 (msg) => !msg.isOptimistic || msg.content !== newMessage.content
               );
 
               // Avoid duplicates
-              const existingMessage = filtered.find(
-                (msg) => msg.id === newMessage.id
-              );
-              if (existingMessage) {
-                console.log("Message already exists, skipping duplicate");
+              if (filtered.find((msg) => msg.id === newMessage.id)) {
                 return filtered;
               }
 
-              console.log("Adding new message to current chat:", newMessage);
               return [...filtered, newMessage];
-            }
-
-            console.log("Message not for current chat, skipping UI update");
-            return prevMessages;
-          });
+            });
+          }
 
           // Update user list last message
           fetchUsers();
@@ -258,20 +197,14 @@ const PrivateChat = () => {
 
     ws.onclose = () => {
       console.log("WebSocket disconnected, attempting to reconnect...");
-      setWebsocket(null);
-      setIsWebSocketConnected(false);
-      setTimeout(() => {
-        if (currentUser) {
-          connectWebSocket();
-        }
-      }, 3000);
+      setTimeout(connectWebSocket, 3000);
     };
 
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
-      setWebsocket(null);
-      setIsWebSocketConnected(false);
     };
+
+    setWebsocket(ws);
   };
 
   useEffect(() => {
@@ -281,19 +214,15 @@ const PrivateChat = () => {
 
   useEffect(() => {
     if (currentUser) {
-      console.log("Setting up WebSocket for user:", currentUser.nickname);
       connectWebSocket();
     }
 
     return () => {
-      console.log("Cleaning up WebSocket connection");
       if (websocket) {
         websocket.close();
-        setWebsocket(null);
-        setIsWebSocketConnected(false);
       }
     };
-  }, [currentUser]); // Only depend on currentUser
+  }, [currentUser]);
 
   useEffect(() => {
     if (selectedUser) {
@@ -368,6 +297,14 @@ const PrivateChat = () => {
     e.preventDefault();
     if (!newMessage.trim() || sending || !selectedUser || !currentUser) return;
 
+    // Check if user can send messages to selected user
+    if (!selectedUser.can_chat) {
+      alert(
+        "You need to follow this user or they need to follow you to send messages."
+      );
+      return;
+    }
+
     const messageContent = newMessage.trim();
     setNewMessage("");
     setSending(true);
@@ -433,42 +370,6 @@ const PrivateChat = () => {
         <div className="users-sidebar">
           <div className="sidebar-header">
             <h2>💬 Private Messages</h2>
-            <div className="connection-status">
-              {isWebSocketConnected ? (
-                <span className="status-connected">🟢 Connected</span>
-              ) : (
-                <span className="status-disconnected">🔴 Disconnected</span>
-              )}
-            </div>
-            {/* Debug button for testing WebSocket */}
-            {isWebSocketConnected && (
-              <button
-                onClick={() => {
-                  if (websocket && currentUser) {
-                    console.log("Sending test message via WebSocket");
-                    websocket.send(
-                      JSON.stringify({
-                        type: "test",
-                        user_id: currentUser.id,
-                        message: "WebSocket test from frontend",
-                      })
-                    );
-                  }
-                }}
-                style={{
-                  padding: "4px 8px",
-                  fontSize: "12px",
-                  margin: "8px 0",
-                  background: "rgba(255,255,255,0.2)",
-                  border: "none",
-                  borderRadius: "4px",
-                  color: "white",
-                  cursor: "pointer",
-                }}
-              >
-                Test WS
-              </button>
-            )}
             <div className="search-bar">
               <input
                 type="text"
@@ -487,7 +388,7 @@ const PrivateChat = () => {
                 key={user.id}
                 className={`user-item ${
                   selectedUser?.id === user.id ? "selected" : ""
-                }`}
+                } ${!user.can_chat ? "disabled" : ""}`}
                 onClick={() => setSelectedUser(user)}
               >
                 <div className="user-avatar">
@@ -500,13 +401,19 @@ const PrivateChat = () => {
                 </div>
                 <div className="user-info">
                   <div className="user-name">{user.nickname}</div>
-                  {user.last_message && (
-                    <div className="last-message">{user.last_message}</div>
-                  )}
-                  {user.last_message_time && (
-                    <div className="last-message-time">
-                      {formatTime(user.last_message_time)}
-                    </div>
+                  {user.can_chat ? (
+                    <>
+                      {user.last_message && (
+                        <div className="last-message">{user.last_message}</div>
+                      )}
+                      {user.last_message_time && (
+                        <div className="last-message-time">
+                          {formatTime(user.last_message_time)}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="follow-to-text">Follow to text</div>
                   )}
                   {user.follow_status && user.follow_status !== "none" && (
                     <div className={`follow-status ${user.follow_status}`}>
@@ -524,8 +431,8 @@ const PrivateChat = () => {
 
             {filteredUsers.length === 0 && (
               <div className="no-users">
-                <p>No conversations available</p>
-                <small>Follow someone or get followed to start chatting!</small>
+                <p>No users found</p>
+                <small>Try following someone to start chatting!</small>
               </div>
             )}
           </div>
@@ -548,13 +455,15 @@ const PrivateChat = () => {
                       {selectedUser.nickname}
                     </div>
                     <div className="header-user-status">
-                      {selectedUser.follow_status === "mutual"
-                        ? "Mutual followers"
-                        : selectedUser.follow_status === "you_follow"
-                        ? "You follow this user"
-                        : selectedUser.follow_status === "follows_you"
-                        ? "Follows you"
-                        : "Can chat"}
+                      {selectedUser.can_chat
+                        ? selectedUser.follow_status === "mutual"
+                          ? "Mutual followers"
+                          : selectedUser.follow_status === "you_follow"
+                          ? "You follow this user"
+                          : selectedUser.follow_status === "follows_you"
+                          ? "Follows you"
+                          : "Can chat"
+                        : "Follow to text"}
                     </div>
                   </div>
                 </div>
@@ -598,30 +507,40 @@ const PrivateChat = () => {
                     ))}
                   </div>
                 )}
-                <form onSubmit={sendMessage} className="message-form">
-                  <button
-                    type="button"
-                    className="emoji-toggle-button"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  >
-                    😊
-                  </button>
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder={`Message ${selectedUser.nickname}...`}
-                    className="message-input"
-                    disabled={sending}
-                  />
-                  <button
-                    type="submit"
-                    disabled={sending || !newMessage.trim()}
-                    className="send-button"
-                  >
-                    {sending ? "⏳" : "📤"}
-                  </button>
-                </form>
+                {selectedUser.can_chat ? (
+                  <form onSubmit={sendMessage} className="message-form">
+                    <button
+                      type="button"
+                      className="emoji-toggle-button"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    >
+                      😊
+                    </button>
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder={`Message ${selectedUser.nickname}...`}
+                      className="message-input"
+                      disabled={sending}
+                    />
+                    <button
+                      type="submit"
+                      disabled={sending || !newMessage.trim()}
+                      className="send-button"
+                    >
+                      {sending ? "⏳" : "📤"}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="follow-to-text-banner">
+                    <p>💔 You need to follow each other to send messages</p>
+                    <small>
+                      At least one of you must follow the other to start
+                      chatting
+                    </small>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -673,22 +592,6 @@ const PrivateChat = () => {
           color: white;
           font-size: 28px;
           font-weight: 700;
-        }
-
-        .connection-status {
-          margin-bottom: 16px;
-        }
-
-        .status-connected {
-          color: #10d876;
-          font-size: 14px;
-          font-weight: 600;
-        }
-
-        .status-disconnected {
-          color: #ff6b6b;
-          font-size: 14px;
-          font-weight: 600;
         }
 
         .search-bar {
@@ -755,6 +658,17 @@ const PrivateChat = () => {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
           box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+          border-color: transparent;
+        }
+
+        .user-item.disabled {
+          opacity: 0.7;
+          cursor: default;
+        }
+
+        .user-item.disabled:hover {
+          transform: none;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           border-color: transparent;
         }
 
@@ -827,6 +741,13 @@ const PrivateChat = () => {
 
         .user-item.selected .last-message-time {
           color: rgba(255, 255, 255, 0.8);
+        }
+
+        .follow-to-text {
+          color: #e53e3e;
+          font-size: 13px;
+          font-weight: 600;
+          font-style: italic;
         }
 
         .follow-status {
@@ -1105,6 +1026,26 @@ const PrivateChat = () => {
           opacity: 0.5;
           cursor: not-allowed;
           transform: none;
+        }
+
+        .follow-to-text-banner {
+          padding: 24px;
+          text-align: center;
+          background: linear-gradient(135deg, #fed7d7 0%, #fc8181 100%);
+          color: #742a2a;
+          border-radius: 16px;
+          margin: 12px 0;
+        }
+
+        .follow-to-text-banner p {
+          margin: 0 0 8px 0;
+          font-size: 16px;
+          font-weight: 600;
+        }
+
+        .follow-to-text-banner small {
+          font-size: 14px;
+          opacity: 0.8;
         }
 
         .no-chat-selected {

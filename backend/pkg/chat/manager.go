@@ -31,6 +31,9 @@ func (m *Manager) Run() {
 		// Track which users have already received this message to avoid duplicates
 		sentToUsers := make(map[int]bool)
 
+		fmt.Printf("Broadcasting message: Type=%s, SenderID=%d, ReceiverID=%d, Content=%s\n",
+			msg.Type, msg.SenderID, msg.ReceiverID, msg.Message)
+
 		for wsclient := range m.Clients {
 			if msg.Type == "update" {
 				//Sending update message to all clients
@@ -44,7 +47,10 @@ func (m *Manager) Run() {
 				}
 			} else {
 				if wsclient.UserID == msg.ReceiverID || wsclient.UserID == msg.SenderID {
+					fmt.Printf("Sending private message to client UserID=%d\n", wsclient.UserID)
 					wsclient.Send <- message
+				} else {
+					fmt.Printf("NOT sending message to client UserID=%d (not sender or receiver)\n", wsclient.UserID)
 				}
 			}
 		}

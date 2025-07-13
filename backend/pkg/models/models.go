@@ -183,3 +183,25 @@ type Notification struct {
 	IsRead      bool      `json:"is_read"`
 	CreatedAt   time.Time `json:"created_at"`
 }
+
+type PrivateMessage struct {
+	ID           int       `json:"id"`
+	SenderID     int       `json:"sender_id"`
+	ReceiverID   int       `json:"receiver_id"`
+	SenderName   string    `json:"sender_name"`
+	ReceiverName string    `json:"receiver_name"`
+	Content      string    `json:"content"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+type ChatUser struct {
+	ID              int    `json:"id"`
+	Nickname        string `json:"nickname"`
+	AvatarPath      string `json:"avatar_path,omitempty"`
+	IsOnline        bool   `json:"is_online,omitempty"`
+	LastMessage     string `json:"last_message,omitempty"`
+	LastMessageTime string `json:"last_message_time,omitempty"`
+	UnreadCount     int    `json:"unread_count,omitempty"`
+	FollowStatus    string `json:"follow_status,omitempty"` // "mutual", "you_follow", "follows_you", "none"
+	CanChat         bool   `json:"can_chat,omitempty"`      // Whether you can send messages to this user
+}

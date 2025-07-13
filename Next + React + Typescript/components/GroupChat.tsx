@@ -44,6 +44,7 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
   const fetchMessages = async () => {
     try {
+      console.log(`Fetching messages for group ${groupId}`);
       const response = await fetch(
         `/api/groups/chat/messages?group_id=${groupId}`,
         {
@@ -53,7 +54,16 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
       if (response.ok) {
         const result = await response.json();
-        setMessages(result.data?.messages || []);
+        console.log("Fetched messages response:", result);
+        const messages = result.data?.messages || [];
+        console.log("Setting messages:", messages);
+        setMessages(messages);
+      } else {
+        console.error(
+          "Failed to fetch messages:",
+          response.status,
+          response.statusText
+        );
       }
     } catch (err) {
       console.error("Error fetching messages:", err);
@@ -79,71 +89,69 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
   const connectWebSocket = () => {
     // Close existing connection if any
-    if (websocket) {
+    if (websocket && websocket.readyState !== WebSocket.CLOSED) {
+      console.log("Closing existing WebSocket connection");
       websocket.close();
-      setWebsocket(null);
     }
+
+    // Don't create a new connection if one is already connecting
+    if (websocket && websocket.readyState === WebSocket.CONNECTING) {
+      console.log("WebSocket already connecting, skipping");
+      return;
+    }
+
+    console.log("Creating new WebSocket connection");
 
     const ws = new WebSocket(`ws://localhost:8080/ws`);
 
     ws.onopen = () => {
       console.log("WebSocket connected");
+      setWebsocket(ws); // Set the websocket state after successful connection
     };
 
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        console.log("WebSocket message received:", message);
 
         if (message.type === "group_message" && message.group_id === groupId) {
           // Add the new message to the chat
           const newGroupMessage: ChatMessage = {
-            id: message.id || Date.now() + Math.random(), // Use actual message ID from backend
+            id: message.id || Date.now() + Math.random(),
             group_id: message.group_id,
             sender_id: message.sender_id,
             sender_name: message.sender_name,
             content: message.message,
             created_at: message.time,
-            isOptimistic: false, // Mark as real message from server
+            isOptimistic: false,
           };
 
+          console.log("Processing new group message:", newGroupMessage);
+
           setMessages((prev) => {
-            // Check if message already exists by ID to prevent duplicates
-            const existsById = prev.some((m) => m.id === newGroupMessage.id);
-            if (existsById) {
-              return prev;
-            }
-
-            // If this is from the current user, remove any optimistic messages with the same content
-            let filteredPrev = prev;
-            if (currentUser && newGroupMessage.sender_id === currentUser.id) {
-              filteredPrev = prev.filter((m) => {
-                // Remove optimistic messages with the same content
-                const isSameContent =
-                  m.sender_id === newGroupMessage.sender_id &&
-                  m.content === newGroupMessage.content;
-
-                if (m.isOptimistic && isSameContent) {
-                  return false; // Remove this message
-                }
-                return true; // Keep this message
-              });
-            }
-
-            // Also check by content and sender to catch any other duplicates
-            const existsByContent = filteredPrev.some(
-              (m) =>
-                m.sender_id === newGroupMessage.sender_id &&
-                m.content === newGroupMessage.content &&
-                Math.abs(
-                  new Date(m.created_at).getTime() -
-                    new Date(newGroupMessage.created_at).getTime()
-                ) < 2000
+            // First, check if this exact message already exists by ID
+            const existsById = prev.some(
+              (m) => m.id === newGroupMessage.id && !m.isOptimistic
             );
-
-            if (existsByContent) {
+            if (existsById) {
+              console.log("Message already exists by ID, skipping");
               return prev;
             }
 
+            // Remove any optimistic messages with the same content from the same sender
+            let filteredPrev = prev.filter((m) => {
+              if (
+                m.isOptimistic &&
+                m.sender_id === newGroupMessage.sender_id &&
+                m.content.trim() === newGroupMessage.content.trim()
+              ) {
+                console.log("Removing optimistic message:", m);
+                return false;
+              }
+              return true;
+            });
+
+            console.log("Adding new message to chat");
             return [...filteredPrev, newGroupMessage];
           });
         }
@@ -154,9 +162,11 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
     ws.onclose = () => {
       console.log("WebSocket disconnected");
-      // Try to reconnect after 3 seconds, but only if we don't have an active connection
+      setWebsocket(null);
+      // Try to reconnect after 3 seconds
       setTimeout(() => {
-        if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+        if (isGroupMember && currentUser) {
+          console.log("Attempting to reconnect WebSocket");
           connectWebSocket();
         }
       }, 3000);
@@ -164,9 +174,8 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
+      setWebsocket(null);
     };
-
-    setWebsocket(ws);
   };
 
   const fetchMembers = async () => {
@@ -193,20 +202,32 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     fetchMembers();
   }, [groupId]);
 
+  // Separate effect for handling messages and WebSocket after user is loaded
   useEffect(() => {
     if (isGroupMember && currentUser) {
+      console.log(
+        "Loading messages and connecting WebSocket for group",
+        groupId
+      );
       fetchMessages();
-      connectWebSocket();
-    }
 
-    // Cleanup WebSocket on unmount or dependency change
+      // Only connect WebSocket if we don't already have one
+      if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+        connectWebSocket();
+      }
+    }
+  }, [isGroupMember, currentUser, groupId]);
+
+  // Cleanup WebSocket on unmount
+  useEffect(() => {
     return () => {
-      if (websocket) {
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
+        console.log("Component unmounting, closing WebSocket connection");
         websocket.close();
         setWebsocket(null);
       }
     };
-  }, [groupId, isGroupMember, currentUser]);
+  }, [groupId]); // Clean up when groupId changes
 
   useEffect(() => {
     scrollToBottom();
@@ -232,6 +253,7 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     if (!newMessage.trim() || sending || !isGroupMember || !currentUser) return;
 
     const messageContent = newMessage.trim();
+    console.log("Sending message:", messageContent);
     setNewMessage(""); // Clear input immediately for better UX
     setSending(true);
 
@@ -246,6 +268,7 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       isOptimistic: true, // Mark as optimistic
     };
 
+    console.log("Adding optimistic message:", optimisticMessage);
     // Add optimistic message immediately
     setMessages((prev) => [...prev, optimisticMessage]);
 
@@ -265,6 +288,9 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       if (!response.ok) {
         throw new Error("Failed to send message");
       }
+
+      const result = await response.json();
+      console.log("Message sent successfully:", result);
       // On success, we don't need to do anything - WebSocket will handle the real message
       // and our duplicate detection will replace the optimistic message
     } catch (err) {

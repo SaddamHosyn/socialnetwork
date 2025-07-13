@@ -171,35 +171,6 @@ const GroupInviteTest: React.FC = () => {
           <div>
             <strong>Users available:</strong> {users.length}
           </div>
-          {groups.length > 0 && (
-            <div style={{ marginTop: "8px" }}>
-              <strong>Groups:</strong> {groups.map((g) => g.title).join(", ")}
-            </div>
-          )}
-          {users.length > 0 && (
-            <div style={{ marginTop: "8px" }}>
-              <strong>Users:</strong>{" "}
-              {users.map((u) => u.nickname || u.email).join(", ")}
-            </div>
-          )}
-          {users.length === 0 && (
-            <div style={{ marginTop: "8px", color: "#e53e3e" }}>
-              <strong>⚠️ No users loaded!</strong>
-              <div style={{ fontSize: "12px", marginTop: "4px" }}>
-                Check the console for errors. Make sure you are logged in and
-                that there are other users in the database.
-              </div>
-            </div>
-          )}
-          {groups.length === 0 && (
-            <div style={{ marginTop: "8px", color: "#e53e3e" }}>
-              <strong>⚠️ No groups loaded!</strong>
-              <div style={{ fontSize: "12px", marginTop: "4px" }}>
-                Check the console for errors. You may need to create a group
-                first.
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

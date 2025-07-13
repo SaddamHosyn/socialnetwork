@@ -19,11 +19,6 @@ type Props = {
 
 const Header = ({ onLogout, isLoggedIn, currentPage, onNavigate }: Props) => (
   <header className="header">
-    <div className="header-left">
-      <h1 onClick={() => onNavigate("home")} className="logo">
-        Gritlab Gossiper
-      </h1>
-    </div>
     <nav className="header-nav">
       {isLoggedIn ? (
         <>
@@ -49,7 +44,7 @@ const Header = ({ onLogout, isLoggedIn, currentPage, onNavigate }: Props) => (
             className={`nav-button ${currentPage === "chat" ? "active" : ""}`}
             onClick={() => onNavigate("chat")}
           >
-            💬 Chat
+            Chat
           </button>
           <button
             className={`nav-button ${
