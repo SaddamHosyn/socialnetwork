@@ -1,38 +1,59 @@
-// app/api/groups/route.ts
-import { type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const limit = searchParams.get("limit") || "20";
+    const offset = searchParams.get("offset") || "0";
+    
+    const backendResponse = await fetch(`http://localhost:8080/api/groups?limit=${limit}&offset=${offset}`, {
+      method: "GET",
+      headers: {
+        Cookie: request.headers.get("cookie") || "",
+      },
+    });
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const limit = searchParams.get("limit") || "20";
-  const offset = searchParams.get("offset") || "0";
-  const cookie = req.headers.get("cookie");
+    const data = await backendResponse.json();
 
-  const res = await fetch(`http://localhost:8080/api/groups?limit=${limit}&offset=${offset}`, {
-    method: "GET",
-    headers: {
-      Cookie: cookie || "",
-    },
-    cache: "no-store",
-  });
+    if (!backendResponse.ok) {
+      return NextResponse.json(data, { status: backendResponse.status });
+    }
 
-  return res;
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch groups" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function POST(req: NextRequest) {
-  const cookie = req.headers.get("cookie");
-  const body = await req.text();
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.text();
 
-  const res = await fetch("http://localhost:8080/api/groups", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Cookie: cookie || "",
-    },
-    body: body,
-    cache: "no-store",
-  });
+    const backendResponse = await fetch("http://localhost:8080/api/groups", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Cookie: request.headers.get("cookie") || "",
+      },
+      body: body,
+    });
 
-  return res;
+    const data = await backendResponse.json();
+
+    if (!backendResponse.ok) {
+      return NextResponse.json(data, { status: backendResponse.status });
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error creating group:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to create group" },
+      { status: 500 }
+    );
+  }
 }

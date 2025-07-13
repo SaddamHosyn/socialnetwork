@@ -1,20 +1,30 @@
-import { type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.text();
 
-export async function POST(req: NextRequest) {
-  const cookie = req.headers.get("cookie");
-  const body = await req.text();
+    const backendResponse = await fetch("http://localhost:8080/api/groups/invite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Cookie: request.headers.get("cookie") || "",
+      },
+      body: body,
+    });
 
-  const res = await fetch("http://localhost:8080/api/groups/invite", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Cookie: cookie || "",
-    },
-    body: body,
-    cache: "no-store",
-  });
+    const data = await backendResponse.json();
 
-  return res;
+    if (!backendResponse.ok) {
+      return NextResponse.json(data, { status: backendResponse.status });
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error sending group invitation:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to send group invitation" },
+      { status: 500 }
+    );
+  }
 }

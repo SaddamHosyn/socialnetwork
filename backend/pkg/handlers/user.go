@@ -17,7 +17,7 @@ func FetchUsers(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(userIDKey).(int)
 
-	users, err := db.GetAllUsersForInvitation(userID)
+	users, err := db.GetUsersWithFollowStatus(userID)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Server error")
 		return

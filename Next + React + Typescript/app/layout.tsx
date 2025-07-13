@@ -1,3 +1,4 @@
+"use client";
 import "../styles/index.css";
 import { ToastProvider } from "../hooks/useToast";
 
@@ -9,9 +10,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

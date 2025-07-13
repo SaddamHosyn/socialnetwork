@@ -28,18 +28,45 @@ const GroupInviteTest: React.FC = () => {
         console.log("Fetching users...");
         const response = await fetch("/api/users", { credentials: "include" });
         console.log("Users response status:", response.status);
+        console.log(
+          "Users response headers:",
+          Object.fromEntries(response.headers.entries())
+        );
+
         if (response.ok) {
           const result = await response.json();
-          console.log("Users result:", result);
-          const userData = result.data || result || [];
-          console.log("Setting users:", userData);
-          setUsers(Array.isArray(userData) ? userData : []);
+          console.log("Users result full:", result);
+
+          // Handle different response structures
+          let userData = [];
+          if (result.success && result.data) {
+            userData = result.data;
+          } else if (result.data) {
+            userData = result.data;
+          } else if (Array.isArray(result)) {
+            userData = result;
+          } else {
+            console.log("Unexpected user data structure:", result);
+          }
+
+          console.log("Final userData to set:", userData);
+          console.log("Is userData an array?", Array.isArray(userData));
+
+          if (Array.isArray(userData) && userData.length > 0) {
+            console.log("First user:", userData[0]);
+            setUsers(userData);
+          } else {
+            console.log("No valid user data found or empty array");
+            setUsers([]);
+          }
         } else {
           const errorText = await response.text();
           console.error("Users fetch failed:", response.status, errorText);
+          setUsers([]);
         }
       } catch (err) {
         console.error("Failed to fetch users:", err);
+        setUsers([]);
       }
     };
 
@@ -49,18 +76,41 @@ const GroupInviteTest: React.FC = () => {
         console.log("Fetching groups...");
         const response = await fetch("/api/groups", { credentials: "include" });
         console.log("Groups response status:", response.status);
+
         if (response.ok) {
           const result = await response.json();
-          console.log("Groups result:", result);
-          const groupData = result.data || result || [];
-          console.log("Setting groups:", groupData);
-          setGroups(Array.isArray(groupData) ? groupData : []);
+          console.log("Groups result full:", result);
+
+          // Handle different response structures
+          let groupData = [];
+          if (result.success && result.data) {
+            groupData = result.data;
+          } else if (result.data) {
+            groupData = result.data;
+          } else if (Array.isArray(result)) {
+            groupData = result;
+          } else {
+            console.log("Unexpected group data structure:", result);
+          }
+
+          console.log("Final groupData to set:", groupData);
+          console.log("Is groupData an array?", Array.isArray(groupData));
+
+          if (Array.isArray(groupData) && groupData.length > 0) {
+            console.log("First group:", groupData[0]);
+            setGroups(groupData);
+          } else {
+            console.log("No valid group data found or empty array");
+            setGroups([]);
+          }
         } else {
           const errorText = await response.text();
           console.error("Groups fetch failed:", response.status, errorText);
+          setGroups([]);
         }
       } catch (err) {
         console.error("Failed to fetch groups:", err);
+        setGroups([]);
       }
     };
 
@@ -121,10 +171,33 @@ const GroupInviteTest: React.FC = () => {
           <div>
             <strong>Users available:</strong> {users.length}
           </div>
+          {groups.length > 0 && (
+            <div style={{ marginTop: "8px" }}>
+              <strong>Groups:</strong> {groups.map((g) => g.title).join(", ")}
+            </div>
+          )}
           {users.length > 0 && (
             <div style={{ marginTop: "8px" }}>
               <strong>Users:</strong>{" "}
               {users.map((u) => u.nickname || u.email).join(", ")}
+            </div>
+          )}
+          {users.length === 0 && (
+            <div style={{ marginTop: "8px", color: "#e53e3e" }}>
+              <strong>⚠️ No users loaded!</strong>
+              <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                Check the console for errors. Make sure you are logged in and
+                that there are other users in the database.
+              </div>
+            </div>
+          )}
+          {groups.length === 0 && (
+            <div style={{ marginTop: "8px", color: "#e53e3e" }}>
+              <strong>⚠️ No groups loaded!</strong>
+              <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                Check the console for errors. You may need to create a group
+                first.
+              </div>
             </div>
           )}
         </div>

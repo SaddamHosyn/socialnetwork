@@ -1,17 +1,26 @@
-import { type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+export async function GET(request: NextRequest) {
+  try {
+    const backendResponse = await fetch("http://localhost:8080/api/users", {
+      method: "GET",
+      headers: {
+        Cookie: request.headers.get("cookie") || "",
+      },
+    });
 
-export async function GET(req: NextRequest) {
-  const cookie = req.headers.get("cookie");
+    const data = await backendResponse.json();
 
-  const res = await fetch("http://localhost:8080/api/users", {
-    method: "GET",
-    headers: {
-      Cookie: cookie || "",
-    },
-    cache: "no-store",
-  });
+    if (!backendResponse.ok) {
+      return NextResponse.json(data, { status: backendResponse.status });
+    }
 
-  return res;
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch users" },
+      { status: 500 }
+    );
+  }
 }
