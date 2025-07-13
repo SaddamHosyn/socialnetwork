@@ -35,8 +35,8 @@ func ValidateRegister(email, password, firstName, lastName, nickname, aboutMe st
 		return &ValidationError{Message: "You must be at least 18 years old"}
 	}
 
-	if gender < 1 || gender > 3 {
-		return &ValidationError{Message: "Gender must be Male, Female, or Alien"}
+	if gender < 1 || gender > 2 {
+		return &ValidationError{Message: "Gender must be Male or Female"}
 	}
 
 	if len(firstName) > 20 || len(lastName) > 20 {
