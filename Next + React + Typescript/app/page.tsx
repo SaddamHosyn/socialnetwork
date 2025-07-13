@@ -24,7 +24,7 @@ type PageType =
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
-  const [currentPage, setCurrentPage] = useState<PageType>("home"); // Always start with home
+  const [currentPage, setCurrentPage] = useState<PageType>("home");
 
   const handleLogout = async () => {
     try {
@@ -36,6 +36,7 @@ export default function Page() {
       if (res.ok) {
         setIsLoggedIn(false);
         setCurrentPage("home");
+        localStorage.removeItem("currentPage");
       } else {
         console.error("Logout failed:", await res.text());
       }
@@ -46,7 +47,13 @@ export default function Page() {
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
-    setCurrentPage("posts");
+    const savedPage = localStorage.getItem("currentPage") as PageType;
+    // If user was trying to access a protected page before login, go there
+    if (savedPage && ["posts", "profile", "groups", "users", "chat"].includes(savedPage)) {
+      setCurrentPage(savedPage);
+    } else {
+      setCurrentPage("posts");
+    }
   };
 
   const handleRegisterSuccess = () => {
@@ -54,12 +61,17 @@ export default function Page() {
   };
 
   const handleNavigate = (page: PageType) => {
-    // Prevent navigation to protected pages if not logged in
+    // Check if trying to access protected page while not logged in
     if (!isLoggedIn && ["posts", "profile", "groups", "users", "chat"].includes(page)) {
+      // Save the intended page to localStorage
+      localStorage.setItem("currentPage", page);
       setCurrentPage("login");
       return;
     }
+    
     setCurrentPage(page);
+    // Save current page to localStorage for persistence across refreshes
+    localStorage.setItem("currentPage", page);
   };
 
   useEffect(() => {
@@ -68,12 +80,27 @@ export default function Page() {
         const res = await fetch("/api/me", { credentials: "include" });
         if (res.ok) {
           setIsLoggedIn(true);
-          // Don't automatically redirect to posts - let user choose
+          
+          // Restore the previous page from localStorage if user is logged in
+          const savedPage = localStorage.getItem("currentPage") as PageType;
+          if (savedPage && ["posts", "profile", "groups", "users", "chat"].includes(savedPage)) {
+            setCurrentPage(savedPage);
+          } else if (savedPage === "home" || savedPage === "login" || savedPage === "register") {
+            setCurrentPage(savedPage);
+          }
+          // If no saved page or invalid page, stay on home
         } else {
           setIsLoggedIn(false);
+          // If not logged in, check if current page is protected
+          const savedPage = localStorage.getItem("currentPage") as PageType;
+          if (savedPage && !["home", "login", "register"].includes(savedPage)) {
+            // User was on a protected page but is not logged in
+            setCurrentPage("home");
+          }
         }
       } catch {
         setIsLoggedIn(false);
+        setCurrentPage("home");
       } finally {
         setAuthChecked(true);
       }
