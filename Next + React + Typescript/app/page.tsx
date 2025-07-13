@@ -10,6 +10,7 @@ import GroupsPage from "../components/pages/GroupsPage";
 import UsersPage from "../components/pages/UsersPage";
 import PrivateChat from "../components/PrivateChat";
 import NotificationBanner from "../components/NotificationBanner";
+import OtherUserProfile from "../components/OtherUserProfile";
 
 type PageType =
   | "home"
@@ -19,12 +20,14 @@ type PageType =
   | "register"
   | "groups"
   | "users"
-  | "chat";
+  | "chat"
+  | "user-profile";
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageType>("home"); // Always start with home
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -55,11 +58,26 @@ export default function Page() {
 
   const handleNavigate = (page: PageType) => {
     // Prevent navigation to protected pages if not logged in
-    if (!isLoggedIn && ["posts", "profile", "groups", "users", "chat"].includes(page)) {
+    if (
+      !isLoggedIn &&
+      ["posts", "profile", "groups", "users", "chat", "user-profile"].includes(
+        page
+      )
+    ) {
       setCurrentPage("login");
       return;
     }
     setCurrentPage(page);
+  };
+
+  const handleUserProfileView = (userId: number) => {
+    setSelectedUserId(userId);
+    setCurrentPage("user-profile");
+  };
+
+  const handleBackFromUserProfile = () => {
+    setCurrentPage("users");
+    setSelectedUserId(null);
   };
 
   useEffect(() => {
@@ -112,7 +130,16 @@ export default function Page() {
       case "groups":
         return <GroupsPage />;
       case "users":
-        return <UsersPage />;
+        return <UsersPage onUserClick={handleUserProfileView} />;
+      case "user-profile":
+        return selectedUserId ? (
+          <OtherUserProfile
+            userId={selectedUserId}
+            onBack={handleBackFromUserProfile}
+          />
+        ) : (
+          <UsersPage onUserClick={handleUserProfileView} />
+        );
       case "chat":
         return <PrivateChat />;
       default:
@@ -143,9 +170,7 @@ export default function Page() {
         onNavigate={handleNavigate}
       />
       {isLoggedIn && (
-        <NotificationBanner 
-          onRequestsClick={() => setCurrentPage("profile")}
-        />
+        <NotificationBanner onRequestsClick={() => setCurrentPage("profile")} />
       )}
       <main className="main-content">{renderCurrentPage()}</main>
     </>

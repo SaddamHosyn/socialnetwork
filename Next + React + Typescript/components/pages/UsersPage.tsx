@@ -14,10 +14,14 @@ interface User {
   is_private: boolean;
   followers_count: number;
   following_count: number;
-  follow_status: 'following' | 'pending' | 'not_following';
+  follow_status: "following" | "pending" | "not_following";
 }
 
-const UsersPage: React.FC = () => {
+interface UsersPageProps {
+  onUserClick?: (userId: number) => void;
+}
+
+const UsersPage: React.FC<UsersPageProps> = ({ onUserClick }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,22 +32,22 @@ const UsersPage: React.FC = () => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/users/discover', {
-          credentials: 'include',
+        const response = await fetch("/api/users/discover", {
+          credentials: "include",
         });
-        
+
         if (!response.ok) {
-          throw new Error('Failed to fetch users');
+          throw new Error("Failed to fetch users");
         }
-        
+
         const data = await response.json();
         if (data.success) {
           setUsers(data.data || []);
         } else {
-          setError(data.message || 'Failed to load users');
+          setError(data.message || "Failed to load users");
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
         setLoading(false);
       }
@@ -53,19 +57,26 @@ const UsersPage: React.FC = () => {
   }, []);
 
   const handleFollowChange = (userId: number, status: string) => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => 
-        user.id === userId 
-          ? { ...user, follow_status: status as 'following' | 'pending' | 'not_following' }
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === userId
+          ? {
+              ...user,
+              follow_status: status as
+                | "following"
+                | "pending"
+                | "not_following",
+            }
           : user
       )
     );
   };
 
-  const filteredUsers = users.filter(user => 
-    user.nickname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.last_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.nickname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.last_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -114,13 +125,24 @@ const UsersPage: React.FC = () => {
           filteredUsers.map((user) => (
             <div key={user.id} className="user-card">
               <div className="user-avatar">
-                <img src={getAvatarUrl(user.avatar)} alt={`${user.nickname}'s avatar`} />
+                <img
+                  src={getAvatarUrl(user.avatar)}
+                  alt={`${user.nickname}'s avatar`}
+                />
               </div>
-              
+
               <div className="user-info">
-                <h3 className="user-nickname">{user.nickname}</h3>
-                <p className="user-name">{user.first_name} {user.last_name}</p>
-                
+                <h3
+                  className="user-nickname clickable"
+                  onClick={() => onUserClick?.(user.id)}
+                  style={{ cursor: "pointer", color: "#007bff" }}
+                >
+                  {user.nickname}
+                </h3>
+                <p className="user-name">
+                  {user.first_name} {user.last_name}
+                </p>
+
                 <div className="user-stats">
                   <span className="stat">
                     <strong>{user.followers_count}</strong> followers
@@ -129,7 +151,7 @@ const UsersPage: React.FC = () => {
                     <strong>{user.following_count}</strong> following
                   </span>
                 </div>
-                
+
                 <div className="user-privacy">
                   {user.is_private ? (
                     <span className="privacy-badge private">🔒 Private</span>
@@ -138,11 +160,13 @@ const UsersPage: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="user-actions">
                 <FollowButton
                   userId={user.id}
-                  onFollowChange={(status) => handleFollowChange(user.id, status)}
+                  onFollowChange={(status) =>
+                    handleFollowChange(user.id, status)
+                  }
                   className="follow-btn"
                 />
               </div>

@@ -3646,8 +3646,18 @@ body {
   font-weight: 500;
 }
 
+.user-nickname.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
 .user-nickname:hover {
   text-decoration: underline;
+}
+
+.user-nickname.clickable:hover {
+  color: #0056b3;
+  transform: translateX(2px);
 }
 
 .user-email {

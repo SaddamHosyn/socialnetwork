@@ -44,6 +44,7 @@ func main() {
 	http.Handle("/api/comment/create", handlers.AuthMiddleware(http.HandlerFunc(handlers.CommentHandler)))
 	http.Handle("/api/vote", handlers.AuthMiddleware(http.HandlerFunc(handlers.VoteHandler)))
 	http.Handle("/api/profile", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchProfile)))
+	http.Handle("/api/profile/user", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchUserProfile)))
 	http.Handle("/api/profile/privacy", handlers.AuthMiddleware(http.HandlerFunc(handlers.UpdatePrivacyHandler)))
 	http.Handle("/api/post/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeletePostHandler)))
 	http.Handle("/api/comment/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeleteCommentHandler)))

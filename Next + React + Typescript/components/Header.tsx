@@ -8,7 +8,8 @@ type PageType =
   | "register"
   | "groups"
   | "users"
-  | "chat";
+  | "chat"
+  | "user-profile";
 
 type Props = {
   onLogout: () => void;
