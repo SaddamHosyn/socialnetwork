@@ -55,45 +55,65 @@ func GetChatUserList(currentUserID int, threshold time.Time) ([]models.PublicUse
 
 func GetUserBySessionToken(token string) (models.User, error) {
 	var user models.User
+	var nickname sql.NullString
+
 	err := sqlite.GetDB().QueryRow(`
         SELECT id, nickname, first_name, last_name, gender, email
         FROM users
         INNER JOIN sessions ON sessions.user_id = users.id
         WHERE sessions.token = ?`, token,
-	).Scan(&user.ID, &user.Nickname, &user.FirstName, &user.LastName, &user.Gender, &user.Email)
+	).Scan(&user.ID, &nickname, &user.FirstName, &user.LastName, &user.Gender, &user.Email)
 	if err != nil {
 		return user, err
 	}
+
+	// Handle NULL nickname
+	user.Nickname = nickname.String
+
 	return user, nil
 }
 
 func GetUserProfileInfo(userID int) (models.User, int, error) {
 	var user models.User
 	var genderID int
+	var nickname, avatar, aboutMe sql.NullString
+
 	err := sqlite.GetDB().QueryRow(`
         SELECT id, nickname, first_name, last_name, date_of_birth, gender, email, avatar, about_me, is_private
         FROM users WHERE id = ?`, userID,
-	).Scan(&user.ID, &user.Nickname, &user.FirstName, &user.LastName, &user.DateOfBirth, &genderID, &user.Email, &user.Avatar, &user.AboutMe, &user.IsPrivate)
+	).Scan(&user.ID, &nickname, &user.FirstName, &user.LastName, &user.DateOfBirth, &genderID, &user.Email, &avatar, &aboutMe, &user.IsPrivate)
 	if err != nil {
 		return user, 0, err
 	}
+
+	// Handle NULL values
+	user.Nickname = nickname.String
+	user.Avatar = avatar.String
+	user.AboutMe = aboutMe.String
+
 	return user, genderID, nil
 }
 
 func GetUserProfile(userID int) (models.UserProfile, error) {
 	var profile models.UserProfile
+	var nickname sql.NullString
+
 	err := sqlite.GetDB().QueryRow(`
         SELECT id, nickname, first_name, last_name, date_of_birth, gender, email
         FROM users WHERE id = ?`, userID,
 	).Scan(
 		&profile.User.ID,
-		&profile.User.Nickname,
+		&nickname,
 		&profile.User.FirstName,
 		&profile.User.LastName,
 		&profile.User.DateOfBirth,
 		&profile.User.Gender,
 		&profile.User.Email,
 	)
+
+	// Handle NULL nickname
+	profile.User.Nickname = nickname.String
+
 	return profile, err
 }
 
@@ -177,11 +197,19 @@ func GetCommentsByUser(userID int, nick string) ([]models.Comment, error) {
 // GetUserByID retrieves a user by their ID
 func GetUserByID(userID int) (models.User, error) {
 	var user models.User
+	var nickname, avatar, aboutMe sql.NullString
+
 	err := sqlite.GetDB().QueryRow(`
 		SELECT id, email, first_name, last_name, date_of_birth, gender, nickname, avatar, about_me
 		FROM users WHERE id = ?`, userID,
 	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.DateOfBirth,
-		&user.Gender, &user.Nickname, &user.Avatar, &user.AboutMe)
+		&user.Gender, &nickname, &avatar, &aboutMe)
+
+	// Handle NULL values
+	user.Nickname = nickname.String
+	user.Avatar = avatar.String
+	user.AboutMe = aboutMe.String
+
 	return user, err
 }
 
@@ -246,7 +274,7 @@ func GetUsersWithFollowStatus(currentUserID int) ([]map[string]interface{}, erro
 	for rows.Next() {
 		var user struct {
 			ID             int            `json:"id"`
-			Nickname       string         `json:"nickname"`
+			Nickname       sql.NullString `json:"nickname"`
 			FirstName      string         `json:"first_name"`
 			LastName       string         `json:"last_name"`
 			Email          string         `json:"email"`
@@ -278,7 +306,7 @@ func GetUsersWithFollowStatus(currentUserID int) ([]map[string]interface{}, erro
 
 		userMap := map[string]interface{}{
 			"id":              user.ID,
-			"nickname":        user.Nickname,
+			"nickname":        user.Nickname.String,
 			"first_name":      user.FirstName,
 			"last_name":       user.LastName,
 			"email":           user.Email,

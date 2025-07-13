@@ -61,11 +61,14 @@ func GetAllGroups(limit, offset int) ([]models.Group, error) {
 	var groups []models.Group
 	for rows.Next() {
 		var group models.Group
+		var creatorName sql.NullString
 		err := rows.Scan(&group.ID, &group.Title, &group.Description,
-			&group.CreatorID, &group.CreatorName, &group.CreatedAt, &group.MemberCount)
+			&group.CreatorID, &creatorName, &group.CreatedAt, &group.MemberCount)
 		if err != nil {
 			return nil, err
 		}
+
+		group.CreatorName = creatorName.String
 		groups = append(groups, group)
 	}
 
@@ -96,12 +99,15 @@ func GetUserGroups(userID int) ([]models.Group, error) {
 	var groups []models.Group
 	for rows.Next() {
 		var group models.Group
+		var creatorName sql.NullString
 		err := rows.Scan(&group.ID, &group.Title, &group.Description,
-			&group.CreatorID, &group.CreatorName, &group.CreatedAt,
+			&group.CreatorID, &creatorName, &group.CreatedAt,
 			&group.MemberCount, &group.IsCreator)
 		if err != nil {
 			return nil, err
 		}
+
+		group.CreatorName = creatorName.String
 		group.IsMember = true
 		groups = append(groups, group)
 	}
@@ -127,13 +133,16 @@ func GetGroupDetails(groupID, userID int) (*models.GroupDetails, error) {
 		GROUP BY g.id
 	`
 
+	var creatorName sql.NullString
 	err := sqlite.GetDB().QueryRow(query, userID, userID, groupID).Scan(
 		&details.ID, &details.Title, &details.Description, &details.CreatorID,
-		&details.CreatorName, &details.CreatedAt, &details.MemberCount,
+		&creatorName, &details.CreatedAt, &details.MemberCount,
 		&details.IsMember, &details.IsCreator)
 	if err != nil {
 		return nil, err
 	}
+
+	details.CreatorName = creatorName.String
 
 	// Get members
 	details.Members, err = getGroupMembers(groupID)
@@ -176,10 +185,13 @@ func getGroupMembers(groupID int) ([]models.GroupMember, error) {
 	var members []models.GroupMember
 	for rows.Next() {
 		var member models.GroupMember
-		err := rows.Scan(&member.UserID, &member.Nickname, &member.JoinedAt, &member.IsCreator)
+		var nickname sql.NullString
+		err := rows.Scan(&member.UserID, &nickname, &member.JoinedAt, &member.IsCreator)
 		if err != nil {
 			return nil, err
 		}
+
+		member.Nickname = nickname.String
 		members = append(members, member)
 	}
 
@@ -456,11 +468,14 @@ func GetUserGroupInvitations(userID int) ([]models.GroupInvitation, error) {
 	var invitations []models.GroupInvitation
 	for rows.Next() {
 		var inv models.GroupInvitation
+		var inviterName sql.NullString
 		err := rows.Scan(&inv.ID, &inv.GroupID, &inv.GroupTitle,
-			&inv.InviterID, &inv.InviterName, &inv.CreatedAt)
+			&inv.InviterID, &inviterName, &inv.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+
+		inv.InviterName = inviterName.String
 		inv.Status = "pending"
 		invitations = append(invitations, inv)
 	}
@@ -488,11 +503,14 @@ func GetGroupJoinRequests(userID int) ([]models.GroupJoinRequest, error) {
 	var requests []models.GroupJoinRequest
 	for rows.Next() {
 		var req models.GroupJoinRequest
+		var requesterName sql.NullString
 		err := rows.Scan(&req.ID, &req.GroupID, &req.GroupTitle,
-			&req.RequesterID, &req.RequesterName, &req.CreatedAt)
+			&req.RequesterID, &requesterName, &req.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+
+		req.RequesterName = requesterName.String
 		req.Status = "pending"
 		requests = append(requests, req)
 	}
@@ -528,12 +546,15 @@ func GetAllGroupsWithUserStatus(userID int, limit, offset int) ([]models.Group, 
 	for rows.Next() {
 		var group models.Group
 		var hasPendingRequest int
+		var creatorName sql.NullString
 		err := rows.Scan(&group.ID, &group.Title, &group.Description,
-			&group.CreatorID, &group.CreatorName, &group.CreatedAt, &group.MemberCount,
+			&group.CreatorID, &creatorName, &group.CreatedAt, &group.MemberCount,
 			&group.IsMember, &group.IsCreator, &hasPendingRequest)
 		if err != nil {
 			return nil, err
 		}
+
+		group.CreatorName = creatorName.String
 		group.HasPendingRequest = hasPendingRequest == 1
 		groups = append(groups, group)
 	}
@@ -559,10 +580,13 @@ func GetAllUsersForInvitation(currentUserID int) ([]models.User, error) {
 	var users []models.User
 	for rows.Next() {
 		var user models.User
-		err := rows.Scan(&user.ID, &user.Nickname, &user.Email, &user.FirstName, &user.LastName)
+		var nickname sql.NullString
+		err := rows.Scan(&user.ID, &nickname, &user.Email, &user.FirstName, &user.LastName)
 		if err != nil {
 			return nil, err
 		}
+
+		user.Nickname = nickname.String
 		users = append(users, user)
 	}
 

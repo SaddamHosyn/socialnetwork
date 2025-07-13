@@ -305,11 +305,13 @@ func GetPrivateChatUsers(userID int) ([]models.ChatUser, error) {
 	var users []models.ChatUser
 	for rows.Next() {
 		var user models.ChatUser
-		var avatarPath sql.NullString
-		err := rows.Scan(&user.ID, &user.Nickname, &avatarPath, &user.LastMessage, &user.LastMessageTime, &user.UnreadCount)
+		var avatarPath, nickname sql.NullString
+		err := rows.Scan(&user.ID, &nickname, &avatarPath, &user.LastMessage, &user.LastMessageTime, &user.UnreadCount)
 		if err != nil {
 			continue
 		}
+
+		user.Nickname = nickname.String
 		if avatarPath.Valid {
 			user.AvatarPath = avatarPath.String
 		}
@@ -352,12 +354,14 @@ func GetChatEligibleUsers(userID int) ([]models.ChatUser, error) {
 	var users []models.ChatUser
 	for rows.Next() {
 		var user models.ChatUser
-		var avatarPath sql.NullString
+		var avatarPath, nickname sql.NullString
 		var followStatus string
-		err := rows.Scan(&user.ID, &user.Nickname, &avatarPath, &followStatus)
+		err := rows.Scan(&user.ID, &nickname, &avatarPath, &followStatus)
 		if err != nil {
 			continue
 		}
+
+		user.Nickname = nickname.String
 		if avatarPath.Valid {
 			user.AvatarPath = avatarPath.String
 		}
@@ -430,12 +434,14 @@ func GetAllUsersForChat(userID int) ([]models.ChatUser, error) {
 	var users []models.ChatUser
 	for rows.Next() {
 		var user models.ChatUser
-		var avatarPath sql.NullString
+		var avatarPath, nickname sql.NullString
 		var followStatus string
-		err := rows.Scan(&user.ID, &user.Nickname, &avatarPath, &followStatus)
+		err := rows.Scan(&user.ID, &nickname, &avatarPath, &followStatus)
 		if err != nil {
 			continue
 		}
+
+		user.Nickname = nickname.String
 		if avatarPath.Valid {
 			user.AvatarPath = avatarPath.String
 		}
