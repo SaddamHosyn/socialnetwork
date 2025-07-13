@@ -3005,6 +3005,16 @@ body {
   box-shadow: var(--box-shadow-lg);
 }
 
+.user-card.clickable-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+  border-color: rgba(0, 123, 255, 0.3);
+}
+
+.user-card.clickable-card:hover .user-nickname {
+  color: #0056b3;
+}
+
 .user-avatar {
   width: 80px;
   height: 80px;

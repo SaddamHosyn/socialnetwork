@@ -123,25 +123,31 @@ const UsersPage: React.FC<UsersPageProps> = ({ onUserClick }) => {
           </div>
         ) : (
           filteredUsers.map((user) => (
-            <div key={user.id} className="user-card">
+            <div
+              key={user.id}
+              className="user-card clickable-card"
+              onClick={() => onUserClick?.(user.id)}
+              style={{ cursor: "pointer" }}
+            >
               <div className="user-avatar">
                 <img
                   src={getAvatarUrl(user.avatar)}
-                  alt={`${user.nickname}'s avatar`}
+                  alt={`${user.nickname || user.first_name}'s avatar`}
                 />
               </div>
 
               <div className="user-info">
                 <h3
                   className="user-nickname clickable"
-                  onClick={() => onUserClick?.(user.id)}
-                  style={{ cursor: "pointer", color: "#007bff" }}
+                  style={{ color: "#007bff" }}
                 >
-                  {user.nickname}
+                  {user.nickname || `${user.first_name} ${user.last_name}`}
                 </h3>
-                <p className="user-name">
-                  {user.first_name} {user.last_name}
-                </p>
+                {user.nickname && (
+                  <p className="user-name">
+                    {user.first_name} {user.last_name}
+                  </p>
+                )}
 
                 <div className="user-stats">
                   <span className="stat">
@@ -161,7 +167,10 @@ const UsersPage: React.FC<UsersPageProps> = ({ onUserClick }) => {
                 </div>
               </div>
 
-              <div className="user-actions">
+              <div
+                className="user-actions"
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              >
                 <FollowButton
                   userId={user.id}
                   onFollowChange={(status) =>
