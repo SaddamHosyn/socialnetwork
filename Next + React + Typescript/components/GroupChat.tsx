@@ -9,7 +9,6 @@ interface ChatMessage {
   sender_name: string;
   content: string;
   created_at: string;
-  isOptimistic?: boolean; // Flag to identify optimistic messages
 }
 
 interface Member {
@@ -123,36 +122,20 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
             sender_name: message.sender_name,
             content: message.message,
             created_at: message.time,
-            isOptimistic: false,
           };
 
           console.log("Processing new group message:", newGroupMessage);
 
           setMessages((prev) => {
-            // First, check if this exact message already exists by ID
-            const existsById = prev.some(
-              (m) => m.id === newGroupMessage.id && !m.isOptimistic
-            );
+            // Check if this exact message already exists by ID
+            const existsById = prev.some((m) => m.id === newGroupMessage.id);
             if (existsById) {
               console.log("Message already exists by ID, skipping");
               return prev;
             }
 
-            // Remove any optimistic messages with the same content from the same sender
-            let filteredPrev = prev.filter((m) => {
-              if (
-                m.isOptimistic &&
-                m.sender_id === newGroupMessage.sender_id &&
-                m.content.trim() === newGroupMessage.content.trim()
-              ) {
-                console.log("Removing optimistic message:", m);
-                return false;
-              }
-              return true;
-            });
-
             console.log("Adding new message to chat");
-            return [...filteredPrev, newGroupMessage];
+            return [...prev, newGroupMessage];
           });
         }
       } catch (err) {
@@ -257,21 +240,6 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     setNewMessage(""); // Clear input immediately for better UX
     setSending(true);
 
-    // Create optimistic message
-    const optimisticMessage: ChatMessage = {
-      id: Date.now() + Math.random(), // Temporary unique ID with decimal
-      group_id: groupId,
-      sender_id: currentUser.id,
-      sender_name: currentUser.nickname,
-      content: messageContent,
-      created_at: new Date().toISOString(),
-      isOptimistic: true, // Mark as optimistic
-    };
-
-    console.log("Adding optimistic message:", optimisticMessage);
-    // Add optimistic message immediately
-    setMessages((prev) => [...prev, optimisticMessage]);
-
     try {
       const response = await fetch("/api/groups/chat/send", {
         method: "POST",
@@ -291,13 +259,10 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
       const result = await response.json();
       console.log("Message sent successfully:", result);
-      // On success, we don't need to do anything - WebSocket will handle the real message
-      // and our duplicate detection will replace the optimistic message
+      // No need to add message to UI since we filter out own messages
     } catch (err) {
       console.error("Error sending message:", err);
-      // Remove optimistic message on error
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
-      setNewMessage(messageContent); // Restore message in input
+      setNewMessage(messageContent); // Restore message in input on error
       alert("Failed to send message");
     } finally {
       setSending(false);
@@ -371,37 +336,35 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
           <div className="messages-container">
             {messages.length > 0 ? (
               <>
-                {messages.map((message, index) => {
-                  const previousMessage = messages[index - 1];
-                  const showDateDivider =
-                    !previousMessage ||
-                    formatDate(message.created_at) !==
-                      formatDate(previousMessage.created_at);
-                  const isOwnMessage =
-                    currentUser && message.sender_id === currentUser.id;
+                {messages
+                  .filter((message) => {
+                    // Only show messages from other users, not your own
+                    return !(currentUser && message.sender_id === currentUser.id);
+                  })
+                  .map((message, index, filteredMessages) => {
+                    const previousMessage = filteredMessages[index - 1];
+                    const showDateDivider =
+                      !previousMessage ||
+                      formatDate(message.created_at) !==
+                        formatDate(previousMessage.created_at);
 
-                  // Create a unique key combining multiple factors to prevent duplicates
-                  const uniqueKey = `msg-${message.id}-${message.sender_id}-${index}-${message.created_at}`;
+                    // Create a unique key combining multiple factors to prevent duplicates
+                    const uniqueKey = `msg-${message.id}-${message.sender_id}-${index}-${message.created_at}`;
 
-                  return (
-                    <div key={uniqueKey}>
-                      {showDateDivider && (
-                        <div
-                          className="date-divider"
-                          key={`date-${formatDate(
-                            message.created_at
-                          )}-${index}`}
-                        >
-                          {formatDate(message.created_at)}
-                        </div>
-                      )}
-                      <div
-                        className={`message-wrapper ${
-                          isOwnMessage ? "own-message" : "other-message"
-                        }`}
-                      >
-                        <div className="message-bubble">
-                          {!isOwnMessage && (
+                    return (
+                      <div key={uniqueKey}>
+                        {showDateDivider && (
+                          <div
+                            className="date-divider"
+                            key={`date-${formatDate(
+                              message.created_at
+                            )}-${index}`}
+                          >
+                            {formatDate(message.created_at)}
+                          </div>
+                        )}
+                        <div className="message-wrapper other-message">
+                          <div className="message-bubble">
                             <div className="message-avatar">
                               <img
                                 src={getAvatarUrl()}
@@ -409,25 +372,22 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
                                 className="avatar-image"
                               />
                             </div>
-                          )}
-                          <div className="message-content">
-                            {!isOwnMessage && (
+                            <div className="message-content">
                               <div className="message-author">
                                 {message.sender_name}
                               </div>
-                            )}
-                            <div className="message-text">
-                              {message.content}
-                            </div>
-                            <div className="message-time">
-                              {formatTime(message.created_at)}
+                              <div className="message-text">
+                                {message.content}
+                              </div>
+                              <div className="message-time">
+                                {formatTime(message.created_at)}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </>
             ) : (
               <div className="no-messages">
