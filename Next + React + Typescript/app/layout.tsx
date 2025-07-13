@@ -1,4 +1,5 @@
 import "../styles/index.css";
+import { ToastProvider } from "../hooks/useToast";
 
 export default function RootLayout({
   children,
@@ -7,7 +8,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }

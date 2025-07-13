@@ -1,13 +1,26 @@
 "use client";
 import { useState, useEffect } from "react";
 import PostContent from "./PostContent";
+import FollowersList from "./FollowersList";
+import FollowRequestsList from "./FollowRequestsList";
 import type { ProfileData } from "../types/types";
+import { getAvatarUrl, getUserInitials } from "../utils/imageUtils";
 
 const UserProfile: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"posts" | "activity">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "activity" | "followers" | "following" | "requests">("posts");
+
+  useEffect(() => {
+    // Check for tab parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['posts', 'activity', 'followers', 'following', 'requests'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, []);
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
+  const [followStats, setFollowStats] = useState({ followers: 0, following: 0 });
 
   const togglePrivacy = async () => {
     if (!profile) return;
@@ -41,14 +54,61 @@ const UserProfile: React.FC = () => {
     }
   };
 
+  const fetchFollowStats = async () => {
+    if (!profile?.user.id) return;
+    
+    try {
+      // Fetch followers count
+      const followersRes = await fetch(`/api/follow/followers?user_id=${profile.user.id}`, { credentials: "include" });
+      
+      if (followersRes.ok) {
+        const followersData = await followersRes.json();
+        
+        // Fetch following count  
+        const followingRes = await fetch(`/api/follow/following?user_id=${profile.user.id}`, { credentials: "include" });
+        
+        if (followingRes.ok) {
+          const followingData = await followingRes.json();
+          
+          setFollowStats({
+            followers: followersData.followers ? followersData.followers.length : 0,
+            following: followingData.following ? followingData.following.length : 0,
+          });
+        } else {
+          console.warn("Failed to fetch following data:", followingRes.status);
+          setFollowStats({ followers: 0, following: 0 });
+        }
+      } else {
+        console.warn("Failed to fetch followers data:", followersRes.status);
+        setFollowStats({ followers: 0, following: 0 });
+      }
+    } catch (error) {
+      console.error("Error fetching follow stats:", error);
+      setFollowStats({ followers: 0, following: 0 });
+    }
+  };
+
   useEffect(() => {
-    fetch("/api/profile", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setProfile(data.data);
-      })
-      .finally(() => setLoading(false));
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/profile", { credentials: "include" });
+        const data = await res.json();
+        if (data.success) {
+          setProfile(data.data);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
   }, []);
+
+  useEffect(() => {
+    if (profile?.user.id) {
+      fetchFollowStats();
+    }
+  }, [profile?.user.id]);
 
   if (loading) {
     return (
@@ -81,19 +141,11 @@ const UserProfile: React.FC = () => {
       {/* Centered Profile Header */}
       <div className="profile-header-modern">
         <div className="profile-avatar-section-modern">
-          {user.avatar && user.avatar.trim() !== "" ? (
-            <img
-              src={user.avatar}
-              alt="Profile Avatar"
-              className="profile-avatar-modern"
-            />
-          ) : (
-            <div className="profile-avatar-placeholder-modern">
-              <span className="avatar-initials-modern">
-                {user.nickname.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
+          <img
+            src={getAvatarUrl(user.avatar)}
+            alt="Profile Avatar"
+            className="profile-avatar-modern"
+          />
         </div>
 
         <div className="profile-info-modern">
@@ -138,19 +190,24 @@ const UserProfile: React.FC = () => {
               <span className="stat-label-modern">Total Votes</span>
             </div>
             <div className="stat-item-modern">
-              <span className="stat-number-modern">
-                {postList.reduce(
-                  (acc, post) => acc + (post.comments_count || 0),
-                  0
-                )}
+              <span 
+                className="stat-number-modern clickable"
+                onClick={() => setActiveTab("followers")}
+                style={{ cursor: 'pointer' }}
+              >
+                {followStats.followers}
               </span>
-              <span className="stat-label-modern">Comments</span>
+              <span className="stat-label-modern">Followers</span>
             </div>
             <div className="stat-item-modern">
-              <span className="stat-number-modern">
-                {new Date(user.created_at).getFullYear()}
+              <span 
+                className="stat-number-modern clickable"
+                onClick={() => setActiveTab("following")}
+                style={{ cursor: 'pointer' }}
+              >
+                {followStats.following}
               </span>
-              <span className="stat-label-modern">Member Since</span>
+              <span className="stat-label-modern">Following</span>
             </div>
           </div>
         </div>
@@ -171,6 +228,26 @@ const UserProfile: React.FC = () => {
             onClick={() => setActiveTab("activity")}
           >
             📊 Activity Overview
+          </button>
+          <button
+            className={`tab-modern ${activeTab === "followers" ? "active" : ""}`}
+            onClick={() => setActiveTab("followers")}
+          >
+            👥 Followers
+            <span className="tab-count">({followStats.followers})</span>
+          </button>
+          <button
+            className={`tab-modern ${activeTab === "following" ? "active" : ""}`}
+            onClick={() => setActiveTab("following")}
+          >
+            🔗 Following
+            <span className="tab-count">({followStats.following})</span>
+          </button>
+          <button
+            className={`tab-modern ${activeTab === "requests" ? "active" : ""}`}
+            onClick={() => setActiveTab("requests")}
+          >
+            📬 Follow Requests
           </button>
         </div>
 
@@ -335,6 +412,24 @@ const UserProfile: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTab === "followers" && profile?.user.id && (
+            <div className="followers-section-modern">
+              <FollowersList userId={profile.user.id} type="followers" />
+            </div>
+          )}
+
+          {activeTab === "following" && profile?.user.id && (
+            <div className="following-section-modern">
+              <FollowersList userId={profile.user.id} type="following" />
+            </div>
+          )}
+
+          {activeTab === "requests" && (
+            <div className="requests-section-modern">
+              <FollowRequestsList onRequestUpdate={fetchFollowStats} />
             </div>
           )}
         </div>

@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const response = await fetch('http://localhost:8080/api/follow/requests', {
-      method: 'GET',
+    const formData = await request.formData();
+    
+    const response = await fetch('http://localhost:8080/api/follow/requests/respond', {
+      method: 'POST',
+      body: formData,
       headers: {
         'Cookie': request.headers.get('cookie') || '',
       },
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
       return NextResponse.json(
-        { error: 'Failed to fetch follow requests' },
+        { error: errorData.message || 'Failed to respond to follow request' },
         { status: response.status }
       );
     }
@@ -19,7 +23,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching follow requests:', error);
+    console.error('Error responding to follow request:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

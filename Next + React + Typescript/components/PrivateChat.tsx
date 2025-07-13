@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { getAvatarUrl } from "../utils/imageUtils";
 
 interface ChatMessage {
   id: number;
@@ -316,11 +317,6 @@ const PrivateChat = () => {
     } finally {
       setSending(false);
     }
-  };
-
-  const getAvatarUrl = (avatarPath?: string) => {
-    if (!avatarPath) return "/uploads/avatars/default_avatar.svg";
-    return `http://localhost:8080${avatarPath.replace(/^\./, "")}`;
   };
 
   const formatTime = (dateString: string) => {

@@ -15,10 +15,12 @@ type FollowRequest struct {
 }
 
 type Follower struct {
+	ID         int       `json:"id"`
 	FollowerID int       `json:"follower_id"`
 	FolloweeID int       `json:"followee_id"`
 	FollowedAt time.Time `json:"followed_at"`
 	Nickname   string    `json:"nickname"`
+	Email      string    `json:"email"`
 }
 
 // CreateFollowRequest creates a new follow request
@@ -119,7 +121,7 @@ func GetUserPrivacySetting(db *sql.DB, userID int) (bool, error) {
 // GetFollowers gets all followers of a user
 func GetFollowers(db *sql.DB, userID int) ([]Follower, error) {
 	query := `
-		SELECT f.follower_id, f.followee_id, f.followed_at, u.nickname
+		SELECT u.id, f.follower_id, f.followee_id, f.followed_at, u.nickname, u.email
 		FROM followers f
 		JOIN users u ON f.follower_id = u.id
 		WHERE f.followee_id = ?
@@ -134,7 +136,7 @@ func GetFollowers(db *sql.DB, userID int) ([]Follower, error) {
 	var followers []Follower
 	for rows.Next() {
 		var follower Follower
-		err := rows.Scan(&follower.FollowerID, &follower.FolloweeID, &follower.FollowedAt, &follower.Nickname)
+		err := rows.Scan(&follower.ID, &follower.FollowerID, &follower.FolloweeID, &follower.FollowedAt, &follower.Nickname, &follower.Email)
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +148,7 @@ func GetFollowers(db *sql.DB, userID int) ([]Follower, error) {
 // GetFollowing gets all users that a user is following
 func GetFollowing(db *sql.DB, userID int) ([]Follower, error) {
 	query := `
-		SELECT f.follower_id, f.followee_id, f.followed_at, u.nickname
+		SELECT u.id, f.follower_id, f.followee_id, f.followed_at, u.nickname, u.email
 		FROM followers f
 		JOIN users u ON f.followee_id = u.id
 		WHERE f.follower_id = ?
@@ -161,7 +163,7 @@ func GetFollowing(db *sql.DB, userID int) ([]Follower, error) {
 	var following []Follower
 	for rows.Next() {
 		var follower Follower
-		err := rows.Scan(&follower.FollowerID, &follower.FolloweeID, &follower.FollowedAt, &follower.Nickname)
+		err := rows.Scan(&follower.ID, &follower.FollowerID, &follower.FolloweeID, &follower.FollowedAt, &follower.Nickname, &follower.Email)
 		if err != nil {
 			return nil, err
 		}

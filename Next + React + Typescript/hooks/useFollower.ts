@@ -12,6 +12,32 @@ interface FollowData {
   status: 'following' | 'pending' | 'not_following';
 }
 
+interface FollowStatus {
+  follow_status: 'following' | 'pending' | 'not_following';
+}
+
+interface FollowRequest {
+  id: number;
+  follower_id: number;
+  followed_id: number;
+  username: string;
+  email: string;
+  created_at: string;
+}
+
+interface Follower {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  avatar?: string;
+  nickname?: string;
+  about_me?: string;
+  is_private: boolean;
+}
+
 export const useFollower = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

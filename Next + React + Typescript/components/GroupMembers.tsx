@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getAvatarUrl } from "../utils/imageUtils";
 
 interface Member {
   id: number;
@@ -61,11 +62,6 @@ const GroupMembers = ({ groupId, isGroupMember }: GroupMembersProps) => {
       setFilteredMembers(filtered);
     }
   }, [searchTerm, members]);
-
-  const getAvatarUrl = (avatarPath?: string) => {
-    if (!avatarPath) return "/uploads/avatars/default_avatar.svg";
-    return `http://localhost:8080${avatarPath.replace(/^\./, "")}`;
-  };
 
   return (
     <div className="members-section">

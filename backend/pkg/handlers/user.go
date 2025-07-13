@@ -133,3 +133,20 @@ func UpdatePrivacyHandler(w http.ResponseWriter, r *http.Request) {
 		"is_private": isPrivate,
 	})
 }
+
+func DiscoverUsersHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userID := r.Context().Value(userIDKey).(int)
+
+	users, err := db.GetUsersWithFollowStatus(userID)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Server error")
+		return
+	}
+
+	utils.Success(w, http.StatusOK, users)
+}

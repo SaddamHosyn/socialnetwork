@@ -200,3 +200,97 @@ func UpdateUserPrivacy(userID int, isPrivate bool) error {
 
 	return err
 }
+
+// GetUsersWithFollowStatus retrieves all users with their follow status relative to the current user
+func GetUsersWithFollowStatus(currentUserID int) ([]map[string]interface{}, error) {
+	query := `
+		SELECT 
+			u.id,
+			u.nickname,
+			u.first_name,
+			u.last_name,
+			u.email,
+			u.avatar,
+			u.is_private,
+			COALESCE(followers_count.count, 0) as followers_count,
+			COALESCE(following_count.count, 0) as following_count,
+			CASE 
+				WHEN f.follower_id IS NOT NULL THEN 'following'
+				WHEN fr.id IS NOT NULL AND fr.status = 'pending' THEN 'pending'
+				ELSE 'not_following'
+			END as follow_status
+		FROM users u
+		LEFT JOIN (
+			SELECT followee_id, COUNT(*) as count
+			FROM followers
+			GROUP BY followee_id
+		) followers_count ON u.id = followers_count.followee_id
+		LEFT JOIN (
+			SELECT follower_id, COUNT(*) as count
+			FROM followers
+			GROUP BY follower_id
+		) following_count ON u.id = following_count.follower_id
+		LEFT JOIN followers f ON f.followee_id = u.id AND f.follower_id = ?
+		LEFT JOIN follow_requests fr ON fr.requestee_id = u.id AND fr.requester_id = ? AND fr.status = 'pending'
+		WHERE u.id != ?
+		ORDER BY u.nickname ASC
+	`
+
+	rows, err := sqlite.GetDB().Query(query, currentUserID, currentUserID, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []map[string]interface{}
+	for rows.Next() {
+		var user struct {
+			ID             int            `json:"id"`
+			Nickname       string         `json:"nickname"`
+			FirstName      string         `json:"first_name"`
+			LastName       string         `json:"last_name"`
+			Email          string         `json:"email"`
+			Avatar         sql.NullString `json:"avatar"`
+			IsPrivate      bool           `json:"is_private"`
+			FollowersCount int            `json:"followers_count"`
+			FollowingCount int            `json:"following_count"`
+			FollowStatus   string         `json:"follow_status"`
+		}
+
+		var isPrivateInt int
+		err := rows.Scan(
+			&user.ID,
+			&user.Nickname,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Avatar,
+			&isPrivateInt,
+			&user.FollowersCount,
+			&user.FollowingCount,
+			&user.FollowStatus,
+		)
+		if err != nil {
+			continue
+		}
+
+		user.IsPrivate = isPrivateInt == 1
+
+		userMap := map[string]interface{}{
+			"id":              user.ID,
+			"nickname":        user.Nickname,
+			"first_name":      user.FirstName,
+			"last_name":       user.LastName,
+			"email":           user.Email,
+			"avatar":          user.Avatar.String,
+			"is_private":      user.IsPrivate,
+			"followers_count": user.FollowersCount,
+			"following_count": user.FollowingCount,
+			"follow_status":   user.FollowStatus,
+		}
+
+		users = append(users, userMap)
+	}
+
+	return users, rows.Err()
+}

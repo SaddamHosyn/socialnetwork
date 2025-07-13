@@ -7,6 +7,7 @@ type PageType =
   | "login"
   | "register"
   | "groups"
+  | "users"
   | "chat";
 
 type Props = {
@@ -37,6 +38,12 @@ const Header = ({ onLogout, isLoggedIn, currentPage, onNavigate }: Props) => (
             onClick={() => onNavigate("groups")}
           >
             Groups
+          </button>
+          <button
+            className={`nav-button ${currentPage === "users" ? "active" : ""}`}
+            onClick={() => onNavigate("users")}
+          >
+            Users
           </button>
           <button
             className={`nav-button ${currentPage === "chat" ? "active" : ""}`}

@@ -7,7 +7,9 @@ import ProfilePage from "../components/pages/ProfilePage";
 import LoginPage from "../components/pages/LoginPage";
 import RegisterPage from "../components/pages/RegisterPage";
 import GroupsPage from "../components/pages/GroupsPage";
+import UsersPage from "../components/pages/UsersPage";
 import PrivateChat from "../components/PrivateChat";
+import NotificationBanner from "../components/NotificationBanner";
 
 type PageType =
   | "home"
@@ -16,6 +18,7 @@ type PageType =
   | "login"
   | "register"
   | "groups"
+  | "users"
   | "chat";
 
 export default function Page() {
@@ -52,7 +55,7 @@ export default function Page() {
 
   const handleNavigate = (page: PageType) => {
     // Prevent navigation to protected pages if not logged in
-    if (!isLoggedIn && ["posts", "profile", "groups", "chat"].includes(page)) {
+    if (!isLoggedIn && ["posts", "profile", "groups", "users", "chat"].includes(page)) {
       setCurrentPage("login");
       return;
     }
@@ -108,6 +111,8 @@ export default function Page() {
         );
       case "groups":
         return <GroupsPage />;
+      case "users":
+        return <UsersPage />;
       case "chat":
         return <PrivateChat />;
       default:
@@ -137,6 +142,11 @@ export default function Page() {
         currentPage={currentPage}
         onNavigate={handleNavigate}
       />
+      {isLoggedIn && (
+        <NotificationBanner 
+          onRequestsClick={() => setCurrentPage("profile")}
+        />
+      )}
       <main className="main-content">{renderCurrentPage()}</main>
     </>
   );

@@ -33,6 +33,7 @@ func main() {
 	http.HandleFunc("/api/posts", handlers.FetchAllPosts)
 	http.HandleFunc("/api/post", handlers.FetchOnePost)
 	http.Handle("/api/users", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchUsers)))
+	http.Handle("/api/users/discover", handlers.AuthMiddleware(http.HandlerFunc(handlers.DiscoverUsersHandler)))
 	http.HandleFunc("/api/categories", handlers.FetchCategories)
 	http.HandleFunc("/api/comment/fetch", handlers.FetchComments)
 
@@ -87,6 +88,16 @@ func main() {
 	http.Handle("/api/groups/chat/messages", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetGroupMessages)))
 	http.Handle("/api/groups/chat/latest", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetLatestGroupMessage)))
 
+	// Follow system routes
+	http.Handle("/api/follow", handlers.AuthMiddleware(http.HandlerFunc(handlers.FollowUserHandler)))
+	http.Handle("/api/unfollow", handlers.AuthMiddleware(http.HandlerFunc(handlers.UnfollowUserHandler)))
+	http.Handle("/api/follow/status", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowStatusHandler)))
+	http.Handle("/api/follow/requests", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowRequestsHandler)))
+	http.Handle("/api/follow/requests/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToFollowRequestHandler)))
+	http.Handle("/api/follow/followers", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowersHandler)))
+	http.Handle("/api/follow/following", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetFollowingHandler)))
+
+	// WebSocket and Chat
 	http.HandleFunc("/ws", manager.ServeWebSocket)
 	http.HandleFunc("/api/chat", chat.HandleChatRequest)
 	http.HandleFunc("/api/chat/history", chat.HandleChatHistory)
