@@ -77,6 +77,7 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 			Nickname    string    `json:"nickname"`
 			Avatar      string    `json:"avatar"`
 			AboutMe     string    `json:"about_me"`
+			IsPrivate   bool      `json:"is_private"`
 		}{
 			ID:          user.ID,
 			Email:       user.Email,
@@ -87,10 +88,48 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 			Nickname:    user.Nickname,
 			Avatar:      user.Avatar,
 			AboutMe:     user.AboutMe,
+			IsPrivate:   user.IsPrivate,
 		},
 		Posts:    posts,
 		Comments: comments,
 	}
 
 	utils.Success(w, http.StatusOK, profile)
+}
+
+func UpdatePrivacyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userID, ok := r.Context().Value(userIDKey).(int)
+	if !ok {
+		utils.Fail(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		utils.Fail(w, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	isPrivateStr := r.FormValue("is_private")
+	if isPrivateStr != "0" && isPrivateStr != "1" {
+		utils.Fail(w, http.StatusBadRequest, "Invalid privacy setting")
+		return
+	}
+
+	isPrivate := isPrivateStr == "1"
+
+	err := db.UpdateUserPrivacy(userID, isPrivate)
+	if err != nil {
+		utils.Fail(w, http.StatusInternalServerError, "Failed to update privacy settings")
+		return
+	}
+
+	utils.Success(w, http.StatusOK, map[string]interface{}{
+		"message":    "Privacy settings updated successfully",
+		"is_private": isPrivate,
+	})
 }

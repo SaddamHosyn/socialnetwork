@@ -70,10 +70,11 @@ LEFT JOIN (
 ) uv ON uv.post_id = p.id
 LEFT JOIN post_categories pc ON pc.post_id = p.id
 LEFT JOIN categories c ON c.id = pc.category_id
-WHERE ? = 0 OR EXISTS (
+WHERE (? = 0 OR EXISTS (
   SELECT 1 FROM post_categories pc2 
   WHERE pc2.post_id = p.id AND pc2.category_id = ?
-)
+))
+AND (u.is_private = 0 OR u.id = ?)
 GROUP BY p.id
 ORDER BY p.created_at DESC
 LIMIT ? OFFSET ?;`
@@ -83,6 +84,7 @@ LIMIT ? OFFSET ?;`
 		currentUserID,
 		categoryID,
 		categoryID,
+		currentUserID,
 		limit,
 		offset,
 	)

@@ -71,9 +71,9 @@ func GetUserProfileInfo(userID int) (models.User, int, error) {
 	var user models.User
 	var genderID int
 	err := sqlite.GetDB().QueryRow(`
-        SELECT id, nickname, first_name, last_name, date_of_birth, gender, email
+        SELECT id, nickname, first_name, last_name, date_of_birth, gender, email, avatar, about_me, is_private
         FROM users WHERE id = ?`, userID,
-	).Scan(&user.ID, &user.Nickname, &user.FirstName, &user.LastName, &user.DateOfBirth, &genderID, &user.Email)
+	).Scan(&user.ID, &user.Nickname, &user.FirstName, &user.LastName, &user.DateOfBirth, &genderID, &user.Email, &user.Avatar, &user.AboutMe, &user.IsPrivate)
 	if err != nil {
 		return user, 0, err
 	}
@@ -183,4 +183,20 @@ func GetUserByID(userID int) (models.User, error) {
 	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.DateOfBirth,
 		&user.Gender, &user.Nickname, &user.Avatar, &user.AboutMe)
 	return user, err
+}
+
+// UpdateUserPrivacy updates the privacy setting for a user
+func UpdateUserPrivacy(userID int, isPrivate bool) error {
+	privateValue := 0
+	if isPrivate {
+		privateValue = 1
+	}
+
+	_, err := sqlite.GetDB().Exec(`
+		UPDATE users 
+		SET is_private = ? 
+		WHERE id = ?
+	`, privateValue, userID)
+
+	return err
 }

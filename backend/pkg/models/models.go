@@ -54,6 +54,7 @@ type User struct {
 	Nickname    string    `json:"nickname"`
 	Avatar      string    `json:"avatar"`
 	AboutMe     string    `json:"about_me"`
+	IsPrivate   bool      `json:"is_private"`
 }
 
 type Message struct {

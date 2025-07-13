@@ -7,6 +7,39 @@ const UserProfile: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"posts" | "activity">("posts");
+  const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
+
+  const togglePrivacy = async () => {
+    if (!profile) return;
+    
+    setUpdatingPrivacy(true);
+    try {
+      const response = await fetch("/api/profile/privacy", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          is_private: profile.user.is_private ? "0" : "1",
+        }).toString(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setProfile(prev => prev ? {
+            ...prev,
+            user: { ...prev.user, is_private: !prev.user.is_private }
+          } : null);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating privacy:", error);
+    } finally {
+      setUpdatingPrivacy(false);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/profile", { credentials: "include" })
@@ -66,6 +99,32 @@ const UserProfile: React.FC = () => {
         <div className="profile-info-modern">
           <h1 className="profile-name-modern">{user.nickname}</h1>
           <p className="profile-email-modern">{user.email}</p>
+
+          {/* Privacy Toggle */}
+          <div className="privacy-toggle-section">
+            <button
+              onClick={togglePrivacy}
+              disabled={updatingPrivacy}
+              className={`privacy-toggle-button ${user.is_private ? 'private' : 'public'}`}
+            >
+              {updatingPrivacy ? 'Updating...' : (
+                <>
+                  <span className="privacy-icon">
+                    {user.is_private ? '🔒' : '🌐'}
+                  </span>
+                  <span className="privacy-text">
+                    {user.is_private ? 'Private Account' : 'Public Account'}
+                  </span>
+                </>
+              )}
+            </button>
+            <p className="privacy-description">
+              {user.is_private 
+                ? 'Your posts are hidden from other users' 
+                : 'Your posts are visible to all users'
+              }
+            </p>
+          </div>
 
           <div className="profile-stats-modern">
             <div className="stat-item-modern">
