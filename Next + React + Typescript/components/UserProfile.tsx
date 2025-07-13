@@ -21,6 +21,7 @@ const UserProfile: React.FC = () => {
   }, []);
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
   const [followStats, setFollowStats] = useState({ followers: 0, following: 0 });
+  const [debugMode, setDebugMode] = useState(false);
 
   const togglePrivacy = async () => {
     if (!profile) return;
@@ -63,16 +64,37 @@ const UserProfile: React.FC = () => {
       
       if (followersRes.ok) {
         const followersData = await followersRes.json();
+        console.log('Followers stats data:', followersData);
         
         // Fetch following count  
         const followingRes = await fetch(`/api/follow/following?user_id=${profile.user.id}`, { credentials: "include" });
         
         if (followingRes.ok) {
           const followingData = await followingRes.json();
+          console.log('Following stats data:', followingData);
+          
+          // Handle the response structure properly
+          let followersArray = [];
+          let followingArray = [];
+          
+          if (followersData.success && followersData.data) {
+            followersArray = followersData.data.followers || followersData.data || [];
+          } else {
+            followersArray = followersData.followers || [];
+          }
+          
+          if (followingData.success && followingData.data) {
+            followingArray = followingData.data.following || followingData.data || [];
+          } else {
+            followingArray = followingData.following || [];
+          }
+          
+          console.log('Processed followers:', followersArray);
+          console.log('Processed following:', followingArray);
           
           setFollowStats({
-            followers: followersData.followers ? followersData.followers.length : 0,
-            following: followingData.following ? followingData.following.length : 0,
+            followers: Array.isArray(followersArray) ? followersArray.length : 0,
+            following: Array.isArray(followingArray) ? followingArray.length : 0,
           });
         } else {
           console.warn("Failed to fetch following data:", followingRes.status);
@@ -108,6 +130,18 @@ const UserProfile: React.FC = () => {
     if (profile?.user.id) {
       fetchFollowStats();
     }
+  }, [profile?.user.id]);
+
+  // Refresh follow stats when the component becomes visible again
+  useEffect(() => {
+    const handleFocus = () => {
+      if (profile?.user.id) {
+        fetchFollowStats();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [profile?.user.id]);
 
   if (loading) {
@@ -212,6 +246,48 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Debug Panel */}
+      {debugMode && (
+        <div style={{ 
+          background: '#f8f9fa', 
+          border: '1px solid #dee2e6', 
+          borderRadius: '8px', 
+          padding: '16px', 
+          margin: '16px 0',
+          fontFamily: 'monospace',
+          fontSize: '12px'
+        }}>
+          <h4>🐛 Debug Information</h4>
+          <p><strong>User ID:</strong> {profile?.user.id}</p>
+          <p><strong>Follow Stats:</strong> {followStats.followers} followers, {followStats.following} following</p>
+          <p><strong>Profile User:</strong> {profile?.user.nickname} ({profile?.user.is_private ? 'Private' : 'Public'})</p>
+          <button 
+            onClick={async () => {
+              if (profile?.user.id) {
+                const res = await fetch(`/api/follow/followers?user_id=${profile.user.id}`, { credentials: "include" });
+                const data = await res.json();
+                console.log('Followers API Response:', data);
+                
+                const res2 = await fetch(`/api/follow/following?user_id=${profile.user.id}`, { credentials: "include" });
+                const data2 = await res2.json();
+                console.log('Following API Response:', data2);
+              }
+            }}
+            style={{ 
+              background: '#007bff', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              padding: '4px 8px',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+          >
+            Log API Responses
+          </button>
+        </div>
+      )}
 
       {/* Profile Content Below */}
       <div className="profile-content-modern">

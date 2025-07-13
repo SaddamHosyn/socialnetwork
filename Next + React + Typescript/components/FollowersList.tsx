@@ -27,16 +27,32 @@ const FollowersList: React.FC<FollowersListProps> = ({ userId, type }) => {
   const fetchUsers = async () => {
     try {
       const endpoint = type === 'followers' ? '/api/follow/followers' : '/api/follow/following';
+      
       const response = await fetch(`${endpoint}?user_id=${userId}`, {
         credentials: 'include',
       });
       
       if (response.ok) {
         const data = await response.json();
-        setUsers(data[type] || []);
+        
+        // Handle the response structure properly
+        let users = [];
+        if (data.success && data.data) {
+          // Backend returns: {success: true, data: {followers: [...]} or {following: [...]}}
+          users = data.data[type] || [];
+        } else if (data[type]) {
+          // Direct response structure: {followers: [...]} or {following: [...]}
+          users = data[type] || [];
+        } else {
+          // Fallback: data is array directly
+          users = Array.isArray(data) ? data : [];
+        }
+        
+        setUsers(users);
       } else {
-        console.error(`Failed to fetch ${type}`);
-        addToast(`Failed to load ${type}`, 'error');
+        const errorData = await response.text();
+        console.error(`Failed to fetch ${type}:`, response.status, errorData);
+        addToast(`Failed to load ${type}: ${response.status}`, 'error');
       }
     } catch (error) {
       console.error(`Error fetching ${type}:`, error);

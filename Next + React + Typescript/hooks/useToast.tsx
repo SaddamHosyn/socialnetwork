@@ -1,17 +1,15 @@
-'use client';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
-import React, { createContext, useContext, useState } from 'react';
-import type { ReactNode } from 'react';
-
-interface Toast {
+export interface Toast {
   id: string;
   message: string;
-  type?: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info';
+  duration?: number;
 }
 
 interface ToastContextType {
   toasts: Toast[];
-  addToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  addToast: (message: string, type?: 'success' | 'error' | 'info', duration?: number) => void;
   removeToast: (id: string) => void;
 }
 
@@ -32,24 +30,30 @@ interface ToastProviderProps {
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const addToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info', duration = 5000) => {
     const id = Date.now().toString();
-    const newToast = { id, message, type };
+    const toast: Toast = { id, message, type, duration };
     
-    setToasts(prev => [...prev, newToast]);
+    setToasts(prev => [...prev, toast]);
     
-    // Auto remove toast after 5 seconds
+    // Auto remove toast after duration
     setTimeout(() => {
-      removeToast(id);
-    }, 5000);
-  };
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, duration);
+  }, []);
 
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const value = {
+    toasts,
+    addToast,
+    removeToast
   };
 
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>
@@ -69,7 +73,8 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove }) => 
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`toast toast-${toast.type || 'info'}`}
+          className={`toast toast-${toast.type}`}
+          onClick={() => onRemove(toast.id)}
         >
           <div className="toast-content">
             <span className="toast-message">{toast.message}</span>

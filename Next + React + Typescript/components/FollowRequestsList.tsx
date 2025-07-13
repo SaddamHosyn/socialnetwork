@@ -28,15 +28,32 @@ const FollowRequestsList: React.FC<FollowRequestsListProps> = ({ onRequestUpdate
 
   const fetchFollowRequests = async () => {
     try {
+      console.log('Fetching follow requests...');
       const response = await fetch('/api/follow/requests', {
         credentials: 'include',
       });
       
+      console.log('Follow requests response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setRequests(data.follow_requests || []);
+        console.log('Follow requests data:', data);
+        
+        // Handle the response structure properly
+        let requests = [];
+        if (data.success && data.data && data.data.follow_requests) {
+          requests = data.data.follow_requests;
+        } else if (data.follow_requests) {
+          requests = data.follow_requests;
+        } else {
+          requests = [];
+        }
+        
+        console.log('Setting follow requests:', requests);
+        setRequests(requests);
       } else {
-        console.error('Failed to fetch follow requests');
+        const errorData = await response.json();
+        console.error('Failed to fetch follow requests:', errorData);
       }
     } catch (error) {
       console.error('Error fetching follow requests:', error);
