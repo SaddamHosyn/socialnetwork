@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PostContent from "./PostContent";
+import PostComments from "./PostComments";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import type { Post } from "../types/types";
 
@@ -20,6 +21,9 @@ const PostList = ({
 }: Props) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedComments, setExpandedComments] = useState<Set<number>>(
+    new Set()
+  );
   const { user: currentUser } = useCurrentUser();
 
   // Use props if provided, otherwise fetch data
@@ -84,6 +88,18 @@ const PostList = ({
     }
   };
 
+  const toggleComments = (postId: number) => {
+    setExpandedComments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
   if (finalLoading) {
     return <div className="loading">Loading posts...</div>;
   }
@@ -95,15 +111,18 @@ const PostList = ({
   return (
     <div className="post-list">
       {finalPosts.map((post) => (
-        <PostContent
-          key={post.id}
-          post={post}
-          currentUserId={currentUser?.id}
-          onCommentClick={
-            onPostSelect ? () => onPostSelect(post.id) : undefined
-          }
-          onVote={(vote) => handleVote(post.id, vote)}
-        />
+        <div key={post.id} className="post-with-comments">
+          <PostContent
+            post={post}
+            currentUserId={currentUser?.id}
+            onCommentClick={() => toggleComments(post.id)}
+            onVote={(vote) => handleVote(post.id, vote)}
+          />
+          <PostComments
+            postId={post.id}
+            isVisible={expandedComments.has(post.id)}
+          />
+        </div>
       ))}
     </div>
   );

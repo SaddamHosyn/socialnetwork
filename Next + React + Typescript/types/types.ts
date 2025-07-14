@@ -25,6 +25,7 @@ export type Comment = {
   id: number;
   post_id: number;
   content: string;
+  image?: string;
   author: string;
   nickname: string; // Added this field
   votes: number;

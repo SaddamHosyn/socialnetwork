@@ -92,9 +92,7 @@ const PostCreate: React.FC<Props> = ({ onSubmit, onCancel }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log("API Response:", data); // Debug log
         if (data.success && data.data) {
-          console.log("Followers data:", data.data.followers); // Debug log
           setFollowers(data.data.followers || []);
         }
       }

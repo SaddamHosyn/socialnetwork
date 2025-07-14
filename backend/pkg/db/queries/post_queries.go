@@ -53,7 +53,8 @@ SELECT
   COALESCE(v.total_votes, 0) AS votes,
   COALESCE(uv.user_vote, 0) AS user_vote,
   GROUP_CONCAT(DISTINCT c.name) AS cats,
-  GROUP_CONCAT(pi.image_path) AS image_paths
+  GROUP_CONCAT(pi.image_path) AS image_paths,
+  COALESCE(cc.comment_count, 0) AS comments_count
 FROM posts p
 LEFT JOIN post_images pi ON pi.post_id = p.id
 JOIN users u ON u.id = p.user_id
@@ -68,6 +69,11 @@ LEFT JOIN (
   FROM votes 
   WHERE user_id = ? AND post_id IS NOT NULL
 ) uv ON uv.post_id = p.id
+LEFT JOIN (
+  SELECT post_id, COUNT(*) AS comment_count
+  FROM comments
+  GROUP BY post_id
+) cc ON cc.post_id = p.id
 LEFT JOIN post_categories pc ON pc.post_id = p.id
 LEFT JOIN categories c ON c.id = pc.category_id
 WHERE (? = 0 OR EXISTS (
@@ -122,7 +128,7 @@ LIMIT ? OFFSET ?;`
 		var catNames, extraImages sql.NullString
 		if err := rows.Scan(
 			&p.ID, &p.UserID, &p.Nickname, &p.Title, &p.Content,
-			&p.CreatedAt, &p.Privacy, &p.Votes, &p.UserVote, &catNames, &extraImages,
+			&p.CreatedAt, &p.Privacy, &p.Votes, &p.UserVote, &catNames, &extraImages, &p.CommentsCount,
 		); err != nil {
 			continue
 		}

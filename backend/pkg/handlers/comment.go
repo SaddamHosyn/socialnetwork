@@ -16,9 +16,18 @@ func CommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Bad request")
-		return
+	// Parse form data - handle both multipart and url-encoded
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(contentType, "multipart/form-data") {
+		if err := r.ParseMultipartForm(50 << 20); err != nil {
+			utils.Fail(w, http.StatusBadRequest, "Invalid form data")
+			return
+		}
+	} else {
+		if err := r.ParseForm(); err != nil {
+			utils.Fail(w, http.StatusBadRequest, "Bad request")
+			return
+		}
 	}
 
 	postID, err := strconv.Atoi(r.FormValue("post_id"))
@@ -27,14 +36,42 @@ func CommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	content := strings.TrimSpace(r.FormValue("content"))
-	if ve := utils.ValidateComment(content); ve != nil {
-		utils.Fail(w, http.StatusBadRequest, ve.Message)
-		return
-	}
 
 	userID := r.Context().Value(userIDKey).(int)
 
-	commentID, err := db.InsertComment(postID, userID, content)
+	// Handle optional image upload
+	var imagePath *string
+	if r.MultipartForm != nil {
+		files := r.MultipartForm.File["image"]
+		if len(files) > 1 {
+			utils.Fail(w, http.StatusBadRequest, "Max 1 image per comment")
+			return
+		}
+		if len(files) == 1 {
+			imgPath, verr := utils.SaveUploadFile(files[0])
+			if verr != nil {
+				utils.Fail(w, http.StatusBadRequest, verr.Message)
+				return
+			}
+			imagePath = &imgPath
+		}
+	}
+
+	// Validate that either content or image is provided
+	if content == "" && imagePath == nil {
+		utils.Fail(w, http.StatusBadRequest, "Comment must have either text content or an image")
+		return
+	}
+
+	// If content is provided, validate it
+	if content != "" {
+		if ve := utils.ValidateComment(content); ve != nil {
+			utils.Fail(w, http.StatusBadRequest, ve.Message)
+			return
+		}
+	}
+
+	commentID, err := db.InsertComment(postID, userID, content, imagePath)
 	if err != nil {
 		log.Printf("Comment insert error: %v", err)
 		utils.Fail(w, http.StatusInternalServerError, "Server error")

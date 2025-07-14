@@ -5,17 +5,18 @@ import (
 )
 
 type Post struct {
-	ID         int       `json:"id"`
-	UserID     int       `json:"user_id"`
-	Nickname   string    `json:"nickname"`
-	Title      string    `json:"title"`
-	Content    string    `json:"content"`
-	ImagePaths []string  `json:"image_paths"`
-	CreatedAt  time.Time `json:"created_at"`
-	Votes      int       `json:"votes"`
-	UserVote   int       `json:"user_vote"`
-	Categories []string  `json:"categories"`
-	Privacy    string    `json:"privacy"`
+	ID            int       `json:"id"`
+	UserID        int       `json:"user_id"`
+	Nickname      string    `json:"nickname"`
+	Title         string    `json:"title"`
+	Content       string    `json:"content"`
+	ImagePaths    []string  `json:"image_paths"`
+	CreatedAt     time.Time `json:"created_at"`
+	Votes         int       `json:"votes"`
+	UserVote      int       `json:"user_vote"`
+	Categories    []string  `json:"categories"`
+	Privacy       string    `json:"privacy"`
+	CommentsCount int       `json:"comments_count"`
 }
 
 type Category struct {
@@ -29,6 +30,7 @@ type Comment struct {
 	UserID    int       `json:"user_id"`
 	Nickname  string    `json:"nickname"`
 	Content   string    `json:"content"`
+	Image     *string   `json:"image,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	Votes     int       `json:"votes"`
 }

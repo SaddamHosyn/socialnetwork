@@ -91,9 +91,6 @@ func ValidatePost(title, content string) *ValidationError {
 }
 
 func ValidateComment(content string) *ValidationError {
-	if content == "" {
-		return &ValidationError{Message: "Comment cannot be empty"}
-	}
 	if len(content) > 1000 {
 		return &ValidationError{Message: "Comment must be under 1000 characters"}
 	}

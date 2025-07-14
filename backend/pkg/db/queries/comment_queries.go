@@ -6,11 +6,11 @@ import (
 	"social-network/backend/pkg/models"
 )
 
-func InsertComment(postID, userID int, content string) (int, error) {
+func InsertComment(postID, userID int, content string, image *string) (int, error) {
 	var commentID int
 	err := sqlite.GetDB().QueryRow(
-		`INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?) RETURNING id`,
-		postID, userID, content,
+		`INSERT INTO comments (post_id, user_id, content, image) VALUES (?, ?, ?, ?) RETURNING id`,
+		postID, userID, content, image,
 	).Scan(&commentID)
 	return commentID, err
 }
@@ -34,7 +34,7 @@ func DeleteCommentByID(commentID int) error {
 
 func GetCommentsByPost(postID, limit, offset int) ([]models.Comment, error) {
 	rows, err := sqlite.GetDB().Query(`
-		SELECT c.id, c.user_id, u.nickname, c.content, c.created_at,
+		SELECT c.id, c.user_id, u.nickname, c.content, c.image, c.created_at,
 			   COALESCE(SUM(v.vote_type),0) AS votes
 		FROM comments c
 		JOIN users u ON u.id = c.user_id
@@ -52,7 +52,7 @@ func GetCommentsByPost(postID, limit, offset int) ([]models.Comment, error) {
 	var comments []models.Comment
 	for rows.Next() {
 		var c models.Comment
-		if err := rows.Scan(&c.ID, &c.UserID, &c.Nickname, &c.Content, &c.CreatedAt, &c.Votes); err != nil {
+		if err := rows.Scan(&c.ID, &c.UserID, &c.Nickname, &c.Content, &c.Image, &c.CreatedAt, &c.Votes); err != nil {
 			continue
 		}
 		comments = append(comments, c)
