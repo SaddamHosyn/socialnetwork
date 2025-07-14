@@ -38,6 +38,7 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [websocket, setWebsocket] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -261,6 +262,34 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const addEmoji = (emoji: string) => {
+    setNewMessage((prev) => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const commonEmojis = [
+    "😀",
+    "😂",
+    "🥰",
+    "😍",
+    "🤗",
+    "🤔",
+    "😎",
+    "😊",
+    "👍",
+    "👎",
+    "❤️",
+    "💯",
+    "🔥",
+    "⭐",
+    "🎉",
+    "👏",
+    "🙌",
+    "🤝",
+    "✨",
+    "💫",
+  ];
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || sending || !isGroupMember || !currentUser) return;
@@ -428,7 +457,27 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
           </div>
 
           <div className="message-input-container">
+            {showEmojiPicker && (
+              <div className="emoji-picker">
+                {commonEmojis.map((emoji, index) => (
+                  <button
+                    key={index}
+                    className="emoji-button"
+                    onClick={() => addEmoji(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
             <form onSubmit={sendMessage} className="message-form">
+              <button
+                type="button"
+                className="emoji-toggle-button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
+                😊
+              </button>
               <input
                 type="text"
                 value={newMessage}
@@ -699,6 +748,72 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
         .send-button:disabled {
           background: #ccc;
           cursor: not-allowed;
+        }
+
+        .emoji-picker {
+          position: absolute;
+          bottom: 100%;
+          left: 28px;
+          background: white;
+          border: 1px solid #e1e5e9;
+          border-radius: 16px;
+          padding: 16px;
+          display: grid;
+          grid-template-columns: repeat(10, 1fr);
+          gap: 8px;
+          width: 320px;
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+          z-index: 1000;
+        }
+
+        .emoji-button {
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .emoji-button:hover {
+          background: #f7fafc;
+          transform: scale(1.2);
+        }
+
+        .emoji-toggle-button {
+          background: linear-gradient(135deg, #f7fafc, #edf2f7);
+          border: none;
+          padding: 12px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 16px;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .emoji-toggle-button:hover {
+          background: linear-gradient(135deg, #edf2f7, #e2e8f0);
+          transform: scale(1.05);
+        }
+
+        .message-form {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          position: relative;
+        }
+
+        .message-input-container {
+          padding: 16px;
+          background: white;
+          border-top: 1px solid #e1e5e9;
+          position: relative;
         }
 
         .members-panel {
