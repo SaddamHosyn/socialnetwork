@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"log"
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
 	"social-network/backend/pkg/utils"
@@ -99,13 +100,70 @@ func GetPostGroupID(postID int) (int, error) {
 
 // CreateGroupEvent creates a new event in a group
 func CreateGroupEvent(groupID, userID int, title, description string, eventDate time.Time) (int, error) {
+	log.Printf("🔄 Creating group event: groupID=%d, userID=%d, title=%s", groupID, userID, title)
+
 	var eventID int
 	err := sqlite.GetDB().QueryRow(`
 		INSERT INTO group_events (group_id, creator_id, title, description, event_date, created_at)
 		VALUES (?, ?, ?, ?, ?, ?)
 		RETURNING id
 	`, groupID, userID, title, description, eventDate, time.Now()).Scan(&eventID)
-	return eventID, err
+
+	if err != nil {
+		log.Printf("❌ Error creating group event: %v", err)
+		return 0, err
+	}
+
+	// Create notifications for all group members (except the creator)
+	err = createEventNotificationsForGroupMembers(groupID, userID, title, eventID)
+	if err != nil {
+		log.Printf("❌ Error creating event notifications: %v", err)
+		// Don't return error - the event was created successfully
+	}
+
+	log.Printf("✅ Group event created successfully with ID: %d", eventID)
+	return eventID, nil
+}
+
+// Helper function to create event notifications for all group members
+func createEventNotificationsForGroupMembers(groupID, creatorID int, eventTitle string, eventID int) error {
+	// Get group name and creator name
+	var groupName, creatorName string
+	err := sqlite.GetDB().QueryRow("SELECT name FROM groups WHERE id = ?", groupID).Scan(&groupName)
+	if err != nil {
+		return err
+	}
+
+	err = sqlite.GetDB().QueryRow("SELECT nickname FROM users WHERE id = ?", creatorID).Scan(&creatorName)
+	if err != nil {
+		return err
+	}
+
+	// Get all group members except the creator
+	rows, err := sqlite.GetDB().Query(`
+		SELECT user_id FROM group_members 
+		WHERE group_id = ? AND user_id != ?
+	`, groupID, creatorID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	// Create notification for each member
+	for rows.Next() {
+		var memberID int
+		if err := rows.Scan(&memberID); err != nil {
+			log.Printf("❌ Error scanning member ID: %v", err)
+			continue
+		}
+
+		err = CreateGroupEventNotification(memberID, creatorID, creatorName, eventTitle, groupName, eventID)
+		if err != nil {
+			log.Printf("❌ Error creating event notification for member %d: %v", memberID, err)
+		}
+	}
+
+	return nil
 }
 
 // GetGroupEvents returns all events for a group

@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
 	"time"
@@ -239,6 +240,8 @@ func IsGroupCreatorByGroupID(userID, groupID int) (bool, error) {
 
 // CreateGroupInvitation creates a new group invitation
 func CreateGroupInvitation(groupID, inviterID, inviteeID int) error {
+	log.Printf("🔄 Creating group invitation: groupID=%d, inviterID=%d, inviteeID=%d", groupID, inviterID, inviteeID)
+
 	// Check if user is already a member
 	isMember, err := IsGroupMember(inviteeID, groupID)
 	if err != nil {
@@ -262,16 +265,53 @@ func CreateGroupInvitation(groupID, inviterID, inviteeID int) error {
 	}
 
 	// Create invitation
-	_, err = sqlite.GetDB().Exec(`
+	result, err := sqlite.GetDB().Exec(`
 		INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status, created_at)
 		VALUES (?, ?, ?, 'pending', ?)
 	`, groupID, inviterID, inviteeID, time.Now())
+	if err != nil {
+		log.Printf("❌ Error creating group invitation: %v", err)
+		return err
+	}
 
-	return err
+	// Get the invitation ID
+	invitationID, err := result.LastInsertId()
+	if err != nil {
+		log.Printf("❌ Error getting invitation ID: %v", err)
+		return err
+	}
+
+	// Get inviter and group names for the notification
+	var inviterName, groupName string
+	err = sqlite.GetDB().QueryRow("SELECT nickname FROM users WHERE id = ?", inviterID).Scan(&inviterName)
+	if err != nil {
+		log.Printf("❌ Error getting inviter name: %v", err)
+		// Continue without the notification
+		return nil
+	}
+
+	err = sqlite.GetDB().QueryRow("SELECT name FROM groups WHERE id = ?", groupID).Scan(&groupName)
+	if err != nil {
+		log.Printf("❌ Error getting group name: %v", err)
+		// Continue without the notification
+		return nil
+	}
+
+	// Create notification for the invitee
+	err = CreateGroupInvitationNotification(inviteeID, inviterID, inviterName, groupName, int(invitationID))
+	if err != nil {
+		log.Printf("❌ Error creating group invitation notification: %v", err)
+		// Don't return the error - the invitation was created successfully
+	}
+
+	log.Printf("✅ Group invitation created successfully with ID: %d", invitationID)
+	return nil
 }
 
 // CreateJoinRequest creates a new join request
 func CreateJoinRequest(groupID, userID int) error {
+	log.Printf("🔄 Creating join request: groupID=%d, userID=%d", groupID, userID)
+
 	// Check if user is already a member
 	isMember, err := IsGroupMember(userID, groupID)
 	if err != nil {
@@ -309,18 +349,76 @@ func CreateJoinRequest(groupID, userID int) error {
 			SET status = 'pending', created_at = ?
 			WHERE id = ?
 		`, time.Now(), existingRequestID)
-		return err
+		if err != nil {
+			log.Printf("❌ Error updating join request: %v", err)
+			return err
+		}
+
+		// Create notification for updated request
+		err = createJoinRequestNotification(groupID, userID, existingRequestID)
+		if err != nil {
+			log.Printf("❌ Error creating join request notification: %v", err)
+		}
+
+		log.Printf("✅ Join request updated successfully with ID: %d", existingRequestID)
+		return nil
 	} else if err != sql.ErrNoRows {
 		return err
 	}
 
 	// Create new join request if no previous request exists
-	_, err = sqlite.GetDB().Exec(`
+	result, err := sqlite.GetDB().Exec(`
 		INSERT INTO group_join_requests (group_id, requester_id, status, created_at)
 		VALUES (?, ?, 'pending', ?)
 	`, groupID, userID, time.Now())
+	if err != nil {
+		log.Printf("❌ Error creating join request: %v", err)
+		return err
+	}
 
-	return err
+	// Get the join request ID
+	requestID, err := result.LastInsertId()
+	if err != nil {
+		log.Printf("❌ Error getting join request ID: %v", err)
+		return err
+	}
+
+	// Create notification for new request
+	err = createJoinRequestNotification(groupID, userID, int(requestID))
+	if err != nil {
+		log.Printf("❌ Error creating join request notification: %v", err)
+	}
+
+	log.Printf("✅ Join request created successfully with ID: %d", requestID)
+	return nil
+}
+
+// Helper function to create join request notification
+func createJoinRequestNotification(groupID, requesterID, requestID int) error {
+	// Get group creator ID and group name
+	var creatorID int
+	var groupName string
+	err := sqlite.GetDB().QueryRow(`
+		SELECT gm.user_id, g.name 
+		FROM group_members gm 
+		JOIN groups g ON g.id = gm.group_id 
+		WHERE gm.group_id = ? AND gm.role = 'owner'
+	`, groupID).Scan(&creatorID, &groupName)
+	if err != nil {
+		log.Printf("❌ Error getting group creator: %v", err)
+		return err
+	}
+
+	// Get requester name
+	var requesterName string
+	err = sqlite.GetDB().QueryRow("SELECT nickname FROM users WHERE id = ?", requesterID).Scan(&requesterName)
+	if err != nil {
+		log.Printf("❌ Error getting requester name: %v", err)
+		return err
+	}
+
+	// Create notification for the group creator
+	return CreateJoinRequestNotification(creatorID, requesterID, requesterName, groupName, requestID)
 }
 
 // HandleGroupInvitation accepts or declines a group invitation

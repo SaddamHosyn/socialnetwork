@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"log"
 	"time"
 )
 
@@ -26,12 +27,43 @@ type Follower struct {
 
 // CreateFollowRequest creates a new follow request
 func CreateFollowRequest(db *sql.DB, requesterID, requesteeID int) error {
+	log.Printf("🔄 Creating follow request: requesterID=%d, requesteeID=%d", requesterID, requesteeID)
+
+	// Get requester's name for the notification
+	var requesterName string
+	err := db.QueryRow("SELECT nickname FROM users WHERE id = ?", requesterID).Scan(&requesterName)
+	if err != nil {
+		log.Printf("❌ Error getting requester name: %v", err)
+		return err
+	}
+
+	// Insert the follow request
 	query := `
 		INSERT INTO follow_requests (requester_id, requestee_id, status)
 		VALUES (?, ?, 'pending')
 	`
-	_, err := db.Exec(query, requesterID, requesteeID)
-	return err
+	result, err := db.Exec(query, requesterID, requesteeID)
+	if err != nil {
+		log.Printf("❌ Error creating follow request: %v", err)
+		return err
+	}
+
+	// Get the follow request ID
+	followRequestID, err := result.LastInsertId()
+	if err != nil {
+		log.Printf("❌ Error getting follow request ID: %v", err)
+		return err
+	}
+
+	// Create notification for the requestee
+	err = CreateFollowRequestNotification(requesteeID, requesterID, requesterName, int(followRequestID))
+	if err != nil {
+		log.Printf("❌ Error creating follow request notification: %v", err)
+		// Don't return the error - the follow request was created successfully
+	}
+
+	log.Printf("✅ Follow request created successfully with ID: %d", followRequestID)
+	return nil
 }
 
 // GetFollowRequest gets a specific follow request
