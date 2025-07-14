@@ -52,8 +52,6 @@ func FetchProfile(w http.ResponseWriter, r *http.Request) {
 		gender = "Male"
 	case 2:
 		gender = "Female"
-	case 3:
-		gender = "Alien"
 	}
 
 	posts, err := db.GetPostsByUser(userID, user.Nickname)

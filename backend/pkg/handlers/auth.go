@@ -139,6 +139,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	_ = db.UpdateUserLastActive(userID)
 
+	// Delete all existing sessions for this user to ensure single session
+	if err := db.DeleteAllUserSessions(userID); err != nil {
+		log.Printf("Warning: Failed to delete existing sessions for user %d: %v", userID, err)
+	}
+
 	token := uuid.New().String()
 	expiresAt := time.Now().UTC().Add(7 * 24 * time.Hour)
 	if err := db.InsertSession(userID, token, expiresAt); err != nil {

@@ -172,6 +172,52 @@ const UserProfile: React.FC = () => {
 
   return (
     <div className="profile-page-modern">
+      <style jsx>{`
+        .user-info-section {
+          margin: 20px 0;
+          padding: 16px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          border: 1px solid #e9ecef;
+        }
+        
+        .user-info-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 12px;
+        }
+        
+        .info-item {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .info-item.about-me {
+          grid-column: 1 / -1;
+        }
+        
+        .info-label {
+          font-weight: 600;
+          font-size: 12px;
+          color: #6c757d;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 4px;
+        }
+        
+        .info-value {
+          font-size: 14px;
+          color: #212529;
+          font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+          .user-info-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+      
       {/* Centered Profile Header */}
       <div className="profile-header-modern">
         <div className="profile-avatar-section-modern">
@@ -185,6 +231,44 @@ const UserProfile: React.FC = () => {
         <div className="profile-info-modern">
           <h1 className="profile-name-modern">{user.nickname}</h1>
           <p className="profile-email-modern">{user.email}</p>
+
+          {/* User Information Section */}
+          <div className="user-info-section">
+            <div className="user-info-grid">
+              <div className="info-item">
+                <span className="info-label">First Name:</span>
+                <span className="info-value">{user.first_name}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Last Name:</span>
+                <span className="info-value">{user.last_name}</span>
+              </div>
+              {(user.nickname ?? "").trim() !== "" && (
+                <div className="info-item">
+                  <span className="info-label">Nickname:</span>
+                  <span className="info-value">{user.nickname}</span>
+                </div>
+              )}
+              <div className="info-item">
+                <span className="info-label">Email:</span>
+                <span className="info-value">{user.email}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Date of Birth:</span>
+                <span className="info-value">{user.date_of_birth}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Gender:</span>
+                <span className="info-value">{user.gender}</span>
+              </div>
+              {(user.about_me ?? "").trim() !== "" && (
+                <div className="info-item about-me">
+                  <span className="info-label">About Me:</span>
+                  <span className="info-value">{user.about_me}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Privacy Toggle */}
           <div className="privacy-toggle-section">
