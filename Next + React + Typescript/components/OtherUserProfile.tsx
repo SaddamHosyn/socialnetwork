@@ -162,8 +162,13 @@ const OtherUserProfile: React.FC<OtherUserProfileProps> = ({
 
   const { user, posts } = profile;
   const postList = Array.isArray(posts) ? posts : [];
+
+  // Check if this is a private account with restricted access
+  // (private user that current user is not following)
   const isPrivateAndRestricted =
-    user.is_private && postList.length === 0 && !user.email;
+    user.is_private &&
+    (!user.email || user.email === "") &&
+    (!user.first_name || user.first_name === "");
 
   return (
     <div className="profile-page-modern">
@@ -194,7 +199,70 @@ const OtherUserProfile: React.FC<OtherUserProfileProps> = ({
               <p>Follow to see their posts and profile details</p>
             </div>
           ) : (
-            <p className="profile-email-modern">{user.email}</p>
+            <>
+              {user.email && (
+                <p className="profile-email-modern">{user.email}</p>
+              )}
+
+              {/* User Information Section - Only show if we have detailed info */}
+              {(user.first_name ||
+                user.last_name ||
+                user.email ||
+                user.date_of_birth ||
+                user.gender ||
+                user.about_me) && (
+                <div className="user-info-section">
+                  <div className="user-info-grid">
+                    {user.first_name && user.first_name.trim() !== "" && (
+                      <div className="info-item">
+                        <span className="info-label">First Name:</span>
+                        <span className="info-value">{user.first_name}</span>
+                      </div>
+                    )}
+                    {user.last_name && user.last_name.trim() !== "" && (
+                      <div className="info-item">
+                        <span className="info-label">Last Name:</span>
+                        <span className="info-value">{user.last_name}</span>
+                      </div>
+                    )}
+                    {user.nickname && user.nickname.trim() !== "" && (
+                      <div className="info-item">
+                        <span className="info-label">Nickname:</span>
+                        <span className="info-value">{user.nickname}</span>
+                      </div>
+                    )}
+                    {user.email && user.email.trim() !== "" && (
+                      <div className="info-item">
+                        <span className="info-label">Email:</span>
+                        <span className="info-value">{user.email}</span>
+                      </div>
+                    )}
+                    {user.date_of_birth && (
+                      <div className="info-item">
+                        <span className="info-label">Date of Birth:</span>
+                        <span className="info-value">
+                          {new Date(user.date_of_birth).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                    {user.gender &&
+                      user.gender.trim() !== "" &&
+                      user.gender !== "Unknown" && (
+                        <div className="info-item">
+                          <span className="info-label">Gender:</span>
+                          <span className="info-value">{user.gender}</span>
+                        </div>
+                      )}
+                    {user.about_me && user.about_me.trim() !== "" && (
+                      <div className="info-item about-me">
+                        <span className="info-label">About Me:</span>
+                        <span className="info-value">{user.about_me}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Privacy Badge */}
