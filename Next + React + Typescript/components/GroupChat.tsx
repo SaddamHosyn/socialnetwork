@@ -40,6 +40,7 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
   const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [websocket, setWebsocket] = useState<WebSocket | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = async () => {
@@ -105,18 +106,19 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
   };
 
   const connectWebSocket = () => {
-    // Close existing connection if any
-    if (websocket && websocket.readyState !== WebSocket.CLOSED) {
-      console.log("Closing existing WebSocket connection");
-      websocket.close();
-    }
-
-    // Don't create a new connection if one is already connecting
-    if (websocket && websocket.readyState === WebSocket.CONNECTING) {
-      console.log("WebSocket already connecting, skipping");
+    // Prevent multiple concurrent connections
+    if (isConnecting || (websocket && websocket.readyState === WebSocket.CONNECTING)) {
+      console.log("Already connecting to WebSocket, skipping");
       return;
     }
 
+    // Don't reconnect if already connected and working
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+      console.log("WebSocket already connected and open");
+      return;
+    }
+
+    setIsConnecting(true);
     console.log("Creating new WebSocket connection");
 
     // Get session token for authentication
@@ -127,16 +129,21 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       console.log("Using session token from cookie");
       wsUrl = `ws://localhost:8080/ws?token=${sessionToken}`;
     } else {
-      console.log("No session token found, trying direct connection (cookies should be sent automatically)");
-      console.log("If WebSocket connection fails, please make sure you are logged in");
-      // Try without token - cookies might still be sent for same-origin requests
+      console.log("No session token found, trying direct connection");
     }
 
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log("WebSocket connected");
-      setWebsocket(ws); // Set the websocket state after successful connection
+      console.log("WebSocket connected successfully");
+      setWebsocket(ws);
+      setIsConnecting(false);
+      
+      // Refresh messages when reconnecting to ensure we have the latest
+      if (isGroupMember && currentUser) {
+        console.log("Refreshing messages after WebSocket reconnection");
+        fetchMessages();
+      }
     };
 
     ws.onmessage = (event) => {
@@ -174,21 +181,26 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       }
     };
 
-    ws.onclose = () => {
-      console.log("WebSocket disconnected");
+    ws.onclose = (event) => {
+      console.log("WebSocket disconnected, code:", event.code, "reason:", event.reason);
       setWebsocket(null);
-      // Try to reconnect after 3 seconds
-      setTimeout(() => {
-        if (isGroupMember && currentUser) {
-          console.log("Attempting to reconnect WebSocket");
-          connectWebSocket();
-        }
-      }, 3000);
+      setIsConnecting(false);
+      
+      // Only try to reconnect if it wasn't a normal closure and we should still be connected
+      if (isGroupMember && currentUser && event.code !== 1000 && event.code !== 1001) {
+        console.log("Will attempt to reconnect WebSocket in 5 seconds...");
+        setTimeout(() => {
+          if (isGroupMember && currentUser && !websocket) {
+            connectWebSocket();
+          }
+        }, 5000);
+      }
     };
 
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
       setWebsocket(null);
+      setIsConnecting(false);
     };
   };
 
@@ -225,27 +237,56 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       );
       fetchMessages();
 
-      // Only connect WebSocket if we don't already have one
-      if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+      // Only connect if we don't have a good connection
+      if (!websocket || (websocket.readyState !== WebSocket.OPEN && websocket.readyState !== WebSocket.CONNECTING)) {
+        console.log("WebSocket state:", websocket?.readyState || "null", "- need to connect");
         connectWebSocket();
+      } else {
+        console.log("WebSocket already connected or connecting, state:", websocket.readyState);
       }
     }
   }, [isGroupMember, currentUser, groupId]);
 
-  // Cleanup WebSocket on unmount
+  // Cleanup WebSocket on unmount or when dependencies change
   useEffect(() => {
     return () => {
-      if (websocket && websocket.readyState === WebSocket.OPEN) {
-        console.log("Component unmounting, closing WebSocket connection");
-        websocket.close();
+      if (websocket && (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING)) {
+        console.log("Component changing/unmounting, closing WebSocket connection");
+        websocket.close(1000, "Component unmounting"); // Normal closure
         setWebsocket(null);
+        setIsConnecting(false);
       }
     };
-  }, [groupId]); // Clean up when groupId changes
+  }, [groupId]); // Only clean up when groupId changes
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle page visibility changes (e.g., after refresh, tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isGroupMember && currentUser) {
+        console.log("Page became visible, checking WebSocket connection");
+        
+        // Only reconnect if we don't have a connection and we're not already trying
+        if (!websocket && !isConnecting) {
+          console.log("WebSocket not connected after page visibility change, reconnecting...");
+          setTimeout(() => {
+            if (isGroupMember && currentUser && !websocket && !isConnecting) {
+              connectWebSocket();
+            }
+          }, 1000);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isGroupMember, currentUser, websocket, isConnecting]);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
