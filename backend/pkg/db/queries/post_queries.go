@@ -80,12 +80,9 @@ WHERE (? = 0 OR EXISTS (
   SELECT 1 FROM post_categories pc2 
   WHERE pc2.post_id = p.id AND pc2.category_id = ?
 ))
-AND (u.is_private = 0 OR u.id = ? OR (u.is_private = 1 AND ? > 0 AND EXISTS (
-  SELECT 1 FROM followers f2 WHERE f2.follower_id = ? AND f2.followee_id = u.id
-)))
 AND (
-  -- Post privacy filtering
-  p.privacy = 'public'
+  -- Post privacy filtering (this overrides user account privacy)
+  p.privacy = 'public'  -- Public posts are visible to everyone
   OR (? > 0 AND p.user_id = ?)  -- User can see their own posts if logged in
   OR (p.privacy = 'followers' AND ? > 0 AND EXISTS (
     SELECT 1 FROM followers f 
@@ -105,17 +102,14 @@ LIMIT ? OFFSET ?;`
 		currentUserID, // 1. for user_vote subquery
 		categoryID,    // 2. for category filtering check
 		categoryID,    // 3. for category filtering EXISTS
-		currentUserID, // 4. for user privacy filtering (own posts)
-		currentUserID, // 5. for user privacy filtering (follower condition)
-		currentUserID, // 6. for user privacy filtering (follower EXISTS)
-		currentUserID, // 7. for own posts condition check
-		currentUserID, // 8. for own posts user_id match
-		currentUserID, // 9. for followers condition check
-		currentUserID, // 10. for followers EXISTS
-		currentUserID, // 11. for private condition check
-		currentUserID, // 12. for private EXISTS
-		limit,         // 13. LIMIT
-		offset,        // 14. OFFSET
+		currentUserID, // 4. for own posts condition check
+		currentUserID, // 5. for own posts user_id match
+		currentUserID, // 6. for followers condition check
+		currentUserID, // 7. for followers EXISTS
+		currentUserID, // 8. for private condition check
+		currentUserID, // 9. for private EXISTS
+		limit,         // 10. LIMIT
+		offset,        // 11. OFFSET
 	)
 	if err != nil {
 		return nil, err
