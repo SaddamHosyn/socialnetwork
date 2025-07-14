@@ -230,7 +230,6 @@ const GroupDetails = ({ groupId, onBack }: GroupDetailsProps) => {
         >
           Group Chat
         </button>
-        
       </div>
 
       <div className="group-content">
@@ -547,7 +546,25 @@ const EventCreator = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || !eventDate) return;
+
+    // Validate title length (must be 3-100 characters)
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+
+    if (trimmedTitle.length < 3 || trimmedTitle.length > 100) {
+      alert("Event title must be between 3 and 100 characters");
+      return;
+    }
+
+    if (trimmedDescription.length < 10 || trimmedDescription.length > 1000) {
+      alert("Event description must be between 10 and 1000 characters");
+      return;
+    }
+
+    if (!eventDate) {
+      alert("Please select an event date and time");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -556,16 +573,18 @@ const EventCreator = ({
 
       const formData = new URLSearchParams();
       formData.append("group_id", groupId.toString());
-      formData.append("title", title.trim());
-      formData.append("description", description.trim());
+      formData.append("title", trimmedTitle);
+      formData.append("description", trimmedDescription);
       formData.append("event_date", eventDateRFC3339);
 
       console.log("Creating event with data:", {
         group_id: groupId.toString(),
-        title: title.trim(),
-        description: description.trim(),
+        title: trimmedTitle,
+        description: trimmedDescription,
         event_date: eventDateRFC3339,
         original_event_date: eventDate,
+        title_length: trimmedTitle.length,
+        description_length: trimmedDescription.length,
       });
 
       const response = await fetch("/api/groups/events/create", {
@@ -613,31 +632,53 @@ const EventCreator = ({
     <div className="event-creator">
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="event-title">Event Title:</label>
+          <label htmlFor="event-title">Event Title (3-100 characters):</label>
           <input
             id="event-title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter event title..."
+            placeholder="Enter event title (min 3 characters)..."
+            minLength={3}
             maxLength={100}
             required
             disabled={isSubmitting}
           />
+          <small
+            style={{
+              color:
+                title.trim().length < 3 && title.length > 0 ? "red" : "gray",
+            }}
+          >
+            {title.trim().length}/100 characters
+          </small>
         </div>
 
         <div className="form-group">
-          <label htmlFor="event-description">Event Description:</label>
+          <label htmlFor="event-description">
+            Event Description (10-1000 characters):
+          </label>
           <textarea
             id="event-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe your event..."
+            placeholder="Describe your event (min 10 characters)..."
             rows={4}
-            maxLength={500}
+            minLength={10}
+            maxLength={1000}
             required
             disabled={isSubmitting}
           />
+          <small
+            style={{
+              color:
+                description.trim().length < 10 && description.length > 0
+                  ? "red"
+                  : "gray",
+            }}
+          >
+            {description.trim().length}/1000 characters
+          </small>
         </div>
 
         <div className="form-group">
@@ -657,7 +698,12 @@ const EventCreator = ({
           <button
             type="submit"
             disabled={
-              isSubmitting || !title.trim() || !description.trim() || !eventDate
+              isSubmitting ||
+              title.trim().length < 3 ||
+              title.trim().length > 100 ||
+              description.trim().length < 10 ||
+              description.trim().length > 1000 ||
+              !eventDate
             }
           >
             {isSubmitting ? "Creating..." : "Create Event"}
