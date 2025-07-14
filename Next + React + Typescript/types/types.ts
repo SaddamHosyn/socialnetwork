@@ -60,3 +60,17 @@ export type Group = {
   is_member: boolean;
   created_at: string;
 };
+
+export type Notification = {
+  id: number;
+  user_id: number;
+  type: string;
+  reference_id: number;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  requires_action: boolean;
+  action_taken: string;
+  sender_id: number;
+  sender_name: string;
+};

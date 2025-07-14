@@ -33,8 +33,8 @@ const NotificationBanner: React.FC<NotificationBannerProps> = ({ onRequestsClick
 
     fetchPendingRequests();
     
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchPendingRequests, 30000);
+    // Poll for updates every 5 seconds for faster updates
+    const interval = setInterval(fetchPendingRequests, 5000);
     return () => clearInterval(interval);
   }, []);
 

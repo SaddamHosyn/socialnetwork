@@ -49,8 +49,13 @@ func main() {
 	http.Handle("/api/post/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeletePostHandler)))
 	http.Handle("/api/comment/delete", handlers.AuthMiddleware(http.HandlerFunc(handlers.DeleteCommentHandler)))
 
+	// Notification endpoints
 	http.Handle("/api/notifications", handlers.AuthMiddleware(http.HandlerFunc(handlers.GetNotificationsHandler)))
 	http.Handle("/api/notifications/read", handlers.AuthMiddleware(http.HandlerFunc(handlers.MarkNotificationReadHandler)))
+	// Group notification endpoints  
+	http.Handle("/api/notifications/group/invitation/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToGroupInvitationHandler)))
+	http.Handle("/api/notifications/group/join/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToJoinRequestHandler)))
+	http.Handle("/api/notifications/follow/respond", handlers.AuthMiddleware(http.HandlerFunc(handlers.RespondToFollowNotificationHandler)))
 
 	// Group management routes
 	http.Handle("/api/groups", handlers.AuthMiddleware(http.HandlerFunc(handlers.GroupsHandler)))
