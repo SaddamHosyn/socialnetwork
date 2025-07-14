@@ -5,14 +5,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
     
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'user_id is required' },
-        { status: 400 }
-      );
+    // Build the backend URL, including user_id if provided
+    let backendUrl = 'http://localhost:8080/api/follow/following';
+    if (userId) {
+      backendUrl += `?user_id=${userId}`;
     }
 
-    const response = await fetch(`http://localhost:8080/api/follow/following?user_id=${userId}`, {
+    const response = await fetch(backendUrl, {
       method: 'GET',
       headers: {
         'Cookie': request.headers.get('cookie') || '',

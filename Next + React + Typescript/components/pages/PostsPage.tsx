@@ -3,47 +3,21 @@ import { useState, useEffect } from "react";
 import PostCreate from "../PostCreate";
 import PostSingle from "../PostSingle";
 import PostList from "../PostList";
-import CategoryList from "../CategoryList";
-import type { Category, Post } from "../../types/types";
+import type { Post } from "../../types/types";
 
 const PostsPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
-    null
-  );
   const [viewMode, setViewMode] = useState<"list" | "create" | "single">(
     "list"
   );
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Fetch categories
-  useEffect(() => {
-    fetch("/api/categories", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setCategories(data.data || []);
-        } else {
-          setCategories([]);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching categories:", error);
-        setCategories([]);
-      });
-  }, []);
-
   // Fetch posts
   useEffect(() => {
     setLoading(true);
-    let url = "/api/posts";
-    if (selectedCategoryId !== null) {
-      url += `?category_id=${selectedCategoryId}`;
-    }
-    fetch(url, { credentials: "include" })
+    fetch("/api/posts", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -53,7 +27,7 @@ const PostsPage = () => {
         }
       })
       .finally(() => setLoading(false));
-  }, [selectedCategoryId]);
+  }, []);
 
   const handleVote = async (postId: number, vote: 1 | -1) => {
     const res = await fetch("/api/vote", {
@@ -114,21 +88,7 @@ const PostsPage = () => {
         {/* Sidebar */}
         <aside className="posts-sidebar-modern">
           <div className="sidebar-header">
-            <h2>🗂️ Categories</h2>
-            <button
-              className="create-post-sidebar-btn"
-              onClick={handleCreatePost}
-            >
-              ✨ New Post
-            </button>
-          </div>
-
-          <div className="categories-section">
-            <CategoryList
-              categories={categories}
-              selected={selectedCategoryId}
-              onSelect={setSelectedCategoryId}
-            />
+            <h2>� Community Stats</h2>
           </div>
 
           <div className="stats-section">
@@ -137,10 +97,6 @@ const PostsPage = () => {
               <div className="stat-card">
                 <div className="stat-number">{posts.length}</div>
                 <div className="stat-label">Posts</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{categories.length}</div>
-                <div className="stat-label">Categories</div>
               </div>
               <div className="stat-card">
                 <div className="stat-number">
@@ -157,19 +113,8 @@ const PostsPage = () => {
           {/* Page Header */}
           <div className="posts-main-header">
             <div className="header-content">
-              <h1>
-                {selectedCategoryId
-                  ? `${
-                      categories.find((c) => c.id === selectedCategoryId)
-                        ?.name || "Category"
-                    } Posts`
-                  : "🌟 Community Posts"}
-              </h1>
-              <p>
-                {selectedCategoryId
-                  ? "Discover amazing posts in this category"
-                  : "Share your thoughts and connect with the community"}
-              </p>
+              <h1>🌟 Community Posts</h1>
+              <p>Share your thoughts and connect with the community</p>
             </div>
             <button className="primary-action-btn" onClick={handleCreatePost}>
               <span>✨</span>
@@ -190,7 +135,6 @@ const PostsPage = () => {
                 </button>
               </div>
               <PostCreate
-                categories={categories}
                 onSubmit={handlePostCreated}
                 onCancel={() => setShowCreateForm(false)}
               />
@@ -231,9 +175,7 @@ const PostsPage = () => {
                   <div className="no-posts-icon">📝</div>
                   <h3>No posts yet</h3>
                   <p>
-                    {selectedCategoryId
-                      ? "No posts found in this category. Be the first to share!"
-                      : "Be the first to share something amazing with the community!"}
+                    Be the first to share something amazing with the community!
                   </p>
                   <button
                     className="create-first-post-btn"

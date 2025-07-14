@@ -25,9 +25,19 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value(userIDKey).(int)
 	title := strings.TrimSpace(r.FormValue("title"))
 	content := strings.TrimSpace(r.FormValue("content"))
-	cats := r.Form["category"]
+	privacy := strings.TrimSpace(r.FormValue("privacy"))
+	specificFollowers := r.Form["specific_followers"] // for private posts
 
-	if verr := utils.ValidatePost(title, content, cats); verr != nil {
+	// Validate privacy setting
+	if privacy == "" {
+		privacy = "public" // default
+	}
+	if privacy != "public" && privacy != "followers" && privacy != "private" {
+		utils.Fail(w, http.StatusBadRequest, "Invalid privacy setting")
+		return
+	}
+
+	if verr := utils.ValidatePost(title, content); verr != nil {
 		utils.Fail(w, http.StatusBadRequest, verr.Message)
 		return
 	}
@@ -46,11 +56,26 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
-	postID, err := db.InsertPost(tx, uid, title, content)
+	postID, err := db.InsertPost(tx, uid, title, content, privacy)
 	if err != nil {
 		log.Printf("post insert error: %v", err)
 		utils.Fail(w, http.StatusInternalServerError, "Server error creating post")
 		return
+	}
+
+	// Handle specific followers for private posts
+	if privacy == "private" && len(specificFollowers) > 0 {
+		for _, followerIDStr := range specificFollowers {
+			followerID, err := strconv.Atoi(strings.TrimSpace(followerIDStr))
+			if err != nil {
+				log.Printf("invalid follower ID: %v", err)
+				continue // skip invalid IDs but don't fail the whole request
+			}
+			if err := db.AddPostSpecificFollower(tx, postID, followerID); err != nil {
+				log.Printf("error adding specific follower: %v", err)
+				// continue with other followers
+			}
+		}
 	}
 
 	for idx, fh := range files {
@@ -62,19 +87,6 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		if err := db.AddPostImage(tx, postID, imgPath, idx+1); err != nil {
 			log.Printf("image link error: %v", err)
 			utils.Fail(w, http.StatusInternalServerError, "Server error linking images")
-			return
-		}
-	}
-
-	for _, cid := range cats {
-		id, err := strconv.Atoi(cid)
-		if err != nil {
-			utils.Fail(w, http.StatusBadRequest, "Invalid category ID")
-			return
-		}
-		if err := db.LinkPostCategory(tx, postID, id); err != nil {
-			log.Printf("cat link error: %v", err)
-			utils.Fail(w, http.StatusInternalServerError, "Server error linking category")
 			return
 		}
 	}
@@ -196,7 +208,12 @@ func FetchOnePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := db.GetPostByID(postID)
+	var currentUserID int
+	if uid, ok := r.Context().Value(userIDKey).(int); ok {
+		currentUserID = uid
+	}
+
+	post, err := db.GetPostByIDWithPrivacy(postID, currentUserID)
 	if err != nil {
 		if err.Error() == "not found" {
 			utils.Fail(w, http.StatusNotFound, "Post not found")

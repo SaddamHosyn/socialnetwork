@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PostContent from "./PostContent";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 import type { Post } from "../types/types";
 
 type Props = {
@@ -19,6 +20,7 @@ const PostList = ({
 }: Props) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user: currentUser } = useCurrentUser();
 
   // Use props if provided, otherwise fetch data
   const finalPosts = propPosts || posts;
@@ -96,6 +98,7 @@ const PostList = ({
         <PostContent
           key={post.id}
           post={post}
+          currentUserId={currentUser?.id}
           onCommentClick={
             onPostSelect ? () => onPostSelect(post.id) : undefined
           }

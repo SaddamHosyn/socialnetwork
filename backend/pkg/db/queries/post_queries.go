@@ -12,8 +12,8 @@ func BeginTx() (*sql.Tx, error) {
 	return sqlite.GetDB().Begin()
 }
 
-func InsertPost(tx *sql.Tx, userID int, title, content string) (int64, error) {
-	res, err := tx.Exec(`INSERT INTO posts(user_id, title, content) VALUES(?,?,?)`, userID, title, content)
+func InsertPost(tx *sql.Tx, userID int, title, content, privacy string) (int64, error) {
+	res, err := tx.Exec(`INSERT INTO posts(user_id, title, content, privacy) VALUES(?,?,?,?)`, userID, title, content, privacy)
 	if err != nil {
 		return 0, err
 	}
@@ -49,7 +49,7 @@ func DeletePost(postID int) error {
 func GetPostsFeed(currentUserID, categoryID, limit, offset int) ([]models.Post, error) {
 	const sqlQuery = `
 SELECT 
-  p.id, p.user_id, u.nickname, p.title, p.content, p.created_at,
+  p.id, p.user_id, u.nickname, p.title, p.content, p.created_at, p.privacy,
   COALESCE(v.total_votes, 0) AS votes,
   COALESCE(uv.user_vote, 0) AS user_vote,
   GROUP_CONCAT(DISTINCT c.name) AS cats,
@@ -75,16 +75,41 @@ WHERE (? = 0 OR EXISTS (
   WHERE pc2.post_id = p.id AND pc2.category_id = ?
 ))
 AND (u.is_private = 0 OR u.id = ?)
+AND (
+  -- Post privacy filtering
+  p.privacy = 'public'
+  OR (? > 0 AND p.user_id = ?)  -- User can always see their own posts (only if logged in)
+  OR (
+    ? > 0 AND p.privacy = 'followers' 
+    AND EXISTS (
+      SELECT 1 FROM followers f 
+      WHERE f.follower_id = ? AND f.followee_id = p.user_id
+    )
+  )
+  OR (
+    ? > 0 AND p.privacy = 'private' 
+    AND EXISTS (
+      SELECT 1 FROM post_specific_followers psf 
+      WHERE psf.post_id = p.id AND psf.follower_id = ?
+    )
+  )
+)
 GROUP BY p.id
 ORDER BY p.created_at DESC
 LIMIT ? OFFSET ?;`
 
 	rows, err := sqlite.GetDB().Query(
 		sqlQuery,
-		currentUserID,
-		categoryID,
-		categoryID,
-		currentUserID,
+		currentUserID, // for user_vote subquery
+		categoryID,    // for category filtering
+		categoryID,    // for category filtering EXISTS
+		currentUserID, // for user privacy filtering
+		currentUserID, // for post owner check (1st condition)
+		currentUserID, // for post owner check (2nd condition)
+		currentUserID, // for followers check (1st condition)
+		currentUserID, // for followers check (2nd condition)
+		currentUserID, // for private post check (1st condition)
+		currentUserID, // for private post check (2nd condition)
 		limit,
 		offset,
 	)
@@ -99,7 +124,7 @@ LIMIT ? OFFSET ?;`
 		var catNames, extraImages sql.NullString
 		if err := rows.Scan(
 			&p.ID, &p.UserID, &p.Nickname, &p.Title, &p.Content,
-			&p.CreatedAt, &p.Votes, &p.UserVote, &catNames, &extraImages,
+			&p.CreatedAt, &p.Privacy, &p.Votes, &p.UserVote, &catNames, &extraImages,
 		); err != nil {
 			continue
 		}
@@ -125,7 +150,7 @@ func GetPostByID(postID int) (models.Post, error) {
 	var post models.Post
 	var catNames sql.NullString
 	err := sqlite.GetDB().QueryRow(
-		`SELECT p.id, p.user_id, u.nickname, p.title, p.content, p.created_at,
+		`SELECT p.id, p.user_id, u.nickname, p.title, p.content, p.created_at, p.privacy,
            IFNULL(GROUP_CONCAT(DISTINCT c.name), '') AS cats
          FROM posts p
          JOIN users u ON p.user_id = u.id
@@ -136,7 +161,7 @@ func GetPostByID(postID int) (models.Post, error) {
 		postID,
 	).Scan(
 		&post.ID, &post.UserID, &post.Nickname, &post.Title,
-		&post.Content, &post.CreatedAt, &catNames,
+		&post.Content, &post.CreatedAt, &post.Privacy, &catNames,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -173,7 +198,7 @@ func GetPostByIDWithVotes(postID int, userID int) (models.Post, error) {
 
 	err := sqlite.GetDB().QueryRow(`
 		SELECT 
-		  p.id, p.user_id, u.nickname, p.title, p.content, p.created_at,
+		  p.id, p.user_id, u.nickname, p.title, p.content, p.created_at, p.privacy,
 		  COALESCE(v.total_votes, 0) AS votes,
 		  COALESCE(uv.user_vote, 0) AS user_vote,
 		  GROUP_CONCAT(DISTINCT c.name) AS cats,
@@ -199,7 +224,7 @@ func GetPostByIDWithVotes(postID int, userID int) (models.Post, error) {
 		userID, postID,
 	).Scan(
 		&post.ID, &post.UserID, &post.Nickname, &post.Title,
-		&post.Content, &post.CreatedAt, &post.Votes, &post.UserVote,
+		&post.Content, &post.CreatedAt, &post.Privacy, &post.Votes, &post.UserVote,
 		&catNames, &imagePathsStr,
 	)
 
@@ -220,5 +245,73 @@ func GetPostByIDWithVotes(postID int, userID int) (models.Post, error) {
 		post.ImagePaths = []string{}
 	}
 
+	return post, nil
+}
+
+func AddPostSpecificFollower(tx *sql.Tx, postID int64, followerID int) error {
+	_, err := tx.Exec(`INSERT INTO post_specific_followers(post_id, follower_id) VALUES(?,?)`, postID, followerID)
+	return err
+}
+
+func GetPostByIDWithPrivacy(postID, currentUserID int) (models.Post, error) {
+	var post models.Post
+	var catNames sql.NullString
+	err := sqlite.GetDB().QueryRow(
+		`SELECT p.id, p.user_id, u.nickname, p.title, p.content, p.created_at, p.privacy,
+           IFNULL(GROUP_CONCAT(DISTINCT c.name), '') AS cats
+         FROM posts p
+         JOIN users u ON p.user_id = u.id
+         LEFT JOIN post_categories pc ON pc.post_id = p.id
+         LEFT JOIN categories c ON c.id = pc.category_id
+         WHERE p.id = ? AND (
+           -- Post privacy filtering
+           p.privacy = 'public'
+           OR p.user_id = ?  -- User can always see their own posts
+           OR (
+             p.privacy = 'followers' 
+             AND EXISTS (
+               SELECT 1 FROM followers f 
+               WHERE f.follower_id = ? AND f.followee_id = p.user_id
+             )
+           )
+           OR (
+             p.privacy = 'private' 
+             AND EXISTS (
+               SELECT 1 FROM post_specific_followers psf 
+               WHERE psf.post_id = p.id AND psf.follower_id = ?
+             )
+           )
+         )
+         GROUP BY p.id`,
+		postID, currentUserID, currentUserID, currentUserID,
+	).Scan(
+		&post.ID, &post.UserID, &post.Nickname, &post.Title,
+		&post.Content, &post.CreatedAt, &post.Privacy, &catNames,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return post, errors.New("not found")
+		}
+		return post, err
+	}
+	if catNames.Valid && catNames.String != "" {
+		post.Categories = strings.Split(catNames.String, ",")
+	}
+
+	// fetch extra images
+	rows, err := sqlite.GetDB().Query(`SELECT image_path FROM post_images WHERE post_id = ? ORDER BY position`, postID)
+	if err != nil {
+		return post, err
+	}
+	defer rows.Close()
+
+	post.ImagePaths = []string{}
+	for rows.Next() {
+		var img string
+		if err := rows.Scan(&img); err != nil {
+			continue
+		}
+		post.ImagePaths = append(post.ImagePaths, img)
+	}
 	return post, nil
 }

@@ -1,31 +1,31 @@
 "use client";
-import { useState, useRef } from "react";
-import type { Category, Post } from "../types/types";
+import { useState, useRef, useEffect } from "react";
+import type { Post } from "../types/types";
 
 type Props = {
-  categories: Category[];
   onSubmit?: (newPost?: Post) => void;
   onCancel: () => void;
 };
 
+type Follower = {
+  id: number;
+  nickname: string;
+  avatar?: string;
+};
+
+type PrivacyType = "public" | "followers" | "private";
+
 const MAX_IMAGES = 5;
 
-const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
+const PostCreate: React.FC<Props> = ({ onSubmit, onCancel }) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [selectedCats, setSelectedCats] = useState<number[]>([]);
   const [images, setImages] = useState<File[]>([]);
+  const [privacy, setPrivacy] = useState<PrivacyType>("public");
+  const [followers, setFollowers] = useState<Follower[]>([]);
+  const [selectedFollowers, setSelectedFollowers] = useState<number[]>([]);
+  const [loadingFollowers, setLoadingFollowers] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleCategory = (id: number) => {
-    setSelectedCats((prev) =>
-      prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : prev.length < 3
-        ? [...prev, id]
-        : prev
-    );
-  };
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -35,13 +35,20 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content || selectedCats.length === 0) return;
+    if (!title || !content) return;
 
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
-    selectedCats.forEach((cat) => formData.append("category", cat.toString()));
     images.forEach((img) => formData.append("images", img));
+    formData.append("privacy", privacy);
+
+    // Add specific followers for private posts
+    if (privacy === "private" && selectedFollowers.length > 0) {
+      selectedFollowers.forEach((followerId) =>
+        formData.append("specific_followers", followerId.toString())
+      );
+    }
 
     const res = await fetch("/api/post/create", {
       method: "POST",
@@ -59,11 +66,58 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
       onCancel();
       setTitle("");
       setContent("");
-      setSelectedCats([]);
       setImages([]);
+      setPrivacy("public");
+      setSelectedFollowers([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    } else {
+      const errorText = await res.text();
+      console.error("Post creation failed:", res.status, errorText);
+      alert(`Failed to create post: ${errorText}`);
     }
-    // handle error...
+  };
+
+  // Fetch followers when privacy is set to "private"
+  useEffect(() => {
+    if (privacy === "private") {
+      fetchFollowers();
+    }
+  }, [privacy]);
+
+  const fetchFollowers = async () => {
+    setLoadingFollowers(true);
+    try {
+      const response = await fetch("/api/follow/followers", {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log("API Response:", data); // Debug log
+        if (data.success && data.data) {
+          console.log("Followers data:", data.data.followers); // Debug log
+          setFollowers(data.data.followers || []);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+    } finally {
+      setLoadingFollowers(false);
+    }
+  };
+
+  const handlePrivacyChange = (newPrivacy: PrivacyType) => {
+    setPrivacy(newPrivacy);
+    if (newPrivacy !== "private") {
+      setSelectedFollowers([]);
+    }
+  };
+
+  const handleFollowerToggle = (followerId: number) => {
+    setSelectedFollowers((prev) =>
+      prev.includes(followerId)
+        ? prev.filter((id) => id !== followerId)
+        : [...prev, followerId]
+    );
   };
 
   return (
@@ -104,38 +158,124 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
         </div>
 
         <div className="form-section">
-          <label className="form-label">🏷️ Categories (select up to 3)</label>
-          <div className="categories-grid">
-            {categories.map((cat) => (
-              <label
-                key={cat.id}
-                className={`category-option ${
-                  selectedCats.includes(cat.id) ? "selected" : ""
-                } ${
-                  !selectedCats.includes(cat.id) && selectedCats.length >= 3
-                    ? "disabled"
-                    : ""
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedCats.includes(cat.id)}
-                  onChange={() => handleCategory(cat.id)}
-                  disabled={
-                    !selectedCats.includes(cat.id) && selectedCats.length >= 3
-                  }
-                  className="category-checkbox"
-                />
-                <span className="category-name">{cat.name}</span>
-                {selectedCats.includes(cat.id) && (
-                  <span className="checkmark">✓</span>
-                )}
-              </label>
-            ))}
+          <label className="form-label">🔒 Privacy Settings</label>
+          <div className="privacy-options">
+            <label
+              className={`privacy-option ${
+                privacy === "public" ? "selected" : ""
+              }`}
+            >
+              <input
+                type="radio"
+                name="privacy"
+                value="public"
+                checked={privacy === "public"}
+                onChange={(e) =>
+                  handlePrivacyChange(e.target.value as PrivacyType)
+                }
+              />
+              <div className="privacy-info">
+                <span className="privacy-icon">🌐</span>
+                <div className="privacy-text">
+                  <strong>Public</strong>
+                  <p>Everyone can see this post</p>
+                </div>
+              </div>
+            </label>
+
+            <label
+              className={`privacy-option ${
+                privacy === "followers" ? "selected" : ""
+              }`}
+            >
+              <input
+                type="radio"
+                name="privacy"
+                value="followers"
+                checked={privacy === "followers"}
+                onChange={(e) =>
+                  handlePrivacyChange(e.target.value as PrivacyType)
+                }
+              />
+              <div className="privacy-info">
+                <span className="privacy-icon">👥</span>
+                <div className="privacy-text">
+                  <strong>All Followers</strong>
+                  <p>Only your followers can see this post</p>
+                </div>
+              </div>
+            </label>
+
+            <label
+              className={`privacy-option ${
+                privacy === "private" ? "selected" : ""
+              }`}
+            >
+              <input
+                type="radio"
+                name="privacy"
+                value="private"
+                checked={privacy === "private"}
+                onChange={(e) =>
+                  handlePrivacyChange(e.target.value as PrivacyType)
+                }
+              />
+              <div className="privacy-info">
+                <span className="privacy-icon">🔐</span>
+                <div className="privacy-text">
+                  <strong>Selected Followers</strong>
+                  <p>Choose which followers can see this post</p>
+                </div>
+              </div>
+            </label>
           </div>
-          <div className="selection-count">
-            {selectedCats.length}/3 categories selected
-          </div>
+
+          {/* Specific followers selection for private posts */}
+          {privacy === "private" && (
+            <div className="specific-followers-section">
+              <h4>Select Followers:</h4>
+              {loadingFollowers ? (
+                <div className="loading-followers">Loading followers...</div>
+              ) : followers.length > 0 ? (
+                <div className="followers-grid">
+                  {followers.map((follower) => (
+                    <label
+                      key={follower.id}
+                      className={`follower-option ${
+                        selectedFollowers.includes(follower.id)
+                          ? "selected"
+                          : ""
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedFollowers.includes(follower.id)}
+                        onChange={() => handleFollowerToggle(follower.id)}
+                      />
+                      <div className="follower-info">
+                        <div className="follower-name">{follower.nickname}</div>
+                        <div className="follower-username">
+                          @{follower.nickname}
+                        </div>
+                      </div>
+                      {selectedFollowers.includes(follower.id) && (
+                        <span className="checkmark">✓</span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-followers">
+                  You don't have any followers yet.
+                </p>
+              )}
+              {selectedFollowers.length > 0 && (
+                <div className="selected-count">
+                  {selectedFollowers.length} follower(s) selected
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="form-section">
@@ -191,7 +331,7 @@ const PostCreate: React.FC<Props> = ({ categories, onSubmit, onCancel }) => {
         <div className="form-actions">
           <button
             type="submit"
-            disabled={!title || !content || selectedCats.length === 0}
+            disabled={!title || !content}
             className="submit-btn-modern"
           >
             <span>🚀</span>

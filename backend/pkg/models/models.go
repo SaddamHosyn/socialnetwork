@@ -15,6 +15,7 @@ type Post struct {
 	Votes      int       `json:"votes"`
 	UserVote   int       `json:"user_vote"`
 	Categories []string  `json:"categories"`
+	Privacy    string    `json:"privacy"`
 }
 
 type Category struct {

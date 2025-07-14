@@ -21,6 +21,7 @@ type Follower struct {
 	FollowedAt time.Time `json:"followed_at"`
 	Nickname   string    `json:"nickname"`
 	Email      string    `json:"email"`
+	Avatar     string    `json:"avatar"`
 }
 
 // CreateFollowRequest creates a new follow request
@@ -121,7 +122,7 @@ func GetUserPrivacySetting(db *sql.DB, userID int) (bool, error) {
 // GetFollowers gets all followers of a user
 func GetFollowers(db *sql.DB, userID int) ([]Follower, error) {
 	query := `
-		SELECT u.id, f.follower_id, f.followee_id, f.followed_at, u.nickname, u.email
+		SELECT u.id, f.follower_id, f.followee_id, f.followed_at, u.nickname, u.email, u.avatar
 		FROM followers f
 		JOIN users u ON f.follower_id = u.id
 		WHERE f.followee_id = ?
@@ -136,10 +137,12 @@ func GetFollowers(db *sql.DB, userID int) ([]Follower, error) {
 	var followers []Follower
 	for rows.Next() {
 		var follower Follower
-		err := rows.Scan(&follower.ID, &follower.FollowerID, &follower.FolloweeID, &follower.FollowedAt, &follower.Nickname, &follower.Email)
+		var avatar sql.NullString
+		err := rows.Scan(&follower.ID, &follower.FollowerID, &follower.FolloweeID, &follower.FollowedAt, &follower.Nickname, &follower.Email, &avatar)
 		if err != nil {
 			return nil, err
 		}
+		follower.Avatar = avatar.String
 		followers = append(followers, follower)
 	}
 	return followers, nil
@@ -148,7 +151,7 @@ func GetFollowers(db *sql.DB, userID int) ([]Follower, error) {
 // GetFollowing gets all users that a user is following
 func GetFollowing(db *sql.DB, userID int) ([]Follower, error) {
 	query := `
-		SELECT u.id, f.follower_id, f.followee_id, f.followed_at, u.nickname, u.email
+		SELECT u.id, f.follower_id, f.followee_id, f.followed_at, u.nickname, u.email, u.avatar
 		FROM followers f
 		JOIN users u ON f.followee_id = u.id
 		WHERE f.follower_id = ?
@@ -163,10 +166,12 @@ func GetFollowing(db *sql.DB, userID int) ([]Follower, error) {
 	var following []Follower
 	for rows.Next() {
 		var follower Follower
-		err := rows.Scan(&follower.ID, &follower.FollowerID, &follower.FolloweeID, &follower.FollowedAt, &follower.Nickname, &follower.Email)
+		var avatar sql.NullString
+		err := rows.Scan(&follower.ID, &follower.FollowerID, &follower.FolloweeID, &follower.FollowedAt, &follower.Nickname, &follower.Email, &avatar)
 		if err != nil {
 			return nil, err
 		}
+		follower.Avatar = avatar.String
 		following = append(following, follower)
 	}
 	return following, nil

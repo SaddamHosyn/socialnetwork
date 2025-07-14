@@ -7,6 +7,7 @@ export type Category = {
 
 export type Post = {
   id: number;
+  user_id: number;
   title: string;
   content: string;
   created_at: string;
@@ -17,6 +18,7 @@ export type Post = {
   votes: number;
   comments_count?: number;
   userVote?: number; // -1, 0, or 1
+  privacy: string; // 'public', 'followers', 'private'
 };
 
 export type Comment = {

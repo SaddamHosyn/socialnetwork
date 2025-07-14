@@ -256,17 +256,20 @@ func GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get target user ID from query params
+	// Get target user ID from query params, or use current user if not provided
 	userIDStr := r.URL.Query().Get("user_id")
-	if userIDStr == "" {
-		utils.Fail(w, http.StatusBadRequest, "user_id is required")
-		return
-	}
+	var targetUserID int
+	var err error
 
-	targetUserID, err := strconv.Atoi(userIDStr)
-	if err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Invalid user_id")
-		return
+	if userIDStr == "" {
+		// Use current authenticated user's ID
+		targetUserID = r.Context().Value(userIDKey).(int)
+	} else {
+		targetUserID, err = strconv.Atoi(userIDStr)
+		if err != nil {
+			utils.Fail(w, http.StatusBadRequest, "Invalid user_id")
+			return
+		}
 	}
 
 	database := sqlite.GetDB()
@@ -290,17 +293,20 @@ func GetFollowingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get target user ID from query params
+	// Get target user ID from query params, or use current user if not provided
 	userIDStr := r.URL.Query().Get("user_id")
-	if userIDStr == "" {
-		utils.Fail(w, http.StatusBadRequest, "user_id is required")
-		return
-	}
+	var targetUserID int
+	var err error
 
-	targetUserID, err := strconv.Atoi(userIDStr)
-	if err != nil {
-		utils.Fail(w, http.StatusBadRequest, "Invalid user_id")
-		return
+	if userIDStr == "" {
+		// Use current authenticated user's ID
+		targetUserID = r.Context().Value(userIDKey).(int)
+	} else {
+		targetUserID, err = strconv.Atoi(userIDStr)
+		if err != nil {
+			utils.Fail(w, http.StatusBadRequest, "Invalid user_id")
+			return
+		}
 	}
 
 	database := sqlite.GetDB()

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PostContent from "./PostContent";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 import type { Post, Comment } from "../types/types";
 
 type Props = {
@@ -15,6 +16,7 @@ const PostSingle = ({ post: propPost, postId, onVote }: Props) => {
   const [loading, setLoading] = useState(!propPost);
   const [newComment, setNewComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
+  const { user: currentUser } = useCurrentUser();
 
   const finalPostId = post?.id || postId;
 
@@ -112,7 +114,11 @@ const PostSingle = ({ post: propPost, postId, onVote }: Props) => {
 
   return (
     <div className="post-single">
-      <PostContent post={post} onVote={handleVote} />
+      <PostContent
+        post={post}
+        onVote={handleVote}
+        currentUserId={currentUser?.id}
+      />
 
       <div className="comments-section">
         <h3>Comments ({comments.length})</h3>

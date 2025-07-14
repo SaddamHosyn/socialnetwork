@@ -77,18 +77,15 @@ func ValidateLogin(login, password string) *ValidationError {
 	return nil
 }
 
-func ValidatePost(title, content string, cats []string) *ValidationError {
+func ValidatePost(title, content string) *ValidationError {
 	if title == "" || content == "" {
 		return &ValidationError{Message: "Title and content required"}
-	}
-	if len(cats) < 1 || len(cats) > 3 {
-		return &ValidationError{Message: "Select 1 - 3 categories"}
 	}
 	if len(title) > 100 {
 		return &ValidationError{Message: "Title under 100 chars"}
 	}
-	if len(content) > 1000 {
-		return &ValidationError{Message: "Content under 1000 chars"}
+	if len(content) > 2000 {
+		return &ValidationError{Message: "Content under 2000 chars"}
 	}
 	return nil
 }
