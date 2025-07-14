@@ -99,7 +99,7 @@ func SaveGroupMessage(groupID, userID int, content string) (int64, error) {
 
 // GetGroupMessages retrieves messages for a specific group
 func GetGroupMessages(groupID, limit, offset int) ([]models.GroupMessage, error) {
-	rows, err := sqlite.GetDB().Query(`
+	query := `
 		SELECT 
 			gm.id,
 			gm.group_id,
@@ -110,9 +110,11 @@ func GetGroupMessages(groupID, limit, offset int) ([]models.GroupMessage, error)
 		FROM group_messages gm
 		LEFT JOIN users u ON gm.user_id = u.id
 		WHERE gm.group_id = ?
-		ORDER BY gm.sent_at ASC
+		ORDER BY gm.id DESC
 		LIMIT ? OFFSET ?
-	`, groupID, limit, offset)
+	`
+
+	rows, err := sqlite.GetDB().Query(query, groupID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -125,6 +127,11 @@ func GetGroupMessages(groupID, limit, offset int) ([]models.GroupMessage, error)
 			return nil, err
 		}
 		messages = append(messages, msg)
+	}
+
+	// Reverse the slice to get chronological order (oldest first)
+	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
+		messages[i], messages[j] = messages[j], messages[i]
 	}
 
 	return messages, nil

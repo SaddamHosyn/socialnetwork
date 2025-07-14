@@ -166,11 +166,11 @@ func GetGroupMessages(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
-	limit := 50 // default limit
-	offset := 0 // default offset
+	limit := 100 // default limit - increased to get more recent messages
+	offset := 0  // default offset
 
 	if limitStr != "" {
-		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 && parsedLimit <= 100 {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 && parsedLimit <= 200 {
 			limit = parsedLimit
 		}
 	}

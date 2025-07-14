@@ -86,6 +86,23 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     }
   };
 
+  const getSessionToken = (): string | null => {
+    console.log("All cookies:", document.cookie);
+    const cookies = document.cookie.split(';');
+    console.log("Parsed cookies:", cookies);
+    
+    for (let cookie of cookies) {
+      const [name, value] = cookie.split('=').map(c => c.trim());
+      console.log(`Cookie: ${name} = ${value}`);
+      if (name === 'session_token') {
+        console.log("Found session token:", value);
+        return value;
+      }
+    }
+    console.log("No session_token cookie found");
+    return null;
+  };
+
   const connectWebSocket = () => {
     // Close existing connection if any
     if (websocket && websocket.readyState !== WebSocket.CLOSED) {
@@ -101,7 +118,20 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
     console.log("Creating new WebSocket connection");
 
-    const ws = new WebSocket(`ws://localhost:8080/ws`);
+    // Get session token for authentication
+    const sessionToken = getSessionToken();
+    
+    let wsUrl = `ws://localhost:8080/ws`;
+    if (sessionToken) {
+      console.log("Using session token from cookie");
+      wsUrl = `ws://localhost:8080/ws?token=${sessionToken}`;
+    } else {
+      console.log("No session token found, trying direct connection (cookies should be sent automatically)");
+      console.log("If WebSocket connection fails, please make sure you are logged in");
+      // Try without token - cookies might still be sent for same-origin requests
+    }
+
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log("WebSocket connected");

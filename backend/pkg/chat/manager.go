@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	db "social-network/backend/pkg/db/queries"
 	"social-network/backend/pkg/models"
 
 	"github.com/gorilla/websocket"
@@ -39,11 +40,25 @@ func (m *Manager) Run() {
 				//Sending update message to all clients
 				wsclient.Send <- message
 			} else if msg.Type == "group_message" {
-				// Handle group messages - send to each user only once
-				// (even if they have multiple WebSocket connections)
+				// Handle group messages - send only to group members
+				// First check if this user is a member of the group
 				if !sentToUsers[wsclient.UserID] {
-					wsclient.Send <- message
-					sentToUsers[wsclient.UserID] = true
+					isMember, err := db.IsUserGroupMember(wsclient.UserID, msg.GroupID)
+					if err != nil {
+						fmt.Printf("Error checking group membership for user %d in group %d: %v\n",
+							wsclient.UserID, msg.GroupID, err)
+						continue
+					}
+
+					if isMember {
+						fmt.Printf("Sending group message to group member UserID=%d for GroupID=%d\n",
+							wsclient.UserID, msg.GroupID)
+						wsclient.Send <- message
+						sentToUsers[wsclient.UserID] = true
+					} else {
+						fmt.Printf("NOT sending group message to UserID=%d (not a member of GroupID=%d)\n",
+							wsclient.UserID, msg.GroupID)
+					}
 				}
 			} else {
 				if wsclient.UserID == msg.ReceiverID || wsclient.UserID == msg.SenderID {
@@ -72,20 +87,30 @@ func (m *Manager) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	// get the session token and find matching user from the db:
+	var token string
+
+	// First try to get token from cookie
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
-		log.Println("Cookie not found!")
-		return
+		// If cookie not found, try to get token from query parameter
+		token = r.URL.Query().Get("token")
+		if token == "" {
+			log.Printf("Cookie and query token not found! Available cookies: %v", r.Cookies())
+			return
+		}
+		log.Printf("Using token from query parameter: %s", token[:10]+"...")
+	} else {
+		token = cookie.Value
+		log.Printf("Using token from cookie: %s", token[:10]+"...")
 	}
-
-	token := cookie.Value
 
 	currentUser, err := CurrentUser("forum.db", token)
 	if err != nil {
-		log.Println("User is not authorized, closeing websocket")
+		log.Printf("User is not authorized, closing websocket: %v", err)
 		return
 	}
-	//fmt.Println("currentUser.ID: ", currentUser.ID)
+
+	log.Printf("Successfully authenticated user %d (%s) for WebSocket", currentUser.ID, currentUser.Nickname)
 
 	// create a new client and add it to the manager
 	client := NewClient(currentUser.ID, currentUser.Nickname, conn, m)
@@ -108,8 +133,8 @@ func (m *Manager) AddClient(client *Client) {
 	defer m.Unlock()
 
 	m.Clients[client] = true
-	//fmt.Println(client)
-
+	log.Printf("Added client for user %d (%s). Total connected clients: %d",
+		client.UserID, client.UserName, len(m.Clients))
 }
 
 // Upgrade HTTP connection to WebSocket
