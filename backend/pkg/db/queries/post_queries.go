@@ -74,25 +74,21 @@ WHERE (? = 0 OR EXISTS (
   SELECT 1 FROM post_categories pc2 
   WHERE pc2.post_id = p.id AND pc2.category_id = ?
 ))
-AND (u.is_private = 0 OR u.id = ?)
+AND (u.is_private = 0 OR u.id = ? OR (u.is_private = 1 AND ? > 0 AND EXISTS (
+  SELECT 1 FROM followers f2 WHERE f2.follower_id = ? AND f2.followee_id = u.id
+)))
 AND (
   -- Post privacy filtering
   p.privacy = 'public'
-  OR (? > 0 AND p.user_id = ?)  -- User can always see their own posts (only if logged in)
-  OR (
-    ? > 0 AND p.privacy = 'followers' 
-    AND EXISTS (
-      SELECT 1 FROM followers f 
-      WHERE f.follower_id = ? AND f.followee_id = p.user_id
-    )
-  )
-  OR (
-    ? > 0 AND p.privacy = 'private' 
-    AND EXISTS (
-      SELECT 1 FROM post_specific_followers psf 
-      WHERE psf.post_id = p.id AND psf.follower_id = ?
-    )
-  )
+  OR (? > 0 AND p.user_id = ?)  -- User can see their own posts if logged in
+  OR (p.privacy = 'followers' AND ? > 0 AND EXISTS (
+    SELECT 1 FROM followers f 
+    WHERE f.follower_id = ? AND f.followee_id = p.user_id
+  ))
+  OR (p.privacy = 'private' AND ? > 0 AND EXISTS (
+    SELECT 1 FROM post_specific_followers psf 
+    WHERE psf.post_id = p.id AND psf.follower_id = ?
+  ))
 )
 GROUP BY p.id
 ORDER BY p.created_at DESC
@@ -100,18 +96,20 @@ LIMIT ? OFFSET ?;`
 
 	rows, err := sqlite.GetDB().Query(
 		sqlQuery,
-		currentUserID, // for user_vote subquery
-		categoryID,    // for category filtering
-		categoryID,    // for category filtering EXISTS
-		currentUserID, // for user privacy filtering
-		currentUserID, // for post owner check (1st condition)
-		currentUserID, // for post owner check (2nd condition)
-		currentUserID, // for followers check (1st condition)
-		currentUserID, // for followers check (2nd condition)
-		currentUserID, // for private post check (1st condition)
-		currentUserID, // for private post check (2nd condition)
-		limit,
-		offset,
+		currentUserID, // 1. for user_vote subquery
+		categoryID,    // 2. for category filtering check
+		categoryID,    // 3. for category filtering EXISTS
+		currentUserID, // 4. for user privacy filtering (own posts)
+		currentUserID, // 5. for user privacy filtering (follower condition)
+		currentUserID, // 6. for user privacy filtering (follower EXISTS)
+		currentUserID, // 7. for own posts condition check
+		currentUserID, // 8. for own posts user_id match
+		currentUserID, // 9. for followers condition check
+		currentUserID, // 10. for followers EXISTS
+		currentUserID, // 11. for private condition check
+		currentUserID, // 12. for private EXISTS
+		limit,         // 13. LIMIT
+		offset,        // 14. OFFSET
 	)
 	if err != nil {
 		return nil, err
@@ -266,24 +264,21 @@ func GetPostByIDWithPrivacy(postID, currentUserID int) (models.Post, error) {
          WHERE p.id = ? AND (
            -- Post privacy filtering
            p.privacy = 'public'
-           OR p.user_id = ?  -- User can always see their own posts
-           OR (
-             p.privacy = 'followers' 
-             AND EXISTS (
-               SELECT 1 FROM followers f 
-               WHERE f.follower_id = ? AND f.followee_id = p.user_id
-             )
-           )
-           OR (
-             p.privacy = 'private' 
-             AND EXISTS (
-               SELECT 1 FROM post_specific_followers psf 
-               WHERE psf.post_id = p.id AND psf.follower_id = ?
-             )
-           )
+           OR (? > 0 AND p.user_id = ?)  -- User can see their own posts if logged in
+           OR (p.privacy = 'followers' AND ? > 0 AND EXISTS (
+             SELECT 1 FROM followers f 
+             WHERE f.follower_id = ? AND f.followee_id = p.user_id
+           ))
+           OR (p.privacy = 'private' AND ? > 0 AND EXISTS (
+             SELECT 1 FROM post_specific_followers psf 
+             WHERE psf.post_id = p.id AND psf.follower_id = ?
+           ))
          )
          GROUP BY p.id`,
-		postID, currentUserID, currentUserID, currentUserID,
+		postID,
+		currentUserID, currentUserID, // for own posts check
+		currentUserID, currentUserID, // for followers check
+		currentUserID, currentUserID, // for private check
 	).Scan(
 		&post.ID, &post.UserID, &post.Nickname, &post.Title,
 		&post.Content, &post.CreatedAt, &post.Privacy, &catNames,

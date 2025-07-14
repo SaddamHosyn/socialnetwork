@@ -233,6 +233,42 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// OptionalAuthMiddleware sets userID in context if session is valid, but doesn't fail if not authenticated
+func OptionalAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session_token")
+		if err != nil {
+			// No session cookie, continue without authentication
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		userID, expiresAtStr, err := db.GetSessionInfo(cookie.Value)
+		if err == sql.ErrNoRows {
+			// Invalid session, continue without authentication
+			next.ServeHTTP(w, r)
+			return
+		} else if err != nil {
+			// DB error, continue without authentication to be safe
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		expiresAt, err := time.Parse(time.RFC3339, expiresAtStr)
+		if err != nil || time.Now().After(expiresAt) {
+			// Session expired, continue without authentication
+			db.DeleteSessionByToken(cookie.Value)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Valid session, set userID in context
+		ctx := context.WithValue(r.Context(), userIDKey, userID)
+		ctx = context.WithValue(ctx, sessionTokenKey, cookie.Value)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func Heartbeat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		utils.Fail(w, http.StatusMethodNotAllowed, "Method not allowed")

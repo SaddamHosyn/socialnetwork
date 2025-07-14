@@ -30,7 +30,7 @@ func main() {
 
 	http.HandleFunc("/api/register", handlers.RegisterHandler)
 	http.HandleFunc("/api/login", handlers.LoginHandler)
-	http.HandleFunc("/api/posts", handlers.FetchAllPosts)
+	http.Handle("/api/posts", handlers.OptionalAuthMiddleware(http.HandlerFunc(handlers.FetchAllPosts)))
 	http.HandleFunc("/api/post", handlers.FetchOnePost)
 	http.Handle("/api/users", handlers.AuthMiddleware(http.HandlerFunc(handlers.FetchUsers)))
 	http.Handle("/api/users/discover", handlers.AuthMiddleware(http.HandlerFunc(handlers.DiscoverUsersHandler)))
