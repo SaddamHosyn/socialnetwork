@@ -16,7 +16,6 @@ const PostList = ({
   posts: propPosts,
   loading: propLoading,
   categoryId,
-  onPostSelect,
   onVote,
 }: Props) => {
   const [posts, setPosts] = useState<Post[]>([]);

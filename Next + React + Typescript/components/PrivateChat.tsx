@@ -82,7 +82,7 @@ const PrivateChat = () => {
   const fetchUsers = async () => {
     try {
       // First try to get users with chat history
-      let response = await fetch("/api/private/chat/users", {
+      const response = await fetch("/api/private/chat/users", {
         credentials: "include",
       });
 

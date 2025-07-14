@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const body = await request.json();
     
-    const response = await fetch(`http://localhost:8080/api/notifications/${params.id}/action`, {
+    const response = await fetch(`http://localhost:8080/api/notifications/${resolvedParams.id}/action`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

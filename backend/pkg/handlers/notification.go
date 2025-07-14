@@ -106,7 +106,7 @@ func RespondToFollowNotificationHandler(w http.ResponseWriter, r *http.Request) 
 		newStatus = "accepted"
 	}
 
-	err = db.UpdateFollowRequestStatus(referenceID, newStatus)
+	err = db.UpdateFollowRequestStatus(database, referenceID, newStatus)
 	if err != nil {
 		utils.Fail(w, http.StatusInternalServerError, "Failed to update follow request status")
 		return
@@ -126,9 +126,9 @@ func RespondToFollowNotificationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// If accepted, create the follow relationship - FIXED: removed database parameter
+	// If accepted, create the follow relationship
 	if action == "accept" {
-		err = db.CreateFollowRelationship(senderID, userID)
+		err = db.CreateFollowRelationship(database, senderID, userID)
 		if err != nil {
 			utils.Fail(w, http.StatusInternalServerError, "Failed to create follow relationship")
 			return

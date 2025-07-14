@@ -64,7 +64,7 @@ const PrivateChat = () => {
   const fetchUsers = async () => {
     try {
       // First try to get users with chat history
-      let response = await fetch("/api/private/chat/users", {
+      const response = await fetch("/api/private/chat/users", {
         credentials: "include",
       });
 
@@ -81,16 +81,17 @@ const PrivateChat = () => {
 
       if (availableResponse.ok) {
         const availableResult = await availableResponse.json();
-        const availableUsers = availableResult.data?.users || availableResult.users || [];
-        
+        const availableUsers =
+          availableResult.data?.users || availableResult.users || [];
+
         // Merge chat history users with available users, avoiding duplicates
         const allUsers = [...usersList];
         availableUsers.forEach((user: User) => {
-          if (!allUsers.find(u => u.id === user.id)) {
+          if (!allUsers.find((u) => u.id === user.id)) {
             allUsers.push(user);
           }
         });
-        
+
         setUsers(allUsers);
         setFilteredUsers(allUsers);
       } else {
@@ -283,7 +284,9 @@ const PrivateChat = () => {
 
     // Check if user can send messages to selected user
     if (!selectedUser.can_chat) {
-      alert("You need to follow this user or they need to follow you to send messages.");
+      alert(
+        "You need to follow this user or they need to follow you to send messages."
+      );
       return;
     }
 
@@ -559,7 +562,10 @@ const PrivateChat = () => {
                 ) : (
                   <div className="follow-to-text-banner">
                     <p>💔 You need to follow each other to send messages</p>
-                    <small>At least one of you must follow the other to start chatting</small>
+                    <small>
+                      At least one of you must follow the other to start
+                      chatting
+                    </small>
                   </div>
                 )}
               </div>
@@ -579,7 +585,8 @@ const PrivateChat = () => {
           display: flex;
           flex-direction: column;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            sans-serif;
         }
 
         .chat-container {

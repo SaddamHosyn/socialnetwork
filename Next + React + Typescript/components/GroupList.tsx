@@ -9,31 +9,24 @@ type Props = {
 };
 
 const GroupList: React.FC<Props> = ({ onGroupClick, showMyGroups = false }) => {
-  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
-  const { getAllGroups, getUserGroups, requestJoinGroup } = useGroups();
+  const { groups, fetchGroups, requestJoinGroup } = useGroups();
 
   useEffect(() => {
     const loadGroups = async () => {
       setLoading(true);
-      const groupData = showMyGroups
-        ? await getUserGroups()
-        : await getAllGroups();
-      setGroups(groupData);
+      await fetchGroups();
       setLoading(false);
     };
 
     loadGroups();
-  }, [showMyGroups, getAllGroups, getUserGroups]);
+  }, [showMyGroups, fetchGroups]);
 
   const handleJoinRequest = async (groupId: number) => {
     const success = await requestJoinGroup(groupId);
     if (success) {
       // Refresh the list
-      const groupData = showMyGroups
-        ? await getUserGroups()
-        : await getAllGroups();
-      setGroups(groupData);
+      await fetchGroups();
     }
   };
 

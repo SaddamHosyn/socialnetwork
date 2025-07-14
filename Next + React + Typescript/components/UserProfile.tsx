@@ -1,31 +1,46 @@
 "use client";
 import { useState, useEffect } from "react";
-import PostContent from "./PostContent";
 import FollowersList from "./FollowersList";
 import FollowRequestsList from "./FollowRequestsList";
 import type { ProfileData } from "../types/types";
-import { getAvatarUrl, getUserInitials } from "../utils/imageUtils";
+import { getAvatarUrl } from "../utils/imageUtils";
 
 const UserProfile: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"posts" | "activity" | "followers" | "following" | "requests">("posts");
+  const [activeTab, setActiveTab] = useState<
+    "posts" | "activity" | "followers" | "following" | "requests"
+  >("posts");
 
   useEffect(() => {
     // Check for tab parameter in URL
     const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab');
-    if (tabParam && ['posts', 'activity', 'followers', 'following', 'requests'].includes(tabParam)) {
-      setActiveTab(tabParam as any);
+    const tabParam = urlParams.get("tab");
+    if (
+      tabParam &&
+      ["posts", "activity", "followers", "following", "requests"].includes(
+        tabParam
+      )
+    ) {
+      setActiveTab(
+        tabParam as
+          | "posts"
+          | "activity"
+          | "followers"
+          | "following"
+          | "requests"
+      );
     }
   }, []);
   const [updatingPrivacy, setUpdatingPrivacy] = useState(false);
-  const [followStats, setFollowStats] = useState({ followers: 0, following: 0 });
-  const [debugMode, setDebugMode] = useState(false);
+  const [followStats, setFollowStats] = useState({
+    followers: 0,
+    following: 0,
+  });
 
   const togglePrivacy = async () => {
     if (!profile) return;
-    
+
     setUpdatingPrivacy(true);
     try {
       const response = await fetch("/api/profile/privacy", {
@@ -42,10 +57,14 @@ const UserProfile: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setProfile(prev => prev ? {
-            ...prev,
-            user: { ...prev.user, is_private: !prev.user.is_private }
-          } : null);
+          setProfile((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  user: { ...prev.user, is_private: !prev.user.is_private },
+                }
+              : null
+          );
         }
       }
     } catch (error) {
@@ -57,44 +76,56 @@ const UserProfile: React.FC = () => {
 
   const fetchFollowStats = async () => {
     if (!profile?.user.id) return;
-    
+
     try {
       // Fetch followers count
-      const followersRes = await fetch(`/api/follow/followers?user_id=${profile.user.id}`, { credentials: "include" });
-      
+      const followersRes = await fetch(
+        `/api/follow/followers?user_id=${profile.user.id}`,
+        { credentials: "include" }
+      );
+
       if (followersRes.ok) {
         const followersData = await followersRes.json();
-        console.log('Followers stats data:', followersData);
-        
-        // Fetch following count  
-        const followingRes = await fetch(`/api/follow/following?user_id=${profile.user.id}`, { credentials: "include" });
-        
+        console.log("Followers stats data:", followersData);
+
+        // Fetch following count
+        const followingRes = await fetch(
+          `/api/follow/following?user_id=${profile.user.id}`,
+          { credentials: "include" }
+        );
+
         if (followingRes.ok) {
           const followingData = await followingRes.json();
-          console.log('Following stats data:', followingData);
-          
+          console.log("Following stats data:", followingData);
+
           // Handle the response structure properly
           let followersArray = [];
           let followingArray = [];
-          
+
           if (followersData.success && followersData.data) {
-            followersArray = followersData.data.followers || followersData.data || [];
+            followersArray =
+              followersData.data.followers || followersData.data || [];
           } else {
             followersArray = followersData.followers || [];
           }
-          
+
           if (followingData.success && followingData.data) {
-            followingArray = followingData.data.following || followingData.data || [];
+            followingArray =
+              followingData.data.following || followingData.data || [];
           } else {
             followingArray = followingData.following || [];
           }
-          
-          console.log('Processed followers:', followersArray);
-          console.log('Processed following:', followingArray);
-          
+
+          console.log("Processed followers:", followersArray);
+          console.log("Processed following:", followingArray);
+
           setFollowStats({
-            followers: Array.isArray(followersArray) ? followersArray.length : 0,
-            following: Array.isArray(followingArray) ? followingArray.length : 0,
+            followers: Array.isArray(followersArray)
+              ? followersArray.length
+              : 0,
+            following: Array.isArray(followingArray)
+              ? followingArray.length
+              : 0,
           });
         } else {
           console.warn("Failed to fetch following data:", followingRes.status);
@@ -140,8 +171,8 @@ const UserProfile: React.FC = () => {
       }
     };
 
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [profile?.user.id]);
 
   if (loading) {
@@ -180,22 +211,22 @@ const UserProfile: React.FC = () => {
           border-radius: 8px;
           border: 1px solid #e9ecef;
         }
-        
+
         .user-info-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 12px;
         }
-        
+
         .info-item {
           display: flex;
           flex-direction: column;
         }
-        
+
         .info-item.about-me {
           grid-column: 1 / -1;
         }
-        
+
         .info-label {
           font-weight: 600;
           font-size: 12px;
@@ -204,20 +235,20 @@ const UserProfile: React.FC = () => {
           letter-spacing: 0.5px;
           margin-bottom: 4px;
         }
-        
+
         .info-value {
           font-size: 14px;
           color: #212529;
           font-weight: 500;
         }
-        
+
         @media (max-width: 768px) {
           .user-info-grid {
             grid-template-columns: 1fr;
           }
         }
       `}</style>
-      
+
       {/* Centered Profile Header */}
       <div className="profile-header-modern">
         <div className="profile-avatar-section-modern">
@@ -275,24 +306,27 @@ const UserProfile: React.FC = () => {
             <button
               onClick={togglePrivacy}
               disabled={updatingPrivacy}
-              className={`privacy-toggle-button ${user.is_private ? 'private' : 'public'}`}
+              className={`privacy-toggle-button ${
+                user.is_private ? "private" : "public"
+              }`}
             >
-              {updatingPrivacy ? 'Updating...' : (
+              {updatingPrivacy ? (
+                "Updating..."
+              ) : (
                 <>
                   <span className="privacy-icon">
-                    {user.is_private ? '🔒' : '🌐'}
+                    {user.is_private ? "🔒" : "🌐"}
                   </span>
                   <span className="privacy-text">
-                    {user.is_private ? 'Private Account' : 'Public Account'}
+                    {user.is_private ? "Private Account" : "Public Account"}
                   </span>
                 </>
               )}
             </button>
             <p className="privacy-description">
-              {user.is_private 
-                ? 'Your posts are hidden from other users' 
-                : 'Your posts are visible to all users'
-              }
+              {user.is_private
+                ? "Your posts are hidden from other users"
+                : "Your posts are visible to all users"}
             </p>
           </div>
 
@@ -308,20 +342,20 @@ const UserProfile: React.FC = () => {
               <span className="stat-label-modern">Total Votes</span>
             </div>
             <div className="stat-item-modern">
-              <span 
+              <span
                 className="stat-number-modern clickable"
                 onClick={() => setActiveTab("followers")}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: "pointer" }}
               >
                 {followStats.followers}
               </span>
               <span className="stat-label-modern">Followers</span>
             </div>
             <div className="stat-item-modern">
-              <span 
+              <span
                 className="stat-number-modern clickable"
                 onClick={() => setActiveTab("following")}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: "pointer" }}
               >
                 {followStats.following}
               </span>
@@ -330,48 +364,6 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Debug Panel */}
-      {debugMode && (
-        <div style={{ 
-          background: '#f8f9fa', 
-          border: '1px solid #dee2e6', 
-          borderRadius: '8px', 
-          padding: '16px', 
-          margin: '16px 0',
-          fontFamily: 'monospace',
-          fontSize: '12px'
-        }}>
-          <h4>🐛 Debug Information</h4>
-          <p><strong>User ID:</strong> {profile?.user.id}</p>
-          <p><strong>Follow Stats:</strong> {followStats.followers} followers, {followStats.following} following</p>
-          <p><strong>Profile User:</strong> {profile?.user.nickname} ({profile?.user.is_private ? 'Private' : 'Public'})</p>
-          <button 
-            onClick={async () => {
-              if (profile?.user.id) {
-                const res = await fetch(`/api/follow/followers?user_id=${profile.user.id}`, { credentials: "include" });
-                const data = await res.json();
-                console.log('Followers API Response:', data);
-                
-                const res2 = await fetch(`/api/follow/following?user_id=${profile.user.id}`, { credentials: "include" });
-                const data2 = await res2.json();
-                console.log('Following API Response:', data2);
-              }
-            }}
-            style={{ 
-              background: '#007bff', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              padding: '4px 8px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-          >
-            Log API Responses
-          </button>
-        </div>
-      )}
 
       {/* Profile Content Below */}
       <div className="profile-content-modern">
@@ -390,14 +382,18 @@ const UserProfile: React.FC = () => {
             📊 Activity Overview
           </button>
           <button
-            className={`tab-modern ${activeTab === "followers" ? "active" : ""}`}
+            className={`tab-modern ${
+              activeTab === "followers" ? "active" : ""
+            }`}
             onClick={() => setActiveTab("followers")}
           >
             👥 Followers
             <span className="tab-count">({followStats.followers})</span>
           </button>
           <button
-            className={`tab-modern ${activeTab === "following" ? "active" : ""}`}
+            className={`tab-modern ${
+              activeTab === "following" ? "active" : ""
+            }`}
             onClick={() => setActiveTab("following")}
           >
             🔗 Following
