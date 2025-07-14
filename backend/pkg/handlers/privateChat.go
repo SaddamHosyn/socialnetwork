@@ -74,11 +74,16 @@ func SendPrivateMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Broadcast the message via WebSocket
+	senderName := sender.Nickname
+	if strings.TrimSpace(senderName) == "" {
+		senderName = sender.FirstName + " " + sender.LastName
+	}
+
 	message := models.Message{
 		Type:       "private_message",
 		ID:         int(messageID),
 		SenderID:   userID,
-		SenderName: sender.Nickname,
+		SenderName: senderName,
 		ReceiverID: req.ReceiverID,
 		Message:    strings.TrimSpace(req.Content),
 		Time:       time.Now().Format(time.RFC3339),
@@ -96,7 +101,7 @@ func SendPrivateMessage(w http.ResponseWriter, r *http.Request) {
 		"sender_id":   userID,
 		"receiver_id": req.ReceiverID,
 		"content":     strings.TrimSpace(req.Content),
-		"sender_name": sender.Nickname,
+		"sender_name": senderName,
 	})
 }
 

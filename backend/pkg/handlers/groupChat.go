@@ -80,13 +80,18 @@ func SendGroupMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Broadcast the message to the group via WebSocket
+	senderName := user.Nickname
+	if strings.TrimSpace(senderName) == "" {
+		senderName = user.FirstName + " " + user.LastName
+	}
+
 	message := models.Message{
 		Type:       "group_message",
 		ID:         int(messageID),
 		GroupID:    req.GroupID,
 		SenderID:   userID,
 		Message:    strings.TrimSpace(req.Content),
-		SenderName: user.Nickname,
+		SenderName: senderName,
 		Time:       time.Now().Format(time.RFC3339),
 	}
 
