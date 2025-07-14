@@ -52,7 +52,10 @@ export default function Page() {
     setIsLoggedIn(true);
     const savedPage = localStorage.getItem("currentPage") as PageType;
     // If user was trying to access a protected page before login, go there
-    if (savedPage && ["posts", "profile", "groups", "users", "chat"].includes(savedPage)) {
+    if (
+      savedPage &&
+      ["posts", "profile", "groups", "users", "chat"].includes(savedPage)
+    ) {
       setCurrentPage(savedPage);
     } else {
       setCurrentPage("posts");
@@ -65,13 +68,18 @@ export default function Page() {
 
   const handleNavigate = (page: PageType) => {
     // Check if trying to access protected page while not logged in
-    if (!isLoggedIn && ["posts", "profile", "groups", "users", "chat", "user-profile"].includes(page)) {
+    if (
+      !isLoggedIn &&
+      ["posts", "profile", "groups", "users", "chat", "user-profile"].includes(
+        page
+      )
+    ) {
       // Save the intended page to localStorage
       localStorage.setItem("currentPage", page);
       setCurrentPage("login");
       return;
     }
-    
+
     setCurrentPage(page);
     // Save current page to localStorage for persistence across refreshes
     localStorage.setItem("currentPage", page);
@@ -93,12 +101,19 @@ export default function Page() {
         const res = await fetch("/api/me", { credentials: "include" });
         if (res.ok) {
           setIsLoggedIn(true);
-          
+
           // Restore the previous page from localStorage if user is logged in
           const savedPage = localStorage.getItem("currentPage") as PageType;
-          if (savedPage && ["posts", "profile", "groups", "users", "chat"].includes(savedPage)) {
+          if (
+            savedPage &&
+            ["posts", "profile", "groups", "users", "chat"].includes(savedPage)
+          ) {
             setCurrentPage(savedPage);
-          } else if (savedPage === "home" || savedPage === "login" || savedPage === "register") {
+          } else if (
+            savedPage === "home" ||
+            savedPage === "login" ||
+            savedPage === "register"
+          ) {
             setCurrentPage(savedPage);
           }
           // If no saved page or invalid page, stay on home
