@@ -9,7 +9,6 @@ interface ChatMessage {
   sender_name: string;
   content: string;
   created_at: string;
-  isOptimistic?: boolean; // Flag to identify optimistic messages
 }
 
 interface Member {
@@ -39,7 +38,9 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [websocket, setWebsocket] = useState<WebSocket | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = async () => {
@@ -87,26 +88,62 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     }
   };
 
-  const connectWebSocket = () => {
-    // Close existing connection if any
-    if (websocket && websocket.readyState !== WebSocket.CLOSED) {
-      console.log("Closing existing WebSocket connection");
-      websocket.close();
+  const getSessionToken = (): string | null => {
+    console.log("All cookies:", document.cookie);
+    const cookies = document.cookie.split(';');
+    console.log("Parsed cookies:", cookies);
+    
+    for (let cookie of cookies) {
+      const [name, value] = cookie.split('=').map(c => c.trim());
+      console.log(`Cookie: ${name} = ${value}`);
+      if (name === 'session_token') {
+        console.log("Found session token:", value);
+        return value;
+      }
     }
+    console.log("No session_token cookie found");
+    return null;
+  };
 
-    // Don't create a new connection if one is already connecting
-    if (websocket && websocket.readyState === WebSocket.CONNECTING) {
-      console.log("WebSocket already connecting, skipping");
+  const connectWebSocket = () => {
+    // Prevent multiple concurrent connections
+    if (isConnecting || (websocket && websocket.readyState === WebSocket.CONNECTING)) {
+      console.log("Already connecting to WebSocket, skipping");
       return;
     }
 
+    // Don't reconnect if already connected and working
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+      console.log("WebSocket already connected and open");
+      return;
+    }
+
+    setIsConnecting(true);
     console.log("Creating new WebSocket connection");
 
-    const ws = new WebSocket(`ws://localhost:8080/ws`);
+    // Get session token for authentication
+    const sessionToken = getSessionToken();
+    
+    let wsUrl = `ws://localhost:8080/ws`;
+    if (sessionToken) {
+      console.log("Using session token from cookie");
+      wsUrl = `ws://localhost:8080/ws?token=${sessionToken}`;
+    } else {
+      console.log("No session token found, trying direct connection");
+    }
+
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log("WebSocket connected");
-      setWebsocket(ws); // Set the websocket state after successful connection
+      console.log("WebSocket connected successfully");
+      setWebsocket(ws);
+      setIsConnecting(false);
+      
+      // Refresh messages when reconnecting to ensure we have the latest
+      if (isGroupMember && currentUser) {
+        console.log("Refreshing messages after WebSocket reconnection");
+        fetchMessages();
+      }
     };
 
     ws.onmessage = (event) => {
@@ -123,36 +160,20 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
             sender_name: message.sender_name,
             content: message.message,
             created_at: message.time,
-            isOptimistic: false,
           };
 
           console.log("Processing new group message:", newGroupMessage);
 
           setMessages((prev) => {
-            // First, check if this exact message already exists by ID
-            const existsById = prev.some(
-              (m) => m.id === newGroupMessage.id && !m.isOptimistic
-            );
+            // Check if this exact message already exists by ID
+            const existsById = prev.some((m) => m.id === newGroupMessage.id);
             if (existsById) {
               console.log("Message already exists by ID, skipping");
               return prev;
             }
 
-            // Remove any optimistic messages with the same content from the same sender
-            let filteredPrev = prev.filter((m) => {
-              if (
-                m.isOptimistic &&
-                m.sender_id === newGroupMessage.sender_id &&
-                m.content.trim() === newGroupMessage.content.trim()
-              ) {
-                console.log("Removing optimistic message:", m);
-                return false;
-              }
-              return true;
-            });
-
             console.log("Adding new message to chat");
-            return [...filteredPrev, newGroupMessage];
+            return [...prev, newGroupMessage];
           });
         }
       } catch (err) {
@@ -160,21 +181,26 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       }
     };
 
-    ws.onclose = () => {
-      console.log("WebSocket disconnected");
+    ws.onclose = (event) => {
+      console.log("WebSocket disconnected, code:", event.code, "reason:", event.reason);
       setWebsocket(null);
-      // Try to reconnect after 3 seconds
-      setTimeout(() => {
-        if (isGroupMember && currentUser) {
-          console.log("Attempting to reconnect WebSocket");
-          connectWebSocket();
-        }
-      }, 3000);
+      setIsConnecting(false);
+      
+      // Only try to reconnect if it wasn't a normal closure and we should still be connected
+      if (isGroupMember && currentUser && event.code !== 1000 && event.code !== 1001) {
+        console.log("Will attempt to reconnect WebSocket in 5 seconds...");
+        setTimeout(() => {
+          if (isGroupMember && currentUser && !websocket) {
+            connectWebSocket();
+          }
+        }, 5000);
+      }
     };
 
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
       setWebsocket(null);
+      setIsConnecting(false);
     };
   };
 
@@ -211,27 +237,56 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       );
       fetchMessages();
 
-      // Only connect WebSocket if we don't already have one
-      if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+      // Only connect if we don't have a good connection
+      if (!websocket || (websocket.readyState !== WebSocket.OPEN && websocket.readyState !== WebSocket.CONNECTING)) {
+        console.log("WebSocket state:", websocket?.readyState || "null", "- need to connect");
         connectWebSocket();
+      } else {
+        console.log("WebSocket already connected or connecting, state:", websocket.readyState);
       }
     }
   }, [isGroupMember, currentUser, groupId]);
 
-  // Cleanup WebSocket on unmount
+  // Cleanup WebSocket on unmount or when dependencies change
   useEffect(() => {
     return () => {
-      if (websocket && websocket.readyState === WebSocket.OPEN) {
-        console.log("Component unmounting, closing WebSocket connection");
-        websocket.close();
+      if (websocket && (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING)) {
+        console.log("Component changing/unmounting, closing WebSocket connection");
+        websocket.close(1000, "Component unmounting"); // Normal closure
         setWebsocket(null);
+        setIsConnecting(false);
       }
     };
-  }, [groupId]); // Clean up when groupId changes
+  }, [groupId]); // Only clean up when groupId changes
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle page visibility changes (e.g., after refresh, tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isGroupMember && currentUser) {
+        console.log("Page became visible, checking WebSocket connection");
+        
+        // Only reconnect if we don't have a connection and we're not already trying
+        if (!websocket && !isConnecting) {
+          console.log("WebSocket not connected after page visibility change, reconnecting...");
+          setTimeout(() => {
+            if (isGroupMember && currentUser && !websocket && !isConnecting) {
+              connectWebSocket();
+            }
+          }, 1000);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isGroupMember, currentUser, websocket, isConnecting]);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
@@ -248,6 +303,34 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const addEmoji = (emoji: string) => {
+    setNewMessage((prev) => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const commonEmojis = [
+    "😀",
+    "😂",
+    "🥰",
+    "😍",
+    "🤗",
+    "🤔",
+    "😎",
+    "😊",
+    "👍",
+    "👎",
+    "❤️",
+    "💯",
+    "🔥",
+    "⭐",
+    "🎉",
+    "👏",
+    "🙌",
+    "🤝",
+    "✨",
+    "💫",
+  ];
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || sending || !isGroupMember || !currentUser) return;
@@ -256,21 +339,6 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     console.log("Sending message:", messageContent);
     setNewMessage(""); // Clear input immediately for better UX
     setSending(true);
-
-    // Create optimistic message
-    const optimisticMessage: ChatMessage = {
-      id: Date.now() + Math.random(), // Temporary unique ID with decimal
-      group_id: groupId,
-      sender_id: currentUser.id,
-      sender_name: currentUser.nickname,
-      content: messageContent,
-      created_at: new Date().toISOString(),
-      isOptimistic: true, // Mark as optimistic
-    };
-
-    console.log("Adding optimistic message:", optimisticMessage);
-    // Add optimistic message immediately
-    setMessages((prev) => [...prev, optimisticMessage]);
 
     try {
       const response = await fetch("/api/groups/chat/send", {
@@ -291,13 +359,10 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
       const result = await response.json();
       console.log("Message sent successfully:", result);
-      // On success, we don't need to do anything - WebSocket will handle the real message
-      // and our duplicate detection will replace the optimistic message
+      // No need to add message to UI since we filter out own messages
     } catch (err) {
       console.error("Error sending message:", err);
-      // Remove optimistic message on error
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
-      setNewMessage(messageContent); // Restore message in input
+      setNewMessage(messageContent); // Restore message in input on error
       alert("Failed to send message");
     } finally {
       setSending(false);
@@ -371,37 +436,35 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
           <div className="messages-container">
             {messages.length > 0 ? (
               <>
-                {messages.map((message, index) => {
-                  const previousMessage = messages[index - 1];
-                  const showDateDivider =
-                    !previousMessage ||
-                    formatDate(message.created_at) !==
-                      formatDate(previousMessage.created_at);
-                  const isOwnMessage =
-                    currentUser && message.sender_id === currentUser.id;
+                {messages
+                  .filter((message) => {
+                    // Only show messages from other users, not your own
+                    return !(currentUser && message.sender_id === currentUser.id);
+                  })
+                  .map((message, index, filteredMessages) => {
+                    const previousMessage = filteredMessages[index - 1];
+                    const showDateDivider =
+                      !previousMessage ||
+                      formatDate(message.created_at) !==
+                        formatDate(previousMessage.created_at);
 
-                  // Create a unique key combining multiple factors to prevent duplicates
-                  const uniqueKey = `msg-${message.id}-${message.sender_id}-${index}-${message.created_at}`;
+                    // Create a unique key combining multiple factors to prevent duplicates
+                    const uniqueKey = `msg-${message.id}-${message.sender_id}-${index}-${message.created_at}`;
 
-                  return (
-                    <div key={uniqueKey}>
-                      {showDateDivider && (
-                        <div
-                          className="date-divider"
-                          key={`date-${formatDate(
-                            message.created_at
-                          )}-${index}`}
-                        >
-                          {formatDate(message.created_at)}
-                        </div>
-                      )}
-                      <div
-                        className={`message-wrapper ${
-                          isOwnMessage ? "own-message" : "other-message"
-                        }`}
-                      >
-                        <div className="message-bubble">
-                          {!isOwnMessage && (
+                    return (
+                      <div key={uniqueKey}>
+                        {showDateDivider && (
+                          <div
+                            className="date-divider"
+                            key={`date-${formatDate(
+                              message.created_at
+                            )}-${index}`}
+                          >
+                            {formatDate(message.created_at)}
+                          </div>
+                        )}
+                        <div className="message-wrapper other-message">
+                          <div className="message-bubble">
                             <div className="message-avatar">
                               <img
                                 src={getAvatarUrl()}
@@ -409,25 +472,22 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
                                 className="avatar-image"
                               />
                             </div>
-                          )}
-                          <div className="message-content">
-                            {!isOwnMessage && (
+                            <div className="message-content">
                               <div className="message-author">
                                 {message.sender_name}
                               </div>
-                            )}
-                            <div className="message-text">
-                              {message.content}
-                            </div>
-                            <div className="message-time">
-                              {formatTime(message.created_at)}
+                              <div className="message-text">
+                                {message.content}
+                              </div>
+                              <div className="message-time">
+                                {formatTime(message.created_at)}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </>
             ) : (
               <div className="no-messages">
@@ -438,7 +498,27 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
           </div>
 
           <div className="message-input-container">
+            {showEmojiPicker && (
+              <div className="emoji-picker">
+                {commonEmojis.map((emoji, index) => (
+                  <button
+                    key={index}
+                    className="emoji-button"
+                    onClick={() => addEmoji(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
             <form onSubmit={sendMessage} className="message-form">
+              <button
+                type="button"
+                className="emoji-toggle-button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
+                😊
+              </button>
               <input
                 type="text"
                 value={newMessage}
@@ -709,6 +789,72 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
         .send-button:disabled {
           background: #ccc;
           cursor: not-allowed;
+        }
+
+        .emoji-picker {
+          position: absolute;
+          bottom: 100%;
+          left: 28px;
+          background: white;
+          border: 1px solid #e1e5e9;
+          border-radius: 16px;
+          padding: 16px;
+          display: grid;
+          grid-template-columns: repeat(10, 1fr);
+          gap: 8px;
+          width: 320px;
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+          z-index: 1000;
+        }
+
+        .emoji-button {
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .emoji-button:hover {
+          background: #f7fafc;
+          transform: scale(1.2);
+        }
+
+        .emoji-toggle-button {
+          background: linear-gradient(135deg, #f7fafc, #edf2f7);
+          border: none;
+          padding: 12px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 16px;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .emoji-toggle-button:hover {
+          background: linear-gradient(135deg, #edf2f7, #e2e8f0);
+          transform: scale(1.05);
+        }
+
+        .message-form {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          position: relative;
+        }
+
+        .message-input-container {
+          padding: 16px;
+          background: white;
+          border-top: 1px solid #e1e5e9;
+          position: relative;
         }
 
         .members-panel {

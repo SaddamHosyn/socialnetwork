@@ -99,20 +99,26 @@ func SaveGroupMessage(groupID, userID int, content string) (int64, error) {
 
 // GetGroupMessages retrieves messages for a specific group
 func GetGroupMessages(groupID, limit, offset int) ([]models.GroupMessage, error) {
-	rows, err := sqlite.GetDB().Query(`
+	query := `
 		SELECT 
 			gm.id,
 			gm.group_id,
 			gm.user_id as sender_id,
 			gm.content,
 			gm.sent_at as created_at,
-			u.nickname AS sender_name
+			COALESCE(
+				NULLIF(TRIM(u.nickname), ''), 
+				u.first_name || ' ' || u.last_name,
+				'Unknown User'
+			) AS sender_name
 		FROM group_messages gm
 		LEFT JOIN users u ON gm.user_id = u.id
 		WHERE gm.group_id = ?
-		ORDER BY gm.sent_at ASC
+		ORDER BY gm.id DESC
 		LIMIT ? OFFSET ?
-	`, groupID, limit, offset)
+	`
+
+	rows, err := sqlite.GetDB().Query(query, groupID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -125,6 +131,11 @@ func GetGroupMessages(groupID, limit, offset int) ([]models.GroupMessage, error)
 			return nil, err
 		}
 		messages = append(messages, msg)
+	}
+
+	// Reverse the slice to get chronological order (oldest first)
+	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
+		messages[i], messages[j] = messages[j], messages[i]
 	}
 
 	return messages, nil
@@ -140,7 +151,11 @@ func GetLatestGroupMessage(groupID int) (*models.GroupMessage, error) {
 			gm.user_id as sender_id,
 			gm.content,
 			gm.sent_at as created_at,
-			u.nickname AS sender_name
+			COALESCE(
+				NULLIF(TRIM(u.nickname), ''), 
+				u.first_name || ' ' || u.last_name,
+				'Unknown User'
+			) AS sender_name
 		FROM group_messages gm
 		LEFT JOIN users u ON gm.user_id = u.id
 		WHERE gm.group_id = ?
@@ -222,8 +237,16 @@ func GetPrivateMessages(userID, otherUserID, limit, offset int) ([]models.Privat
 			pm.receiver_id,
 			pm.content,
 			pm.sent_at,
-			u1.nickname AS sender_name,
-			u2.nickname AS receiver_name
+			COALESCE(
+				NULLIF(TRIM(u1.nickname), ''), 
+				u1.first_name || ' ' || u1.last_name,
+				'Unknown User'
+			) AS sender_name,
+			COALESCE(
+				NULLIF(TRIM(u2.nickname), ''), 
+				u2.first_name || ' ' || u2.last_name,
+				'Unknown User'
+			) AS receiver_name
 		FROM private_messages pm
 		JOIN users u1 ON pm.sender_id = u1.id
 		JOIN users u2 ON pm.receiver_id = u2.id

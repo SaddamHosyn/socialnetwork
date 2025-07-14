@@ -37,19 +37,34 @@ func ConvertRowToUser(rows *sql.Rows) ([]models.User, error) {
 
 	for rows.Next() {
 		var user models.User
+		var nickname, firstName, lastName, gender sql.NullString
 
 		// Store the row data in the temporary user struct
 		err := rows.Scan(
 			&user.ID,
-			&user.Nickname,
-			&user.FirstName,
-			&user.LastName,
-			&user.Gender,
+			&nickname,
+			&firstName,
+			&lastName,
+			&gender,
 			&user.Email)
 
 		if err != nil {
 			log.Printf("Row scan error: %v", err)
 			break
+		}
+
+		// Handle nullable fields
+		if nickname.Valid {
+			user.Nickname = nickname.String
+		}
+		if firstName.Valid {
+			user.FirstName = firstName.String
+		}
+		if lastName.Valid {
+			user.LastName = lastName.String
+		}
+		if gender.Valid {
+			user.Gender = gender.String
 		}
 
 		// Append the temporary user struct to the users slice
