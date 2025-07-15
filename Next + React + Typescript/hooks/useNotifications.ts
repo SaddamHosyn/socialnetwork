@@ -181,8 +181,8 @@ export const useNotifications = () => {
   useEffect(() => {
     fetchNotifications();
     
-    // Poll for new notifications every 5 seconds for faster updates
-    const interval = setInterval(fetchNotifications, 5000);
+    // Poll for new notifications every 15 seconds (reduced from 5 seconds)
+    const interval = setInterval(fetchNotifications, 15000);
     
     return () => clearInterval(interval);
   }, [fetchNotifications]);

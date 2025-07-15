@@ -17,6 +17,13 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Go backend error response:', errorText);
+      
+      // If it's a server error, return empty array instead of failing
+      if (response.status === 500) {
+        console.log('⚠️  Server error fetching notifications, returning empty array');
+        return NextResponse.json([], { status: 200 });
+      }
+      
       throw new Error(`Go backend returned ${response.status}: ${errorText}`);
     }
     
@@ -25,9 +32,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(notifications);
   } catch (error) {
     console.error('Error fetching notifications:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch notifications' },
-      { status: 500 }
-    );
+    // Return empty array instead of error to prevent frontend crashes
+    return NextResponse.json([], { status: 200 });
   }
 }

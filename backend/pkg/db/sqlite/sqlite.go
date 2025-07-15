@@ -3,6 +3,7 @@ package sqlite
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -27,15 +28,29 @@ func GetDB() *sql.DB {
 }
 
 func InitDB(filepath string) *sql.DB {
-	db, err := sql.Open("sqlite3", filepath)
+	// Use WAL mode and other optimizations for better concurrency
+	db, err := sql.Open("sqlite3", filepath+"?_journal_mode=WAL&_synchronous=NORMAL&_cache_size=1000&_foreign_keys=ON&_busy_timeout=5000")
 	if err != nil {
 		log.Fatal("Error opening database:", err)
 	}
+
+	// Set connection pool settings
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	// Enable foreign keys (redundant with connection string but kept for clarity)
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
-
 		log.Fatal("Error enabling foreign keys:", err)
 	}
+
+	// Set WAL mode (redundant with connection string but kept for clarity)
+	_, err = db.Exec("PRAGMA journal_mode = WAL;")
+	if err != nil {
+		log.Fatal("Error setting WAL mode:", err)
+	}
+
 	err = db.Ping()
 	if err != nil {
 		log.Fatal("Error pinging database:", err)

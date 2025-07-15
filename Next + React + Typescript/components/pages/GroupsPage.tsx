@@ -5,7 +5,6 @@ import { Group } from "../../types/groups";
 import GroupDetails from "../GroupDetails";
 import GroupInvitations from "../GroupInvitations";
 import GroupJoinRequests from "../GroupJoinRequests";
-import GroupInviteTest from "../GroupInviteTest";
 
 const GroupsPage = () => {
   const [viewMode, setViewMode] = useState<
@@ -14,7 +13,6 @@ const GroupsPage = () => {
     | "details"
     | "invitations"
     | "join-requests"
-    | "test-invite"
   >("list");
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const {
@@ -194,13 +192,6 @@ const GroupsPage = () => {
         >
           Join Requests
         </button>
-        <button
-          className={`tab ${viewMode === "test-invite" ? "active" : ""}`}
-          onClick={() => setViewMode("test-invite")}
-          style={{ backgroundColor: "#6f42c1", color: "white" }}
-        >
-          Send Invites
-        </button>
       </div>
 
       {viewMode === "list" && (
@@ -358,12 +349,6 @@ const GroupsPage = () => {
               fetchGroups();
             }}
           />
-        </div>
-      )}
-
-      {viewMode === "test-invite" && (
-        <div className="test-invite-view">
-          <GroupInviteTest />
         </div>
       )}
     </div>

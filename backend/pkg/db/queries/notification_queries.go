@@ -4,23 +4,42 @@ import (
 	"log"
 	"social-network/backend/pkg/db/sqlite"
 	"social-network/backend/pkg/models"
+	"time"
 )
 
 func CreateNotification(userID int, notifType string, refID int, content string, requiresAction bool, senderID int, senderName string) error {
 	log.Printf("🔔 Creating notification: userID=%d, type=%s, refID=%d, content=%s, requiresAction=%t, senderID=%d, senderName=%s",
 		userID, notifType, refID, content, requiresAction, senderID, senderName)
 
-	_, err := sqlite.GetDB().Exec(`
-        INSERT INTO notifications (user_id, type, reference_id, content, requires_action, sender_id, sender_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		userID, notifType, refID, content, requiresAction, senderID, senderName)
+	// Retry mechanism for database locks
+	maxRetries := 5
+	var err error
 
-	if err != nil {
-		log.Printf("❌ Error creating notification: %v", err)
-	} else {
-		log.Printf("✅ Notification created successfully for user %d", userID)
+	for i := 0; i < maxRetries; i++ {
+		_, err = sqlite.GetDB().Exec(`
+			INSERT INTO notifications (user_id, type, reference_id, content, requires_action, sender_id, sender_name)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			userID, notifType, refID, content, requiresAction, senderID, senderName)
+
+		if err == nil {
+			log.Printf("✅ Notification created successfully for user %d", userID)
+			return nil
+		}
+
+		// Check if it's a database lock error
+		if err.Error() == "database is locked" {
+			log.Printf("⏳ Database locked, retrying... (attempt %d/%d)", i+1, maxRetries)
+			// Wait with exponential backoff
+			waitTime := time.Duration((i+1)*100) * time.Millisecond
+			time.Sleep(waitTime)
+			continue
+		}
+
+		// If it's not a lock error, don't retry
+		break
 	}
 
+	log.Printf("❌ Error creating notification after %d retries: %v", maxRetries, err)
 	return err
 }
 

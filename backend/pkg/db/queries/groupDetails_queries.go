@@ -102,8 +102,16 @@ func GetPostGroupID(postID int) (int, error) {
 func CreateGroupEvent(groupID, userID int, title, description string, eventDate time.Time) (int, error) {
 	log.Printf("🔄 Creating group event: groupID=%d, userID=%d, title=%s", groupID, userID, title)
 
+	// Use a transaction to ensure atomicity
+	tx, err := sqlite.GetDB().Begin()
+	if err != nil {
+		log.Printf("❌ Error starting transaction: %v", err)
+		return 0, err
+	}
+	defer tx.Rollback()
+
 	var eventID int
-	err := sqlite.GetDB().QueryRow(`
+	err = tx.QueryRow(`
 		INSERT INTO group_events (group_id, creator_id, title, description, event_date, created_at)
 		VALUES (?, ?, ?, ?, ?, ?)
 		RETURNING id
@@ -114,12 +122,21 @@ func CreateGroupEvent(groupID, userID int, title, description string, eventDate 
 		return 0, err
 	}
 
-	// Create notifications for all group members (except the creator)
-	err = createEventNotificationsForGroupMembers(groupID, userID, title, eventID)
-	if err != nil {
-		log.Printf("❌ Error creating event notifications: %v", err)
-		// Don't return error - the event was created successfully
+	// Commit the transaction before creating notifications
+	if err = tx.Commit(); err != nil {
+		log.Printf("❌ Error committing transaction: %v", err)
+		return 0, err
 	}
+
+	// Create notifications for all group members (except the creator)
+	// This is done outside the transaction to avoid lock conflicts
+	go func() {
+		// Use a goroutine to avoid blocking the response
+		err := createEventNotificationsForGroupMembers(groupID, userID, title, eventID)
+		if err != nil {
+			log.Printf("❌ Error creating event notifications: %v", err)
+		}
+	}()
 
 	log.Printf("✅ Group event created successfully with ID: %d", eventID)
 	return eventID, nil
@@ -127,17 +144,23 @@ func CreateGroupEvent(groupID, userID int, title, description string, eventDate 
 
 // Helper function to create event notifications for all group members
 func createEventNotificationsForGroupMembers(groupID, creatorID int, eventTitle string, eventID int) error {
+	log.Printf("🔄 Creating event notifications for group %d, creator %d, event %d", groupID, creatorID, eventID)
+
 	// Get group name and creator name
 	var groupName, creatorName string
 	err := sqlite.GetDB().QueryRow("SELECT name FROM groups WHERE id = ?", groupID).Scan(&groupName)
 	if err != nil {
+		log.Printf("❌ Error getting group name for group %d: %v", groupID, err)
 		return err
 	}
+	log.Printf("✅ Group name: %s", groupName)
 
 	err = sqlite.GetDB().QueryRow("SELECT nickname FROM users WHERE id = ?", creatorID).Scan(&creatorName)
 	if err != nil {
+		log.Printf("❌ Error getting creator name for user %d: %v", creatorID, err)
 		return err
 	}
+	log.Printf("✅ Creator name: %s", creatorName)
 
 	// Get all group members except the creator
 	rows, err := sqlite.GetDB().Query(`
@@ -145,9 +168,13 @@ func createEventNotificationsForGroupMembers(groupID, creatorID int, eventTitle 
 		WHERE group_id = ? AND user_id != ?
 	`, groupID, creatorID)
 	if err != nil {
+		log.Printf("❌ Error querying group members: %v", err)
 		return err
 	}
 	defer rows.Close()
+
+	memberCount := 0
+	notificationCount := 0
 
 	// Create notification for each member
 	for rows.Next() {
@@ -157,10 +184,22 @@ func createEventNotificationsForGroupMembers(groupID, creatorID int, eventTitle 
 			continue
 		}
 
+		memberCount++
+		log.Printf("📝 Creating notification for member %d", memberID)
+
 		err = CreateGroupEventNotification(memberID, creatorID, creatorName, eventTitle, groupName, eventID)
 		if err != nil {
 			log.Printf("❌ Error creating event notification for member %d: %v", memberID, err)
+		} else {
+			notificationCount++
+			log.Printf("✅ Created notification for member %d", memberID)
 		}
+	}
+
+	log.Printf("📊 Event notification summary: %d members found, %d notifications created", memberCount, notificationCount)
+
+	if memberCount == 0 {
+		log.Printf("⚠️  No group members found (excluding creator) for group %d", groupID)
 	}
 
 	return nil
