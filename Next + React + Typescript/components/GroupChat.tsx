@@ -90,13 +90,13 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
   const getSessionToken = (): string | null => {
     console.log("All cookies:", document.cookie);
-    const cookies = document.cookie.split(';');
+    const cookies = document.cookie.split(";");
     console.log("Parsed cookies:", cookies);
-    
+
     for (let cookie of cookies) {
-      const [name, value] = cookie.split('=').map(c => c.trim());
+      const [name, value] = cookie.split("=").map((c) => c.trim());
       console.log(`Cookie: ${name} = ${value}`);
-      if (name === 'session_token') {
+      if (name === "session_token") {
         console.log("Found session token:", value);
         return value;
       }
@@ -107,7 +107,10 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
   const connectWebSocket = () => {
     // Prevent multiple concurrent connections
-    if (isConnecting || (websocket && websocket.readyState === WebSocket.CONNECTING)) {
+    if (
+      isConnecting ||
+      (websocket && websocket.readyState === WebSocket.CONNECTING)
+    ) {
       console.log("Already connecting to WebSocket, skipping");
       return;
     }
@@ -123,7 +126,7 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
 
     // Get session token for authentication
     const sessionToken = getSessionToken();
-    
+
     let wsUrl = `ws://localhost:8080/ws`;
     if (sessionToken) {
       console.log("Using session token from cookie");
@@ -138,7 +141,7 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       console.log("WebSocket connected successfully");
       setWebsocket(ws);
       setIsConnecting(false);
-      
+
       // Refresh messages when reconnecting to ensure we have the latest
       if (isGroupMember && currentUser) {
         console.log("Refreshing messages after WebSocket reconnection");
@@ -182,12 +185,22 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     };
 
     ws.onclose = (event) => {
-      console.log("WebSocket disconnected, code:", event.code, "reason:", event.reason);
+      console.log(
+        "WebSocket disconnected, code:",
+        event.code,
+        "reason:",
+        event.reason
+      );
       setWebsocket(null);
       setIsConnecting(false);
-      
+
       // Only try to reconnect if it wasn't a normal closure and we should still be connected
-      if (isGroupMember && currentUser && event.code !== 1000 && event.code !== 1001) {
+      if (
+        isGroupMember &&
+        currentUser &&
+        event.code !== 1000 &&
+        event.code !== 1001
+      ) {
         console.log("Will attempt to reconnect WebSocket in 5 seconds...");
         setTimeout(() => {
           if (isGroupMember && currentUser && !websocket) {
@@ -238,11 +251,22 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       fetchMessages();
 
       // Only connect if we don't have a good connection
-      if (!websocket || (websocket.readyState !== WebSocket.OPEN && websocket.readyState !== WebSocket.CONNECTING)) {
-        console.log("WebSocket state:", websocket?.readyState || "null", "- need to connect");
+      if (
+        !websocket ||
+        (websocket.readyState !== WebSocket.OPEN &&
+          websocket.readyState !== WebSocket.CONNECTING)
+      ) {
+        console.log(
+          "WebSocket state:",
+          websocket?.readyState || "null",
+          "- need to connect"
+        );
         connectWebSocket();
       } else {
-        console.log("WebSocket already connected or connecting, state:", websocket.readyState);
+        console.log(
+          "WebSocket already connected or connecting, state:",
+          websocket.readyState
+        );
       }
     }
   }, [isGroupMember, currentUser, groupId]);
@@ -250,8 +274,14 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
   // Cleanup WebSocket on unmount or when dependencies change
   useEffect(() => {
     return () => {
-      if (websocket && (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING)) {
-        console.log("Component changing/unmounting, closing WebSocket connection");
+      if (
+        websocket &&
+        (websocket.readyState === WebSocket.OPEN ||
+          websocket.readyState === WebSocket.CONNECTING)
+      ) {
+        console.log(
+          "Component changing/unmounting, closing WebSocket connection"
+        );
         websocket.close(1000, "Component unmounting"); // Normal closure
         setWebsocket(null);
         setIsConnecting(false);
@@ -268,10 +298,12 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
     const handleVisibilityChange = () => {
       if (!document.hidden && isGroupMember && currentUser) {
         console.log("Page became visible, checking WebSocket connection");
-        
+
         // Only reconnect if we don't have a connection and we're not already trying
         if (!websocket && !isConnecting) {
-          console.log("WebSocket not connected after page visibility change, reconnecting...");
+          console.log(
+            "WebSocket not connected after page visibility change, reconnecting..."
+          );
           setTimeout(() => {
             if (isGroupMember && currentUser && !websocket && !isConnecting) {
               connectWebSocket();
@@ -281,10 +313,10 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isGroupMember, currentUser, websocket, isConnecting]);
 
@@ -439,7 +471,9 @@ const GroupChat = ({ groupId, isGroupMember }: GroupChatProps) => {
                 {messages
                   .filter((message) => {
                     // Only show messages from other users, not your own
-                    return !(currentUser && message.sender_id === currentUser.id);
+                    return !(
+                      currentUser && message.sender_id === currentUser.id
+                    );
                   })
                   .map((message, index, filteredMessages) => {
                     const previousMessage = filteredMessages[index - 1];
