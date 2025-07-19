@@ -20,8 +20,8 @@ FROM ubuntu:22.04
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y sqlite3 ca-certificates tzdata wget
 
-# Create non-root user
-RUN useradd -m -s /bin/bash appuser
+# Create non-root user with matching host UID for macOS compatibility
+RUN useradd -m -s /bin/bash -u 502 appuser || useradd -m -s /bin/bash appuser
 
 # Set working directory
 WORKDIR /app
@@ -38,8 +38,10 @@ RUN mkdir -p database uploads uploads/avatars
 # Copy database files if they exist
 COPY backend/database/ ./database/
 
-# Set ownership
+# Set ownership of all directories first
 RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
 USER appuser
 
 # Expose port

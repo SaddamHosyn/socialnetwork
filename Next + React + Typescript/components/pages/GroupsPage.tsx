@@ -300,17 +300,7 @@ const GroupsPage = () => {
                 />
                 <small>{formData.description.length}/500 characters</small>
               </div>
-              <div className="form-group">
-                <label>Privacy</label>
-                <select
-                  name="privacy"
-                  value={formData.privacy}
-                  onChange={handleInputChange}
-                >
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
+
               <div className="form-actions">
                 <button
                   type="button"

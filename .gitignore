@@ -1,6 +1,11 @@
 node_modules
 Next + React + Typescript/.next
 
+# Next.js build outputs
+Next + React + Typescript/out/
+Next + React + Typescript/dist/
+Next + React + Typescript/dist-ssr/
+
 # SQLite WAL files
 *.db-wal
 *.db-shm
