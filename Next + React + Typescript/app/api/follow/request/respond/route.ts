@@ -4,7 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
 
-    const backendResponse = await fetch("http://localhost:8080/api/follow/request/respond", {
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+      const backendResponse = await fetch(`${backendUrl}/api/follow/request/respond`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

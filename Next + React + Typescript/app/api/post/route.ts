@@ -7,7 +7,8 @@ export async function GET(req: NextRequest) {
   const search = req.nextUrl.search || "";
   const cookie = req.headers.get("cookie");
 
-  const res = await fetch(`http://localhost:8080/api/post${search}`, {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/post${search}`, {
     method: "GET",
     headers: {
       cookie: cookie || "",

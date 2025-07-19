@@ -14,8 +14,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const response = await fetch(
-      `http://localhost:8080/api/comment/fetch?post_id=${post_id}&limit=${limit}&offset=${offset}`,
+      `${backendUrl}/api/comment/fetch?post_id=${post_id}&limit=${limit}&offset=${offset}`,
       {
         method: 'GET',
         headers: {

@@ -17,8 +17,9 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
   const res = await fetch(
-    `http://localhost:8080/api/groups/chat/messages?group_id=${groupId}&limit=${limit}&offset=${offset}`,
+    `${backendUrl}/api/groups/chat/messages?group_id=${groupId}&limit=${limit}&offset=${offset}`,
     {
       method: "GET",
       headers: {

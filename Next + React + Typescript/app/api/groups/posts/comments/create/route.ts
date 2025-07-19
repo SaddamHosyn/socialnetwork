@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
     headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
 
-  const res = await fetch("http://localhost:8080/api/groups/posts/comments/create", {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/posts/comments/create`, {
     method: "POST",
     headers: contentType && contentType.includes("multipart/form-data") ? { Cookie: cookie || "" } : headers,
     body,

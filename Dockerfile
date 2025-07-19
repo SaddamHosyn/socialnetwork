@@ -5,13 +5,13 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 # Copy frontend package files
-COPY "Next + React + Typescript/package*.json" ./
+COPY ["Next + React + Typescript/package*.json", "./"]
 
 # Install frontend dependencies
 RUN npm ci --only=production
 
 # Copy frontend source code
-COPY "Next + React + Typescript/" ./
+COPY ["Next + React + Typescript/", "./"]
 
 # Build the frontend
 RUN npm run build
@@ -20,7 +20,7 @@ RUN npm run build
 FROM golang:1.23-alpine AS backend-builder
 
 # Install required packages for CGO (SQLite)
-RUN apk add --no-cache gcc musl-dev sqlite-dev
+RUN apk update && apk add --no-cache gcc musl-dev sqlite-dev
 
 # Set working directory
 WORKDIR /app
@@ -62,7 +62,7 @@ COPY --from=frontend-builder /app/frontend/package.json ./package.json
 RUN mkdir -p database uploads uploads/avatars
 
 # Copy any existing database migrations or initial data
-COPY backend/database/ ./database/
+COPY backend/ ./backend/
 
 # Set ownership to non-root user
 RUN chown -R appuser:appuser /app

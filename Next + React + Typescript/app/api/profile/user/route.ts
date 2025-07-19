@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward the request to the backend
-    const response = await fetch(`http://localhost:8080/api/profile/user?user_id=${userId}`, {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const response = await fetch(`${backendUrl}/api/profile/user?user_id=${userId}`, {
       method: "GET",
       headers: {
         // Forward cookies for authentication

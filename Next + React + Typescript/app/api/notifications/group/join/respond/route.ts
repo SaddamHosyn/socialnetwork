@@ -4,7 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const response = await fetch('http://localhost:8080/api/notifications/group/join/respond', {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const response = await fetch(`${backendUrl}/api/notifications/group/join/respond`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

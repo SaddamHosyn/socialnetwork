@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   // Forward the body to your Go backend
   const formData = await req.formData();
-  const res = await fetch("http://localhost:8080/api/register", {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/register`, {
     method: "POST",
     body: formData,
     credentials: "include",

@@ -1,5 +1,0 @@
-import { NextResponse } from 'next/server';
-
-export async function DELETE() {
-  return NextResponse.json({ message: 'Comment delete endpoint - not implemented yet' }, { status: 501 });
-}

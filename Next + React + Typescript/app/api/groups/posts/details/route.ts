@@ -7,7 +7,8 @@ export async function GET(req: NextRequest) {
   const postId = searchParams.get("post_id");
   const cookie = req.headers.get("cookie");
 
-  const res = await fetch(`http://localhost:8080/api/groups/posts/details?post_id=${postId}`, {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/posts/details?post_id=${postId}`, {
     method: "GET",
     headers: {
       Cookie: cookie || "",

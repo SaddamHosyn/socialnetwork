@@ -16,8 +16,9 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
   const res = await fetch(
-    `http://localhost:8080/api/private/chat/messages?receiver_id=${receiverId}&limit=${limit}&offset=${offset}`,
+    `${backendUrl}/api/private/chat/messages?receiver_id=${receiverId}&limit=${limit}&offset=${offset}`,
     {
       method: "GET",
       headers: {

@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
     fetchHeaders["Content-Type"] = "application/x-www-form-urlencoded";
   }
 
-  const res = await fetch("http://localhost:8080/api/groups/posts/create", {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/posts/create`, {
     method: "POST",
     headers: fetchHeaders,
     body,

@@ -15,13 +15,12 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const res = await fetch(
-    `http://localhost:8080/api/groups/chat/latest?group_id=${groupId}`,
-    {
-      method: "GET",
-      headers: {
-        Cookie: cookie || "",
-      },
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/chat/latest?group_id=${groupId}`, {
+    method: "GET",
+    headers: {
+      Cookie: cookie || "",
+    },
       cache: "no-store",
     }
   );

@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   const offset = searchParams.get("offset") || "0";
   const cookie = req.headers.get("cookie");
 
-  const res = await fetch(`http://localhost:8080/api/groups/posts?group_id=${groupId}&limit=${limit}&offset=${offset}`, {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/posts?group_id=${groupId}&limit=${limit}&offset=${offset}`, {
     method: "GET",
     headers: {
       Cookie: cookie || "",
@@ -24,7 +25,8 @@ export async function POST(req: NextRequest) {
   const cookie = req.headers.get("cookie");
   const body = await req.text();
 
-  const res = await fetch("http://localhost:8080/api/groups/posts/create", {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/posts/create`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

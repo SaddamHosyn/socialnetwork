@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
   const contentType = req.headers.get("content-type");
 
   // IMPORTANT: Use req.body directly (stream) – do NOT parse or clone the body!
-  const res = await fetch("http://localhost:8080/api/post/create", {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/post/create`, {
     method: "POST",
     headers: {
       cookie: cookie || "",

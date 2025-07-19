@@ -4,7 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     
-    const response = await fetch('http://localhost:8080/api/comment/create', {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const response = await fetch(`${backendUrl}/api/comment/create`, {
       method: 'POST',
       headers: {
         'Cookie': request.headers.get('cookie') || '',

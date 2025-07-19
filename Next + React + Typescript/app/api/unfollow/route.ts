@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     const backendFormData = new FormData();
     backendFormData.append('user_id', userId);
 
-    const response = await fetch('http://localhost:8080/api/unfollow', {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const response = await fetch(`${backendUrl}/api/unfollow`, {
       method: 'POST',
       headers: {
         'Cookie': request.headers.get('cookie') || '',

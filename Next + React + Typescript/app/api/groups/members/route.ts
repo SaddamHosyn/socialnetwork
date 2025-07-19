@@ -6,8 +6,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const groupId = searchParams.get("group_id");
   const cookie = req.headers.get("cookie");
-
-  const res = await fetch(`http://localhost:8080/api/groups/members?group_id=${groupId}`, {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/members?group_id=${groupId}`, {
     method: "GET",
     headers: {
       Cookie: cookie || "",

@@ -6,7 +6,8 @@ export async function PUT(req: NextRequest) {
   const cookie = req.headers.get("cookie");
   const body = await req.text();
 
-  const res = await fetch("http://localhost:8080/api/groups/posts/update", {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/posts/update`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

@@ -7,7 +7,8 @@ export async function POST(req: NextRequest) {
   const cookie = req.headers.get("cookie");
   const body = await req.text();
 
-  const res = await fetch("http://localhost:8080/api/private/chat/send", {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/private/chat/send`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

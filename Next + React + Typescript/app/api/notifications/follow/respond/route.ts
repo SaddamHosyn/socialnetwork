@@ -4,14 +4,15 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const response = await fetch('http://localhost:8080/api/notifications/follow/respond', {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const response = await fetch(`${backendUrl}/api/notifications/follow/respond`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Cookie': request.headers.get('cookie') || ''
       },
       body: JSON.stringify(body)
-    });
+    });   
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);

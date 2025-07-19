@@ -6,7 +6,8 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('user_id');
     
     // Build the backend URL, including user_id if provided
-    let backendUrl = 'http://localhost:8080/api/follow/following';
+    const baseBackendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    let backendUrl = `${baseBackendUrl}/api/follow/following`;
     if (userId) {
       backendUrl += `?user_id=${userId}`;
     }

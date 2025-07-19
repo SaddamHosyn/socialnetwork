@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
   console.log("Comments API called with post_id:", postId);
   console.log("Cookie:", cookie);
 
-  const res = await fetch(`http://localhost:8080/api/groups/posts/comments?post_id=${postId}&limit=${limit}&offset=${offset}`, {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/posts/comments?post_id=${postId}&limit=${limit}&offset=${offset}`, {
     method: "GET",
     headers: {
       Cookie: cookie || "",

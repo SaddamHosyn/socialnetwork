@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     // Forward the request to the backend
-    const response = await fetch("http://localhost:8080/api/users/discover", {
+    const response = await fetch(`${backendUrl}/api/users/discover`, {
       method: "GET",
       headers: {
         // Forward cookies for authentication

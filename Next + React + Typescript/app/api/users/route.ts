@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const backendResponse = await fetch("http://localhost:8080/api/users", {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const backendResponse = await fetch(`${backendUrl}/api/users`, {
       method: "GET",
       headers: {
         Cookie: request.headers.get("cookie") || "",

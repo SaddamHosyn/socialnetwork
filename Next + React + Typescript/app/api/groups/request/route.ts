@@ -6,7 +6,8 @@ export async function POST(req: NextRequest) {
   const cookie = req.headers.get("cookie");
   const body = await req.text();
 
-  const res = await fetch("http://localhost:8080/api/groups/request", {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/request`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

@@ -8,7 +8,8 @@ export async function PUT(
     const resolvedParams = await params;
     const body = await request.json();
     
-    const response = await fetch(`http://localhost:8080/api/notifications/${resolvedParams.id}/action`, {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const response = await fetch(`${backendUrl}/api/notifications/${resolvedParams.id}/action`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

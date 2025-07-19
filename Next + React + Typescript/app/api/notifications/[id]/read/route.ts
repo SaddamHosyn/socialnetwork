@@ -6,7 +6,8 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const response = await fetch(`http://localhost:8080/api/notifications/read?id=${id}`, {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const response= await fetch(`${backendUrl}/api/notifications/read?id=${id}`, {
       method: 'POST',
       headers: {
         'Cookie': request.headers.get('cookie') || ''

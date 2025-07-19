@@ -143,7 +143,7 @@ export const useFollower = () => {
   }, [makeRequest]);
 
   const getFollowers = useCallback(async (userId: number): Promise<Follower[]> => {
-    const result = await makeRequest<{ followers: Follower[] }>(`/api/followers?user_id=${userId}`);
+    const result = await makeRequest<{ followers: Follower[] }>(`/api/follow/followers?user_id=${userId}`);
     
     if (result.success && result.data?.followers) {
       return result.data.followers;
@@ -153,7 +153,7 @@ export const useFollower = () => {
   }, [makeRequest]);
 
   const getFollowing = useCallback(async (userId: number): Promise<Follower[]> => {
-    const result = await makeRequest<{ following: Follower[] }>(`/api/following?user_id=${userId}`);
+    const result = await makeRequest<{ following: Follower[] }>(`/api/follow/following?user_id=${userId}`);
     
     if (result.success && result.data?.following) {
       return result.data.following;

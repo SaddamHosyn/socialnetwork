@@ -6,7 +6,8 @@ export async function DELETE(req: NextRequest) {
   const cookie = req.headers.get("cookie");
   const body = await req.text();
 
-  const res = await fetch("http://localhost:8080/api/groups/posts/delete", {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+  const res = await fetch(`${backendUrl}/api/groups/posts/delete`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

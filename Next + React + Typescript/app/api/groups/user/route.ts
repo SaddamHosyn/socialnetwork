@@ -4,8 +4,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const cookie = req.headers.get("cookie");
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
 
-  const res = await fetch("http://localhost:8080/api/groups/user", {
+  const res = await fetch(`${backendUrl}/api/groups/user`, {
     method: "GET",
     headers: {
       Cookie: cookie || "",
