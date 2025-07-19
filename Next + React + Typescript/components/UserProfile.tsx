@@ -378,12 +378,6 @@ const UserProfile: React.FC = () => {
             <span className="tab-count">({postList.length})</span>
           </button>
           <button
-            className={`tab-modern ${activeTab === "activity" ? "active" : ""}`}
-            onClick={() => setActiveTab("activity")}
-          >
-            📊 Activity Overview
-          </button>
-          <button
             className={`tab-modern ${
               activeTab === "followers" ? "active" : ""
             }`}
@@ -462,114 +456,8 @@ const UserProfile: React.FC = () => {
                     You haven't created any posts yet. Start sharing your
                     thoughts with the community!
                   </p>
-                  <button
-                    className="create-post-btn-profile"
-                    onClick={() =>
-                      (window.location.href = "/?page=posts&action=create")
-                    }
-                  >
-                    Create Your First Post
-                  </button>
                 </div>
               )}
-            </div>
-          )}
-
-          {activeTab === "activity" && (
-            <div className="activity-section-modern">
-              <div className="activity-overview-modern">
-                <h3>📈 Your Activity Overview</h3>
-
-                <div className="activity-stats-grid">
-                  <div className="activity-stat-card-modern">
-                    <div className="stat-icon-modern">📝</div>
-                    <div className="stat-content-modern">
-                      <span className="stat-number-large">
-                        {postList.length}
-                      </span>
-                      <span className="stat-label-activity">Total Posts</span>
-                    </div>
-                  </div>
-
-                  <div className="activity-stat-card-modern">
-                    <div className="stat-icon-modern">👍</div>
-                    <div className="stat-content-modern">
-                      <span className="stat-number-large">
-                        {postList.reduce(
-                          (acc, post) => acc + (post.votes || 0),
-                          0
-                        )}
-                      </span>
-                      <span className="stat-label-activity">
-                        Votes Received
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="activity-stat-card-modern">
-                    <div className="stat-icon-modern">💬</div>
-                    <div className="stat-content-modern">
-                      <span className="stat-number-large">
-                        {postList.reduce(
-                          (acc, post) => acc + (post.comments_count || 0),
-                          0
-                        )}
-                      </span>
-                      <span className="stat-label-activity">
-                        Total Comments
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="activity-stat-card-modern">
-                    <div className="stat-icon-modern">📅</div>
-                    <div className="stat-content-modern">
-                      <span className="stat-number-large">
-                        {user.created_at
-                          ? Math.floor(
-                              (Date.now() -
-                                new Date(user.created_at).getTime()) /
-                                (1000 * 60 * 60 * 24)
-                            )
-                          : 0}
-                      </span>
-                      <span className="stat-label-activity">Days Active</span>
-                    </div>
-                  </div>
-                </div>
-
-                {postList.length > 0 && (
-                  <div className="recent-activity-modern">
-                    <h4>🕒 Recent Posts</h4>
-                    <div className="recent-posts-list-modern">
-                      {postList
-                        .sort(
-                          (a, b) =>
-                            new Date(b.created_at).getTime() -
-                            new Date(a.created_at).getTime()
-                        )
-                        .slice(0, 5)
-                        .map((post) => (
-                          <div
-                            key={post.id}
-                            className="recent-post-item-modern"
-                          >
-                            <div className="recent-post-info-modern">
-                              <h5>{post.title}</h5>
-                              <span className="recent-post-date-modern">
-                                {new Date(post.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <div className="recent-post-stats-modern">
-                              <span>👍 {post.votes || 0}</span>
-                              <span>💬 {post.comments_count || 0}</span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           )}
 

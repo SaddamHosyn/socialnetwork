@@ -67,17 +67,6 @@ const GroupMembers = ({ groupId, isGroupMember }: GroupMembersProps) => {
     <div className="members-section">
       <div className="members-header">
         <h2>Group Members ({members.length})</h2>
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search members by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-            disabled={loading}
-          />
-          <span className="search-icon">🔍</span>
-        </div>
       </div>
 
       <div className="members-list">
@@ -91,8 +80,8 @@ const GroupMembers = ({ groupId, isGroupMember }: GroupMembersProps) => {
               Try Again
             </button>
           </div>
-        ) : filteredMembers.length > 0 ? (
-          filteredMembers.map((member) => (
+        ) : members.length > 0 ? (
+          members.map((member) => (
             <div key={member.id} className="member-card">
               <div className="member-avatar">
                 <img
@@ -114,19 +103,12 @@ const GroupMembers = ({ groupId, isGroupMember }: GroupMembersProps) => {
                 </div>
               </div>
               <div className="member-actions">
-                {isGroupMember && !member.is_creator && (
-                  <button className="message-btn">💬 Message</button>
-                )}
               </div>
             </div>
           ))
         ) : (
           <div className="no-results">
-            {searchTerm ? (
-              <p>No members found matching "{searchTerm}"</p>
-            ) : (
-              <p>No members found</p>
-            )}
+            <p>No members found</p>
           </div>
         )}
       </div>
