@@ -6,11 +6,12 @@ import { getAvatarUrl, getUserInitials } from "../../utils/imageUtils";
 
 interface User {
   id: number;
-  nickname: string;
   first_name: string;
   last_name: string;
   email: string;
   avatar?: string;
+  nickname?: string;
+  about_me?: string;
   is_private: boolean;
   followers_count: number;
   following_count: number;

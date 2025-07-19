@@ -27,7 +27,7 @@ export type Comment = {
   content: string;
   image?: string;
   author: string;
-  nickname: string; // Added this field
+  nickname: string;
   votes: number;
   created_at: string;
 };
@@ -42,8 +42,8 @@ export type User = {
   avatar?: string;
   nickname: string;
   about_me?: string;
-  is_private?: boolean; // Added this field that UserList component expects
-  created_at: string; // Added this field that UserList component expects
+  is_private?: boolean;
+  created_at: string;
 };
 
 export type ProfileData = {
@@ -55,7 +55,7 @@ export type Group = {
   id: number;
   name: string;
   description: string;
-  privacy: 'public' | 'private';
+  privacy: "public" | "private";
   members_count: number;
   is_member: boolean;
   created_at: string;

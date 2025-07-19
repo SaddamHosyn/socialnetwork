@@ -16,6 +16,8 @@ interface ChatMessage {
 interface User {
   id: number;
   nickname: string;
+  first_name: string;
+  last_name: string;
   avatar_path?: string;
   isOnline?: boolean;
   last_message?: string;
@@ -572,20 +574,21 @@ const PrivateChat = () => {
                 onClick={() => {
                   console.log("Selecting user:", user);
                   setSelectedUser(user);
-                  // Also update the ref immediately
                   selectedUserRef.current = user;
                 }}
               >
                 <div className="user-avatar">
                   <img
                     src={getAvatarUrl(user.avatar_path)}
-                    alt={`${user.nickname}'s avatar`}
+                    alt={`${user.nickname || user.first_name}’s avatar`}
                     className="avatar-image"
                   />
                   {user.isOnline && <div className="online-indicator"></div>}
                 </div>
                 <div className="user-info">
-                  <div className="user-name">{user.nickname}</div>
+                  <div className="user-name">
+                    {user.nickname || `${user.first_name} ${user.last_name}`}
+                  </div>
                   {user.last_message && (
                     <div className="last-message">{user.last_message}</div>
                   )}

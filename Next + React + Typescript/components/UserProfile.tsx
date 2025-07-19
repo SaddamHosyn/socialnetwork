@@ -286,7 +286,9 @@ const UserProfile: React.FC = () => {
               </div>
               <div className="info-item">
                 <span className="info-label">Date of Birth:</span>
-                <span className="info-value">{user.date_of_birth}</span>
+                <span className="info-value">
+                  {new Date(user.date_of_birth).toLocaleDateString("en-GB")}
+                </span>
               </div>
               <div className="info-item">
                 <span className="info-label">Gender:</span>
