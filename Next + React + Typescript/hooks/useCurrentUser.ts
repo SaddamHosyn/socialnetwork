@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export type CurrentUser = {
   id: number;
@@ -15,10 +15,10 @@ export const useCurrentUser = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch('/api/user/me', {
-          credentials: 'include',
+        const response = await fetch("/api/me", {
+          credentials: "include",
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data && data.data.user) {
@@ -26,7 +26,7 @@ export const useCurrentUser = () => {
           }
         }
       } catch (error) {
-        console.error('Error fetching current user:', error);
+        console.error("Error fetching current user:", error);
       } finally {
         setLoading(false);
       }
